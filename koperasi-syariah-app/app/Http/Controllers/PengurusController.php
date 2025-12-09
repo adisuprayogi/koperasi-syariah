@@ -12,6 +12,10 @@ use App\Models\PengajuanPembiayaan;
 use App\Models\Angsuran;
 use App\Models\JenisPembiayaan;
 use App\Models\Transaksi;
+use App\Notifications\AnggotaBaruNotification;
+use App\Notifications\PengajuanStatusNotification;
+use App\Notifications\SimpananNotification;
+use App\Notifications\AngsuranNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -220,7 +224,7 @@ class PengurusController extends Controller
             }
 
             // Create anggota
-            Anggota::create([
+            $anggota = Anggota::create([
                 'no_anggota' => $no_anggota,
                 'nama_lengkap' => $request->nama_lengkap,
                 'nik' => $request->nik,
@@ -238,6 +242,16 @@ class PengurusController extends Controller
                 'jenis_anggota' => $request->jenis_anggota,
                 'user_id' => $user_id,
             ]);
+
+            // Send welcome email notification if user account was created
+            if ($user_id && $user) {
+                try {
+                    $user->notify(new AnggotaBaruNotification($anggota, $request->password));
+                } catch (\Exception $e) {
+                    // Log error but don't fail the registration
+                    \Log::error('Failed to send welcome email: ' . $e->getMessage());
+                }
+            }
 
             DB::commit();
 
@@ -508,6 +522,17 @@ class PengurusController extends Controller
                 'verified_by' => $pengurusId,
             ]);
 
+            // Send notification to anggota about the transaction
+            try {
+                $anggota = Anggota::find($request->anggota_id);
+                if ($anggota && $anggota->user) {
+                    $anggota->user->notify(new SimpananNotification($transaksi, $request->jenis_transaksi));
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the transaction
+                \Log::error('Failed to send simpanan notification: ' . $e->getMessage());
+            }
+
             DB::commit();
 
             $message = $request->jenis_transaksi == 'setor'
@@ -655,6 +680,17 @@ class PengurusController extends Controller
             'total_angsuran' => $totalAngsuran
         ]);
 
+        // Send notification to anggota about approval
+        try {
+            $anggota = Anggota::find($pengajuan->anggota_id);
+            if ($anggota && $anggota->user) {
+                $anggota->user->notify(new PengajuanStatusNotification($pengajuan, 'approved'));
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail the approval
+            \Log::error('Failed to send approval notification: ' . $e->getMessage());
+        }
+
         return redirect()->route('pengurus.pengajuan.index')
             ->with('success', 'Pengajuan berhasil diverifikasi dan disetujui');
     }
@@ -687,6 +723,17 @@ class PengurusController extends Controller
             'rejecter_id' => auth()->user()->id,
             'alasan_reject' => $request->alasan_reject ?? 'Pengajuan tidak memenuhi kriteria'
         ]);
+
+        // Send notification to anggota about rejection
+        try {
+            $anggota = Anggota::find($pengajuan->anggota_id);
+            if ($anggota && $anggota->user) {
+                $anggota->user->notify(new PengajuanStatusNotification($pengajuan, 'rejected'));
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail the rejection
+            \Log::error('Failed to send rejection notification: ' . $e->getMessage());
+        }
 
         return redirect()->route('pengurus.pengajuan.index')
             ->with('success', 'Pengajuan berhasil ditolak');
@@ -739,6 +786,17 @@ class PengurusController extends Controller
                 'tanggal_jatuh_tempo_pertama' => $request->tanggal_jatuh_tempo_pertama ?? now()->addMonth(),
                 'keterangan_jatuh_tempo' => $request->keterangan_jatuh_tempo ?? 'Angsuran pertama jatuh tempo'
             ]);
+
+            // Send notification to anggota about disbursement
+            try {
+                $anggota = Anggota::find($pengajuan->anggota_id);
+                if ($anggota && $anggota->user) {
+                    $anggota->user->notify(new PengajuanStatusNotification($pengajuan, 'cair'));
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the disbursement
+                \Log::error('Failed to send disbursement notification: ' . $e->getMessage());
+            }
         }
 
         return redirect()->route('pengurus.pengajuan.index')
@@ -925,7 +983,7 @@ class PengurusController extends Controller
             }
 
             // Create transaction record (Syariah: No denda included)
-            Transaksi::create([
+            $transaksi = Transaksi::create([
                 'kode_transaksi' => 'AGS-' . date('Ymd') . '-' . str_pad($angsuran->angsuran_ke, 3, '0', STR_PAD_LEFT),
                 'pengajuan_pembiayaan_id' => $pengajuan->id,
                 'anggota_id' => $pengajuan->anggota_id,
@@ -935,6 +993,23 @@ class PengurusController extends Controller
                 'status' => 'completed',
                 'created_by' => auth()->id()
             ]);
+
+            // Send notification to anggota about installment payment
+            try {
+                $anggota = Anggota::find($pengajuan->anggota_id);
+                if ($anggota && $anggota->user) {
+                    // Get next installment for notification
+                    $nextAngsuran = $pengajuan->angsurans()
+                        ->whereIn('status', ['pending', 'terlambat'])
+                        ->orderBy('angsuran_ke', 'asc')
+                        ->first();
+
+                    $anggota->user->notify(new AngsuranNotification($transaksi, $pengajuan, $nextAngsuran));
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the payment recording
+                \Log::error('Failed to send installment notification: ' . $e->getMessage());
+            }
 
             DB::commit();
 

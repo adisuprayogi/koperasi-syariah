@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\PengajuanPembiayaan;
 use App\Models\JenisPembiayaan;
 use App\Models\Anggota;
+use App\Notifications\PengajuanStatusNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
@@ -137,6 +138,16 @@ class PengajuanPembiayaanController extends Controller
             }
 
             $pengajuan = PengajuanPembiayaan::create($data);
+
+            // Send notification to anggota about application submission
+            try {
+                if ($anggota->user) {
+                    $anggota->user->notify(new PengajuanStatusNotification($pengajuan, 'diajukan'));
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the application submission
+                \Log::error('Failed to send application notification: ' . $e->getMessage());
+            }
 
             DB::commit();
 

@@ -4,86 +4,86 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Dashboard Pengurus</h1>
-        <p class="text-gray-600 mt-2">Selamat datang di halaman Pengurus Koperasi Syariah</p>
+    <div class="mb-4 sm:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard Pengurus</h1>
+        <p class="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Selamat datang di halaman Pengurus Koperasi Syariah</p>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
             <div class="flex items-center">
-                <div class="p-3 bg-green-100 rounded-full">
-                    <i class="fas fa-user-friends text-green-600 text-xl"></i>
+                <div class="p-2 sm:p-3 bg-green-100 rounded-full">
+                    <i class="fas fa-user-friends text-green-600 text-sm sm:text-xl"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Total Saldo</h3>
-                    <p class="text-2xl font-bold text-green-600">{{ number_format($totalSaldo, 0, ',', '.') }}</p>
-                    <p class="text-sm text-gray-600">Net simpanan</p>
+                <div class="ml-3 sm:ml-4">
+                    <h3 class="text-sm sm:text-lg font-semibold text-gray-900">Total Saldo</h3>
+                    <p class="text-lg sm:text-2xl font-bold text-green-600">{{ number_format($totalSaldo, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-600">Net simpanan</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
             <div class="flex items-center">
-                <div class="p-3 bg-blue-100 rounded-full">
-                    <i class="fas fa-piggy-bank text-blue-600 text-xl"></i>
+                <div class="p-2 sm:p-3 bg-blue-100 rounded-full">
+                    <i class="fas fa-piggy-bank text-blue-600 text-sm sm:text-xl"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Total Simpanan</h3>
-                    <p class="text-2xl font-bold text-blue-600">{{ number_format($totalSimpanan, 0, ',', '.') }}</p>
-                    <p class="text-sm text-gray-600">{{ $transaksiHariIni }} transaksi hari ini</p>
+                <div class="ml-3 sm:ml-4">
+                    <h3 class="text-sm sm:text-lg font-semibold text-gray-900">Total Simpanan</h3>
+                    <p class="text-lg sm:text-2xl font-bold text-blue-600">{{ number_format($totalSimpanan, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-600">{{ $transaksiHariIni }} transaksi</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
             <div class="flex items-center">
-                <div class="p-3 bg-purple-100 rounded-full">
-                    <i class="fas fa-hand-holding-usd text-purple-600 text-xl"></i>
+                <div class="p-2 sm:p-3 bg-purple-100 rounded-full">
+                    <i class="fas fa-hand-holding-usd text-purple-600 text-sm sm:text-xl"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Total Pembiayaan</h3>
-                    <p class="text-2xl font-bold text-purple-600">{{ number_format($totalPembiayaanCair, 0, ',', '.') }}</p>
-                    <p class="text-sm text-gray-600">{{ $activePembiayaan }} aktif</p>
+                <div class="ml-3 sm:ml-4">
+                    <h3 class="text-sm sm:text-lg font-semibold text-gray-900">Total Pembiayaan</h3>
+                    <p class="text-lg sm:text-2xl font-bold text-purple-600">{{ number_format($totalPembiayaanCair, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-600">{{ $activePembiayaan }} aktif</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
             <div class="flex items-center">
-                <div class="p-3 bg-yellow-100 rounded-full">
-                    <i class="fas fa-chart-line text-yellow-600 text-xl"></i>
+                <div class="p-2 sm:p-3 bg-yellow-100 rounded-full">
+                    <i class="fas fa-chart-line text-yellow-600 text-sm sm:text-xl"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Total Margin</h3>
-                    <p class="text-2xl font-bold text-yellow-600">{{ number_format($totalMargin, 0, ',', '.') }}</p>
-                    <p class="text-sm text-gray-600">Dari pembiayaan</p>
+                <div class="ml-3 sm:ml-4">
+                    <h3 class="text-sm sm:text-lg font-semibold text-gray-900">Total Margin</h3>
+                    <p class="text-lg sm:text-2xl font-bold text-yellow-600">{{ number_format($totalMargin, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-600">Dari pembiayaan</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Today's Summary & Pending Tasks -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <!-- Today's Summary -->
-        <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Ringkasan Hari Ini</h3>
-            <div class="grid grid-cols-3 gap-4">
-                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                    <i class="fas fa-exchange-alt text-blue-600 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-blue-600">{{ $transaksiHariIni }}</p>
-                    <p class="text-sm text-gray-600">Transaksi</p>
+        <div class="lg:col-span-2 bg-white rounded-lg shadow p-4 sm:p-6">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Ringkasan Hari Ini</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div class="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+                    <i class="fas fa-exchange-alt text-blue-600 text-xl sm:text-2xl mb-2"></i>
+                    <p class="text-xl sm:text-2xl font-bold text-blue-600">{{ $transaksiHariIni }}</p>
+                    <p class="text-xs sm:text-sm text-gray-600">Transaksi</p>
                 </div>
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <i class="fas fa-arrow-up text-green-600 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-green-600">{{ number_format($setoranHariIni, 0, ',', '.') }}</p>
-                    <p class="text-sm text-gray-600">Setoran</p>
+                <div class="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+                    <i class="fas fa-arrow-up text-green-600 text-xl sm:text-2xl mb-2"></i>
+                    <p class="text-xl sm:text-2xl font-bold text-green-600">{{ number_format($setoranHariIni, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-600">Setoran</p>
                 </div>
-                <div class="text-center p-4 bg-red-50 rounded-lg">
-                    <i class="fas fa-arrow-down text-red-600 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-red-600">{{ number_format($penarikanHariIni, 0, ',', '.') }}</p>
-                    <p class="text-sm text-gray-600">Penarikan</p>
+                <div class="text-center p-3 sm:p-4 bg-red-50 rounded-lg">
+                    <i class="fas fa-arrow-down text-red-600 text-xl sm:text-2xl mb-2"></i>
+                    <p class="text-xl sm:text-2xl font-bold text-red-600">{{ number_format($penarikanHariIni, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-600">Penarikan</p>
                 </div>
             </div>
         </div>
@@ -112,24 +112,24 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a href="{{ route('pengurus.anggota.create') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                <i class="fas fa-user-plus text-green-600 mr-3"></i>
-                <span class="font-medium text-gray-900">Tambah Anggota</span>
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-6 sm:mb-8">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <a href="{{ route('pengurus.anggota.create') }}" class="flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <i class="fas fa-user-plus text-green-600 mr-0 sm:mr-3 mb-2 sm:mb-0 text-sm sm:text-base"></i>
+                <span class="font-medium text-gray-900 text-sm sm:text-base text-center">Tambah Anggota</span>
             </a>
-            <a href="{{ route('pengurus.simpanan.create') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                <i class="fas fa-plus-circle text-blue-600 mr-3"></i>
-                <span class="font-medium text-gray-900">Input Simpanan</span>
+            <a href="{{ route('pengurus.simpanan.create') }}" class="flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <i class="fas fa-plus-circle text-blue-600 mr-0 sm:mr-3 mb-2 sm:mb-0 text-sm sm:text-base"></i>
+                <span class="font-medium text-gray-900 text-sm sm:text-base text-center">Input Simpanan</span>
             </a>
-            <a href="{{ route('pengurus.pengajuan.index') }}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                <i class="fas fa-clipboard-check text-purple-600 mr-3"></i>
-                <span class="font-medium text-gray-900">Verifikasi Pengajuan</span>
+            <a href="{{ route('pengurus.pengajuan.index') }}" class="flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                <i class="fas fa-clipboard-check text-purple-600 mr-0 sm:mr-3 mb-2 sm:mb-0 text-sm sm:text-base"></i>
+                <span class="font-medium text-gray-900 text-sm sm:text-base text-center">Verifikasi Pengajuan</span>
             </a>
-            <a href="{{ route('pengurus.laporan.index') }}" class="flex items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
-                <i class="fas fa-chart-bar text-yellow-600 mr-3"></i>
-                <span class="font-medium text-gray-900">Lihat Laporan</span>
+            <a href="{{ route('pengurus.laporan.index') }}" class="flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                <i class="fas fa-chart-bar text-yellow-600 mr-0 sm:mr-3 mb-2 sm:mb-0 text-sm sm:text-base"></i>
+                <span class="font-medium text-gray-900 text-sm sm:text-base text-center">Lihat Laporan</span>
             </a>
         </div>
     </div>

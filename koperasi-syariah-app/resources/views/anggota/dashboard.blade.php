@@ -4,35 +4,35 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Dashboard Anggota</h1>
-        <p class="text-gray-600 mt-2">Selamat datang di halaman Anggota Koperasi Syariah</p>
+    <div class="mb-4 sm:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard Anggota</h1>
+        <p class="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Selamat datang di halaman Anggota Koperasi Syariah</p>
     </div>
 
     <!-- Info Card -->
-    <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 mb-8 text-white">
-        <div class="flex items-center justify-between">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-4 sm:p-6 mb-6 sm:mb-8 text-white">
+        <div class="flex flex-col sm:flex-row items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold mb-2">Selamat Datang, {{ Auth::user()->name }}!</h2>
-                <p class="text-green-100">Terima kasih telah menjadi anggota Koperasi Syariah kami</p>
+                <h2 class="text-xl sm:text-2xl font-bold mb-2">Selamat Datang, {{ Auth::user()->name }}!</h2>
+                <p class="text-green-100 text-sm sm:text-base">Terima kasih telah menjadi anggota Koperasi Syariah kami</p>
             </div>
-            <div class="text-6xl opacity-20">
+            <div class="text-4xl sm:text-6xl opacity-20 mt-4 sm:mt-0">
                 <i class="fas fa-user-circle"></i>
             </div>
         </div>
     </div>
 
     <!-- Savings Summary -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         @foreach($saldoPerJenis as $saldo)
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
             <div class="flex items-center">
-                <div class="p-3 {{ $saldo->jenis->tipe_simpanan == 'modal' ? 'bg-indigo-100' : ($saldo->jenis->tipe_simpanan == 'pokok' ? 'bg-blue-100' : ($saldo->jenis->tipe_simpanan == 'wajib' ? 'bg-yellow-100' : 'bg-green-100')) }} rounded-full">
-                    <i class="fas {{ $saldo->jenis->tipe_simpanan == 'modal' ? 'fa-coins text-indigo-600' : ($saldo->jenis->tipe_simpanan == 'pokok' ? 'fa-lock text-blue-600' : ($saldo->jenis->tipe_simpanan == 'wajib' ? 'fa-calendar-check text-yellow-600' : 'fa-hand-holding-heart text-green-600')) }} text-xl"></i>
+                <div class="p-2 sm:p-3 {{ $saldo->jenis->tipe_simpanan == 'modal' ? 'bg-indigo-100' : ($saldo->jenis->tipe_simpanan == 'pokok' ? 'bg-blue-100' : ($saldo->jenis->tipe_simpanan == 'wajib' ? 'bg-yellow-100' : 'bg-green-100')) }} rounded-full">
+                    <i class="fas {{ $saldo->jenis->tipe_simpanan == 'modal' ? 'fa-coins text-indigo-600' : ($saldo->jenis->tipe_simpanan == 'pokok' ? 'fa-lock text-blue-600' : ($saldo->jenis->tipe_simpanan == 'wajib' ? 'fa-calendar-check text-yellow-600' : 'fa-hand-holding-heart text-green-600')) }} text-sm sm:text-xl"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-sm font-medium text-gray-500">{{ $saldo->jenis->nama_simpanan }}</h3>
-                    <p class="text-xl font-bold text-gray-900">{{ number_format($saldo->saldo, 0, ',', '.') }}</p>
+                <div class="ml-3 sm:ml-4 flex-1">
+                    <h3 class="text-xs sm:text-sm font-medium text-gray-500 truncate">{{ $saldo->jenis->nama_simpanan }}</h3>
+                    <p class="text-lg sm:text-xl font-bold text-gray-900">{{ number_format($saldo->saldo, 0, ',', '.') }}</p>
                 </div>
             </div>
         </div>
@@ -225,24 +225,24 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a href="{{ route('anggota.profile') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                <i class="fas fa-user-edit text-blue-600 mr-3"></i>
-                <span class="font-medium text-gray-900">Edit Profile</span>
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-6 sm:mb-8">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <a href="{{ route('anggota.profile') }}" class="flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <i class="fas fa-user-edit text-blue-600 mr-0 sm:mr-3 mb-2 sm:mb-0 text-sm sm:text-base"></i>
+                <span class="font-medium text-gray-900 text-sm sm:text-base text-center">Edit Profile</span>
             </a>
-            <a href="{{ route('anggota.simpanan.index') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                <i class="fas fa-piggy-bank text-green-600 mr-3"></i>
-                <span class="font-medium text-gray-900">Lihat Simpanan</span>
+            <a href="{{ route('anggota.simpanan.index') }}" class="flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <i class="fas fa-piggy-bank text-green-600 mr-0 sm:mr-3 mb-2 sm:mb-0 text-sm sm:text-base"></i>
+                <span class="font-medium text-gray-900 text-sm sm:text-base text-center">Lihat Simpanan</span>
             </a>
-            <a href="{{ route('anggota.pengajuan.create') }}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                <i class="fas fa-plus-circle text-purple-600 mr-3"></i>
-                <span class="font-medium text-gray-900">Ajukan Pembiayaan</span>
+            <a href="{{ route('anggota.pengajuan.create') }}" class="flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                <i class="fas fa-plus-circle text-purple-600 mr-0 sm:mr-3 mb-2 sm:mb-0 text-sm sm:text-base"></i>
+                <span class="font-medium text-gray-900 text-sm sm:text-base text-center">Ajukan Pembiayaan</span>
             </a>
-            <a href="{{ route('anggota.pengajuan.index') }}" class="flex items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
-                <i class="fas fa-hand-holding-usd text-yellow-600 mr-3"></i>
-                <span class="font-medium text-gray-900">Lihat Pengajuan</span>
+            <a href="{{ route('anggota.pengajuan.index') }}" class="flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                <i class="fas fa-hand-holding-usd text-yellow-600 mr-0 sm:mr-3 mb-2 sm:mb-0 text-sm sm:text-base"></i>
+                <span class="font-medium text-gray-900 text-sm sm:text-base text-center">Lihat Pengajuan</span>
             </a>
         </div>
     </div>

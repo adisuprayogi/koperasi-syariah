@@ -116,39 +116,39 @@
 
     <!-- Transaksi Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div class="px-3 py-3 border-b border-gray-200 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-gray-900">Daftar Transaksi</h2>
             <div class="text-sm text-gray-500">
                 Menampilkan {{ $transaksi->firstItem() }} - {{ $transaksi->lastItem() }} dari {{ $transaksi->total() }} data
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto lg:overflow-x-visible">
+            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Kode Transaksi
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">
                             Tanggal
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 18%;">
                             Anggota
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Jenis
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Jumlah
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Saldo
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Status
                         </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 6%;">
                             Aksi
                         </th>
                     </tr>
@@ -156,7 +156,7 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($transaksi as $t)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 truncate">
                                 <div class="text-sm font-medium text-gray-900">{{ $t->kode_transaksi }}</div>
                                 @if($t->verified_at)
                                     <div class="text-xs text-gray-400">
@@ -164,35 +164,35 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 truncate">
                                 <div class="text-sm text-gray-900">{{ $t->tanggal_transaksi->format('d M Y') }}</div>
                                 <div class="text-xs text-gray-400">{{ $t->tanggal_transaksi->format('H:i') }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 truncate">
                                 <div class="text-sm font-medium text-gray-900">{{ $t->anggota->nama_lengkap }}</div>
                                 <div class="text-xs text-gray-500">{{ $t->anggota->no_anggota }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $t->jenisSimpanan->nama }}</div>
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $t->jenis_transaksi == 'setor' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                            <td class="px-3 py-3 truncate">
+                                <div class="text-sm text-gray-900 truncate">{{ $t->jenisSimpanan->nama }}</div>
+                                <span class="inline-flex px-1 py-0.5 text-xs font-semibold rounded-full {{ $t->jenis_transaksi == 'setor' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                     {{ $t->jenis_transaksi_label }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 truncate">
                                 <div class="text-sm font-bold {{ $t->jenis_transaksi == 'setor' ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $t->jenis_transaksi == 'setor' ? '+' : '-' }} Rp {{ number_format($t->jumlah, 0, ',', '.') }}
+                                    {{ $t->jenis_transaksi == 'setor' ? '+' : '-' }} {{ number_format($t->jumlah, 0, ',', '.') }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 truncate">
                                 <div class="text-sm font-medium text-gray-900">
-                                    Rp {{ number_format($t->saldo_setelahnya, 0, ',', '.') }}
+                                    {{ number_format($t->saldo_setelahnya, 0, ',', '.') }}
                                 </div>
                                 <div class="text-xs text-gray-400">
-                                    Sebelum: Rp {{ number_format($t->saldo_sebelumnya, 0, ',', '.') }}
+                                    Sebelum: {{ number_format($t->saldo_sebelumnya, 0, ',', '.') }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                            <td class="px-3 py-3 truncate">
+                                <span class="inline-flex px-1 py-0.5 text-xs font-semibold rounded-full
                                     @if($t->status == 'verified')
                                         bg-green-100 text-green-800
                                     @elseif($t->status == 'pending')
@@ -208,7 +208,7 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-3 py-3 text-center text-sm font-medium">
                                 <a href="{{ route('pengurus.simpanan.show', $t->id) }}"
                                    class="text-indigo-600 hover:text-indigo-900"
                                    title="Detail">
@@ -235,7 +235,7 @@
 
         <!-- Pagination -->
         @if($transaksi->hasPages())
-            <div class="px-6 py-4 border-t border-gray-200">
+            <div class="px-3 py-3 border-t border-gray-200">
                 {{ $transaksi->links() }}
             </div>
         @endif

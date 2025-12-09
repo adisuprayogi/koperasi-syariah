@@ -84,36 +84,36 @@
 
     <!-- Jenis Pembiayaan Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-3 py-3 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Daftar Jenis Pembiayaan</h2>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto lg:overflow-x-visible">
+            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%;">
                             Kode
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 20%;">
                             Nama Pembiayaan
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Tipe
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Margin/Bagi Hasil
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%;">
                             Plafon
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Jangka Waktu
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%;">
                             Status
                         </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 13%;">
                             Aksi
                         </th>
                     </tr>
@@ -121,23 +121,23 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($jenisPembiayaan as $jp)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                            <td class="px-3 py-3 whitespace-nowrap truncate">
+                                <span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded truncate">
                                     {{ $jp->kode_jenis }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">
+                            <td class="px-3 py-3 whitespace-nowrap truncate">
+                                <div class="text-sm font-medium text-gray-900 truncate">
                                     {{ $jp->nama_pembiayaan }}
                                 </div>
                                 @if($jp->keterangan)
-                                    <div class="text-xs text-gray-500 truncate max-w-xs">
+                                    <div class="text-xs text-gray-500 truncate" style="max-width: 200px;">
                                         {{ $jp->keterangan }}
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                            <td class="px-3 py-3 whitespace-nowrap truncate">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full truncate
                                     @if($jp->tipe_pembiayaan == 'murabahah')
                                         bg-purple-100 text-purple-800
                                     @elseif($jp->tipe_pembiayaan == 'mudharabah')
@@ -150,7 +150,7 @@
                                     {{ $jp->tipe_label }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap truncate">
                                 <div class="text-sm text-gray-900">
                                     @if($jp->tipe_pembiayaan == 'murabahah')
                                         Margin: {{ $jp->margin_formatted }}
@@ -161,7 +161,7 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500 truncate">
                                 <div>Min: Rp {{ number_format($jp->minimal_pembiayaan, 0, ',', '.') }}</div>
                                 @if($jp->maksimal_pembiayaan)
                                     <div>Max: Rp {{ number_format($jp->maksimal_pembiayaan, 0, ',', '.') }}</div>
@@ -169,10 +169,10 @@
                                     <div class="text-xs text-gray-400">Tanpa maksimal</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500 truncate">
                                 <div>{{ $jp->jangka_waktu_min }} - {{ $jp->jangka_waktu_max }} bulan</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap truncate">
                                 @if($jp->status)
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                         Aktif
@@ -183,7 +183,7 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
                                     <a href="{{ route('admin.jenis-pembiayaan.edit', $jp->id) }}"
                                        class="text-indigo-600 hover:text-indigo-900"

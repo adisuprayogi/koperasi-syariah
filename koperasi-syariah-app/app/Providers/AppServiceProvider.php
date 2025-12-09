@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
+use App\Models\Koperasi;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // Share koperasi data to all views
+        View::composer('*', function ($view) {
+            $koperasi = Koperasi::first();
+            $view->with('koperasi', $koperasi);
+        });
     }
 }

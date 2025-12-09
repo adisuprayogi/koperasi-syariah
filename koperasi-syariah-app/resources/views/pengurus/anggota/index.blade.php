@@ -72,33 +72,33 @@
 
     <!-- Anggota Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-3 py-3 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Daftar Anggota</h2>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto lg:overflow-x-visible">
+            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 20%;">
                             Informasi Anggota
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%;">
                             Kontak
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">
                             Status
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">
                             Jenis
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Tanggal Gabung
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%;">
                             Akun
                         </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">
                             Aksi
                         </th>
                     </tr>
@@ -106,32 +106,29 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($anggota as $a)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-2 truncate">
                                 <div>
                                     <div class="text-sm font-medium text-gray-900">
                                         {{ $a->nama_lengkap }}
                                     </div>
-                                    <div class="text-sm text-gray-500">{{ $a->no_anggota_formatted ?? $a->no_anggota }}</div>
+                                    <div class="text-xs text-gray-500">{{ $a->no_anggota_formatted ?? $a->no_anggota }}</div>
                                     <div class="text-xs text-gray-400">
-                                        {{ $a->nik }} • {{ $a->jenis_kelamin_label }} • {{ $a->usia ?? 0 }} tahun
-                                    </div>
-                                    <div class="text-xs text-gray-400">
-                                        <i class="fas fa-calendar-alt mr-1"></i>{{ $a->periode_pendaftaran }}
+                                        {{ $a->nik }} • {{ $a->jenis_kelamin_label }} • {{ $a->usia ?? 0 }} th
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
+                            <td class="px-3 py-2 truncate">
+                                <div class="text-xs text-gray-900">
                                     <i class="fas fa-phone text-gray-400 mr-1"></i>{{ $a->no_hp }}
                                 </div>
-                                <div class="text-sm text-gray-500">
-                                    <i class="fas fa-envelope text-gray-400 mr-1"></i>{{ $a->email }}
+                                <div class="text-xs text-gray-500 truncate">
+                                    {{ $a->email }}
                                 </div>
                                 <div class="text-xs text-gray-400">
                                     <i class="fas fa-briefcase text-gray-400 mr-1"></i>{{ $a->pekerjaan }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
                                     @if($a->status_keanggotaan == 'aktif')
                                         bg-green-100 text-green-800
@@ -145,7 +142,7 @@
                                     {{ $a->status_label }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
                                     @if($a->jenis_anggota == 'biasa')
                                         bg-blue-100 text-blue-800
@@ -157,10 +154,10 @@
                                     {{ $a->jenis_label }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                                 {{ $a->tanggal_gabung->format('d M Y') }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 @if($a->user)
                                     <div class="text-sm text-green-600">
                                         <i class="fas fa-check-circle mr-1"></i>Aktif
@@ -176,7 +173,7 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
                                     <a href="{{ route('pengurus.anggota.edit', $a->id) }}"
                                        class="text-indigo-600 hover:text-indigo-900"

@@ -84,12 +84,12 @@
 
     <!-- Jenis Simpanan Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-3 py-3 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Daftar Jenis Simpanan</h2>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto lg:overflow-x-visible">
+            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -113,7 +113,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
                         </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Aksi
                         </th>
                     </tr>
@@ -121,12 +121,12 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($jenisSimpanan as $js)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 <span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
                                     {{ $js->kode_jenis }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">
                                     {{ $js->nama_simpanan }}
                                 </div>
@@ -136,7 +136,7 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
                                     @if($js->tipe_simpanan == 'modal')
                                         bg-purple-100 text-purple-800
@@ -150,7 +150,7 @@
                                     {{ $js->tipe_label }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
                                     {{ $js->nisbah }}%
                                 </div>
@@ -158,7 +158,7 @@
                                     <div class="text-xs text-gray-500">Bergulir</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                                 <div>Min: Rp {{ number_format($js->minimal_setor, 0, ',', '.') }}</div>
                                 @if($js->maksimal_setor)
                                     <div>Max: Rp {{ number_format($js->maksimal_setor, 0, ',', '.') }}</div>
@@ -166,7 +166,7 @@
                                     <div class="text-xs text-gray-400">Tanpa maksimal</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 @if($js->bisa_ditarik)
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                         Bisa
@@ -177,7 +177,7 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 @if($js->status)
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                         Aktif
@@ -188,7 +188,7 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
                                     <a href="{{ route('admin.jenis-simpanan.edit', $js->id) }}"
                                        class="text-indigo-600 hover:text-indigo-900"

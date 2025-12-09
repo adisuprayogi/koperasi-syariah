@@ -117,32 +117,32 @@
 
     <!-- Pengajuan List -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto lg:overflow-x-visible">
+            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">
                             Kode
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 20%;">
                             Anggota
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 18%;">
                             Jenis Pembiayaan
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Jumlah
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%;">
                             Tenor
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Tanggal
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
                             Status
                         </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%;">
                             Aksi
                         </th>
                     </tr>
@@ -150,29 +150,29 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($pengajuans as $pengajuan)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ $pengajuan->kode_pengajuan }}</div>
+                            <td class="px-3 py-3 whitespace-nowrap truncate">
+                                <div class="text-sm font-medium text-gray-900 truncate">{{ $pengajuan->kode_pengajuan }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $pengajuan->anggota->nama_lengkap }}</div>
-                                <div class="text-xs text-gray-500">{{ $pengajuan->anggota->no_anggota }}</div>
+                            <td class="px-3 py-3 whitespace-nowrap truncate">
+                                <div class="text-sm text-gray-900 truncate">{{ $pengajuan->anggota->nama_lengkap }}</div>
+                                <div class="text-xs text-gray-500 truncate">{{ $pengajuan->anggota->no_anggota }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 truncate">
                                 {{ $pengajuan->jenisPembiayaan->nama_pembiayaan }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 truncate">
                                 {{ $pengajuan->jumlah_pengajuan_formatted }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 truncate">
                                 {{ $pengajuan->tenor }} bulan
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 truncate">
                                 {{ $pengajuan->created_at_formatted }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 whitespace-nowrap truncate">
                                 {!! $pengajuan->status_label !!}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-3 py-3 whitespace-nowrap text-center text-sm font-medium truncate">
                                 <a href="{{ route('pengurus.pengajuan.show', $pengajuan->id) }}"
                                    class="text-indigo-600 hover:text-indigo-900"
                                    title="Lihat Detail">
@@ -229,7 +229,7 @@
 <div id="cairkanModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
     <div class="flex items-center justify-center min-h-screen px-4">
         <div class="bg-white rounded-lg overflow-hidden shadow-xl max-w-md w-full">
-            <div class="bg-purple-600 text-white px-6 py-4">
+            <div class="bg-purple-600 text-white px-3 py-3">
                 <h3 class="text-lg font-semibold">Upload Bukti Pencairan</h3>
             </div>
             <form id="cairkanForm" action="" method="POST" enctype="multipart/form-data" class="p-6">

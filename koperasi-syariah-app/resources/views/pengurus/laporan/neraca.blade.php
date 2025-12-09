@@ -190,7 +190,7 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
         <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
             <div class="text-center">
                 <i class="fas fa-wallet text-3xl opacity-50 mb-2"></i>
@@ -217,9 +217,9 @@
     </div>
 
     <!-- Financial Ratios -->
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h4 class="text-lg font-semibold text-gray-900 mb-4">Rasio Keuangan</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 sm:p-6">
+        <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Rasio Keuangan</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div>
                 <p class="text-sm text-gray-600">Rasio Likuiditas</p>
                 <div class="w-full bg-gray-200 rounded-full h-3 mt-1">
