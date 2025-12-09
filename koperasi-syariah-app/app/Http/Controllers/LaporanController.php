@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\TransaksiSimpanan;
 use App\Models\Anggota;
 use App\Models\JenisSimpanan;
+use App\Models\PengajuanPembiayaan;
+use App\Models\Angsuran;
+use App\Models\Transaksi;
+use App\Models\Koperasi;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
@@ -306,6 +310,184 @@ class LaporanController extends Controller
     }
 
     /**
+     * Generate simpanan per anggota report.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function simpananPerAnggota(Request $request)
+    {
+        $request->validate([
+            'anggota_id' => 'nullable|exists:anggota,id'
+        ]);
+
+        $anggotaId = $request->get('anggota_id');
+        $anggota = null;
+        $reportData = [];
+
+        if ($anggotaId) {
+            $anggota = Anggota::find($anggotaId);
+            $reportData = $this->generateSimpananReportForAnggota($anggotaId);
+        }
+
+        $listAnggota = Anggota::where('status_keanggotaan', 'aktif')
+            ->orderBy('nama_lengkap')
+            ->get();
+
+        return view('pengurus.laporan.simpanan_per_anggota', compact(
+            'reportData',
+            'anggota',
+            'listAnggota'
+        ));
+    }
+
+    /**
+     * Generate pembiayaan per anggota report.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function pembiayaanPerAnggota(Request $request)
+    {
+        $request->validate([
+            'anggota_id' => 'nullable|exists:anggota,id',
+            'status' => 'nullable|in:all,cair,lunas,approved'
+        ]);
+
+        $anggotaId = $request->get('anggota_id');
+        $status = $request->get('status', 'all');
+        $anggota = null;
+        $reportData = [];
+
+        if ($anggotaId) {
+            $anggota = Anggota::find($anggotaId);
+            $reportData = $this->generatePembiayaanReportForAnggota($anggotaId, $status);
+        }
+
+        $listAnggota = Anggota::where('status_keanggotaan', 'aktif')
+            ->orderBy('nama_lengkap')
+            ->get();
+
+        return view('pengurus.laporan.pembiayaan_per_anggota', compact(
+            'reportData',
+            'anggota',
+            'status',
+            'listAnggota'
+        ));
+    }
+
+    /**
+     * Generate laba rugi report.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function labaRugi(Request $request)
+    {
+        $bulan = $request->get('bulan', now()->month);
+        $tahun = $request->get('tahun', now()->year);
+
+        // Pendapatan - Margin dari pembiayaan yang dibayar
+        $marginReceived = Transaksi::whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('jenis_transaksi', 'angsuran')
+            ->sum('jumlah_margin');
+
+        // Pendapatan lainnya (bisa ditambahkan nanti)
+        $otherIncome = 0;
+
+        $totalPendapatan = $marginReceived + $otherIncome;
+
+        // Beban operasional (contoh, bisa disesuaikan)
+        $bebanOperasional = 0; // Placeholder
+        $bebanAdministrasi = 0; // Placeholder
+
+        $totalBeban = $bebanOperasional + $bebanAdministrasi;
+
+        // SHU sebelum pajak
+        $shuSebelumPajak = $totalPendapatan - $totalBeban;
+
+        // Pajak (jika ada, untuk koperasi biasanya ada keringanan)
+        $pajak = $shuSebelumPajak * 0.05; // Contoh 5%
+        $shuSetelahPajak = $shuSebelumPajak - $pajak;
+
+        return view('pengurus.laporan.laba_rugi', compact(
+            'bulan',
+            'tahun',
+            'marginReceived',
+            'otherIncome',
+            'totalPendapatan',
+            'bebanOperasional',
+            'bebanAdministrasi',
+            'totalBeban',
+            'shuSebelumPajak',
+            'pajak',
+            'shuSetelahPajak'
+        ));
+    }
+
+    /**
+     * Generate neraca report.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function neraca(Request $request)
+    {
+        $tanggal = $request->get('tanggal', now()->format('Y-m-d'));
+
+        // Aset
+        // Kas - Total simpanan anggota
+        $totalSimpanan = $this->calculateTotalSimpanan($tanggal);
+
+        // Piutang anggota - Sisa pembiayaan yang belum dibayar
+        $totalPiutang = PengajuanPembiayaan::where('status', 'cair')
+            ->whereDate('tanggal_cair', '<=', $tanggal)
+            ->with('angsuran')
+            ->get()
+            ->sum(function($pengajuan) {
+                return $pengajuan->sisaTotal();
+            });
+
+        $totalAset = $totalSimpanan + $totalPiutang;
+
+        // Kewajiban
+        // Simpanan anggota (kewajiban koperasi kepada anggota)
+        $kewajibanSimpanan = $totalSimpanan;
+
+        // Beban lainnya (placeholder)
+        $kewajibanLainnya = 0;
+
+        $totalKewajiban = $kewajibanSimpanan + $kewajibanLainnya;
+
+        // Ekuitas
+        // Modal awal (placeholder)
+        $modalAwal = 0;
+
+        // SHU tahun berjalan
+        $shuBerjalan = $this->calculateSHUBerjalan($tanggal);
+
+        $totalEkuitas = $modalAwal + $shuBerjalan;
+
+        // Total kewajiban + ekuitas harus sama dengan total aset
+        $totalKewajibanEkuitas = $totalKewajiban + $totalEkuitas;
+
+        return view('pengurus.laporan.neraca', compact(
+            'tanggal',
+            'totalSimpanan',
+            'totalPiutang',
+            'totalAset',
+            'kewajibanSimpanan',
+            'kewajibanLainnya',
+            'totalKewajiban',
+            'modalAwal',
+            'shuBerjalan',
+            'totalEkuitas',
+            'totalKewajibanEkuitas'
+        ));
+    }
+
+    /**
      * Export report to Excel (placeholder for future implementation).
      *
      * @param  \Illuminate\Http\Request  $request
@@ -316,6 +498,139 @@ class LaporanController extends Controller
     {
         // TODO: Implement Excel export functionality
         return redirect()->back()->with('info', 'Fitur export akan segera tersedia');
+    }
+
+    /**
+     * Generate simpanan report for specific anggota.
+     *
+     * @param  int  $anggotaId
+     * @return array
+     */
+    private function generateSimpananReportForAnggota($anggotaId)
+    {
+        $jenisSimpanan = JenisSimpanan::where('status', 1)->get();
+        $reportData = [];
+
+        foreach ($jenisSimpanan as $jenis) {
+            $totalSetor = TransaksiSimpanan::where('anggota_id', $anggotaId)
+                ->where('jenis_simpanan_id', $jenis->id)
+                ->where('jenis_transaksi', 'setor')
+                ->sum('jumlah');
+
+            $totalTarik = TransaksiSimpanan::where('anggota_id', $anggotaId)
+                ->where('jenis_simpanan_id', $jenis->id)
+                ->where('jenis_transaksi', 'tarik')
+                ->sum('jumlah');
+
+            $saldo = $totalSetor - $totalTarik;
+
+            // Get recent transactions
+            $recentTransaksi = TransaksiSimpanan::where('anggota_id', $anggotaId)
+                ->where('jenis_simpanan_id', $jenis->id)
+                ->with('pengurus')
+                ->latest('tanggal_transaksi')
+                ->limit(5)
+                ->get();
+
+            $reportData[] = [
+                'jenis' => $jenis,
+                'total_setor' => $totalSetor,
+                'total_tarik' => $totalTarik,
+                'saldo' => $saldo,
+                'recent_transaksi' => $recentTransaksi
+            ];
+        }
+
+        return $reportData;
+    }
+
+    /**
+     * Generate pembiayaan report for specific anggota.
+     *
+     * @param  int  $anggotaId
+     * @param  string  $status
+     * @return array
+     */
+    private function generatePembiayaanReportForAnggota($anggotaId, $status)
+    {
+        $query = PengajuanPembiayaan::where('anggota_id', $anggotaId)
+            ->with('jenisPembiayaan', 'angsuran');
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $pengajuan = $query->latest('created_at')->get();
+
+        $reportData = [];
+        $totalPlafond = 0;
+        $totalDibayar = 0;
+        $totalSisa = 0;
+
+        foreach ($pengajuan as $p) {
+            $totalPlafond += $p->jumlah_pengajuan;
+            $totalDibayar += $p->totalDibayar();
+            $totalSisa += $p->sisaTotal();
+
+            // Get recent installments
+            $recentAngsuran = Angsuran::where('pengajuan_pembiayaan_id', $p->id)
+                ->where('status', 'terbayar')
+                ->with('transaksi')
+                ->latest('tanggal_bayar')
+                ->limit(3)
+                ->get();
+
+            $reportData[] = [
+                'pengajuan' => $p,
+                'recent_angsuran' => $recentAngsuran
+            ];
+        }
+
+        return [
+            'pengajuan' => $reportData,
+            'total_plafond' => $totalPlafond,
+            'total_dibayar' => $totalDibayar,
+            'total_sisa' => $totalSisa
+        ];
+    }
+
+    /**
+     * Calculate total simpanan.
+     *
+     * @param  string  $tanggal
+     * @return float
+     */
+    private function calculateTotalSimpanan($tanggal)
+    {
+        return TransaksiSimpanan::whereDate('tanggal_transaksi', '<=', $tanggal)
+            ->selectRaw('SUM(CASE WHEN jenis_transaksi = "setor" THEN jumlah ELSE 0 END) as total_setor,
+                         SUM(CASE WHEN jenis_transaksi = "tarik" THEN jumlah ELSE 0 END) as total_tarik')
+            ->first()
+            ->total_setor - TransaksiSimpanan::whereDate('tanggal_transaksi', '<=', $tanggal)
+            ->where('jenis_transaksi', 'tarik')
+            ->sum('jumlah');
+    }
+
+    /**
+     * Calculate SHU for current year.
+     *
+     * @param  string  $tanggal
+     * @return float
+     */
+    private function calculateSHUBerjalan($tanggal)
+    {
+        $year = date('Y', strtotime($tanggal));
+
+        // Margin received from all installments this year
+        $marginReceived = Transaksi::whereYear('tanggal', $year)
+            ->where('jenis_transaksi', 'angsuran')
+            ->sum('jumlah_margin');
+
+        // Placeholder for other income and expenses
+        $otherIncome = 0;
+        $expenses = 0;
+
+        return $marginReceived + $otherIncome - $expenses;
     }
 
     /**

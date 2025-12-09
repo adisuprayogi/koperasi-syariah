@@ -57,22 +57,31 @@
 - [x] Update login controller untuk dual username
 - [x] Test semua login functionality
 
-### 8. Membuat Modul Master Jenis Simpanan
+### 8. Membuat Modul Data Koperasi (Admin)
+- [x] Create data_koperasi migration
+- [x] Create DataKoperasi model
+- [x] CRUD Data Koperasi (nama, alamat, telepon, dll)
+- [x] Upload logo koperasi
+- [x] View: index, edit
+
+### 9. Membuat Modul Master Jenis Simpanan
 - [x] CRUD Jenis Simpanan
 - [x] 4 tipe simpanan: Pokok, Wajib, Sukarela, Modal
 - [x] Setting nisbah (bunga syariah)
 - [x] Aturan penarikan
 - [x] Status aktif/non-aktif
 - [x] Default data creation
+- [x] Auto-calculate Simpanan Wajib Bulanan
+- [x] Add Daily/Weekly/Monthly Reports for Transaksi
 
-### 9. Membuat Modul Master Jenis Pembiayaan
+### 10. Membuat Modul Master Jenis Pembiayaan
 - [x] CRUD Jenis Pembiayaan
 - [x] Sistem bagi hasil (nisbah)
 - [x] Jenis pembiayaan syariah: Murabahah, Mudharabah, Musyarakah, Qardh
 - [x] Setting persentase bagi hasil
 - [x] Status aktif/non-aktif
 
-### 10. Membuat Modul Transaksi Simpanan (Pengurus)
+### 11. Membuat Modul Transaksi Simpanan (Pengurus)
 - [x] Transaksi setoran & penarikan
 - [x] Auto-generate kode transaksi (STS/TRK + tanggal + sequence)
 - [x] Real-time saldo calculation

@@ -20,7 +20,49 @@ class AdminController extends Controller
      */
     public function dashboard()
     {
-        return view('admin.dashboard');
+        // Statistik Pengurus
+        $totalPengurus = Pengurus::count();
+        $pengurusAktif = Pengurus::where('status', 'aktif')->count();
+        $pengurusByPosisi = Pengurus::select('posisi', DB::raw('count(*) as total'))
+                                ->groupBy('posisi')
+                                ->get();
+
+        // Statistik Anggota
+        $totalAnggota = \App\Models\Anggota::count();
+        $anggotaAktif = \App\Models\Anggota::where('status_keanggotaan', 'aktif')->count();
+        $anggotaByJenis = \App\Models\Anggota::select('jenis_anggota', DB::raw('count(*) as total'))
+                              ->groupBy('jenis_anggota')
+                              ->get();
+
+        // Statistik Master Data
+        $totalJenisSimpanan = JenisSimpanan::count();
+        $totalJenisPembiayaan = JenisPembiayaan::count();
+        $simpananAktif = JenisSimpanan::where('status', 1)->count();
+        $pembiayaanAktif = JenisPembiayaan::where('status', 1)->count();
+
+        // Data Koperasi
+        $koperasi = Koperasi::first();
+
+        // Aktivitas terkini (dapat ditambahkan log system nantinya)
+        $recentActivities = collect([
+            (object) ['activity' => 'Login Administrator', 'time' => now()->format('H:i')],
+            (object) ['activity' => 'System Check', 'time' => now()->subMinutes(5)->format('H:i')],
+        ]);
+
+        return view('admin.dashboard', compact(
+            'totalPengurus',
+            'pengurusAktif',
+            'pengurusByPosisi',
+            'totalAnggota',
+            'anggotaAktif',
+            'anggotaByJenis',
+            'totalJenisSimpanan',
+            'totalJenisPembiayaan',
+            'simpananAktif',
+            'pembiayaanAktif',
+            'koperasi',
+            'recentActivities'
+        ));
     }
 
     /**

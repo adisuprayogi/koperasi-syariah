@@ -106,15 +106,15 @@ class PengajuanPembiayaanController extends Controller
             $jenisPembiayaan = JenisPembiayaan::findOrFail($request->jenis_pembiayaan_id);
 
             // Calculate margin and angsuran
-            $marginPercent = $jenisPembiayaan->nisbah_mushoni ?? 10; // Default 10%
+            $marginPercent = $jenisPembiayaan->margin; // Use margin from jenis pembiayaan
             $jumlahMargin = $request->jumlah_pengajuan * ($marginPercent / 100);
             $totalPembiayaan = $request->jumlah_pengajuan + $jumlahMargin;
             $angsuranPokok = $request->jumlah_pengajuan / $request->tenor;
             $angsuranMargin = $jumlahMargin / $request->tenor;
             $totalAngsuran = $angsuranPokok + $angsuranMargin;
 
-            // Generate kode pengajuan
-            $kodePengajuan = PengajuanPembiayaan::generateKodePengajuan();
+            // Generate kode pengajuan dengan parameter jenis pembiayaan
+            $kodePengajuan = PengajuanPembiayaan::generateKodePengajuan($request->jenis_pembiayaan_id);
 
             $data = $request->all();
             $data['kode_pengajuan'] = $kodePengajuan;

@@ -17,8 +17,9 @@
                     <i class="fas fa-user-friends text-green-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Total Anggota</h3>
-                    <p class="text-2xl font-bold text-green-600">0</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Total Saldo</h3>
+                    <p class="text-2xl font-bold text-green-600">{{ number_format($totalSaldo, 0, ',', '.') }}</p>
+                    <p class="text-sm text-gray-600">Net simpanan</p>
                 </div>
             </div>
         </div>
@@ -30,7 +31,8 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-lg font-semibold text-gray-900">Total Simpanan</h3>
-                    <p class="text-2xl font-bold text-blue-600">Rp 0</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ number_format($totalSimpanan, 0, ',', '.') }}</p>
+                    <p class="text-sm text-gray-600">{{ $transaksiHariIni }} transaksi hari ini</p>
                 </div>
             </div>
         </div>
@@ -42,7 +44,8 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-lg font-semibold text-gray-900">Total Pembiayaan</h3>
-                    <p class="text-2xl font-bold text-purple-600">Rp 0</p>
+                    <p class="text-2xl font-bold text-purple-600">{{ number_format($totalPembiayaanCair, 0, ',', '.') }}</p>
+                    <p class="text-sm text-gray-600">{{ $activePembiayaan }} aktif</p>
                 </div>
             </div>
         </div>
@@ -50,13 +53,61 @@
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
                 <div class="p-3 bg-yellow-100 rounded-full">
-                    <i class="fas fa-file-invoice text-yellow-600 text-xl"></i>
+                    <i class="fas fa-chart-line text-yellow-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Pending</h3>
-                    <p class="text-2xl font-bold text-yellow-600">0</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Total Margin</h3>
+                    <p class="text-2xl font-bold text-yellow-600">{{ number_format($totalMargin, 0, ',', '.') }}</p>
+                    <p class="text-sm text-gray-600">Dari pembiayaan</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Today's Summary & Pending Tasks -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Today's Summary -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Ringkasan Hari Ini</h3>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                    <i class="fas fa-exchange-alt text-blue-600 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-blue-600">{{ $transaksiHariIni }}</p>
+                    <p class="text-sm text-gray-600">Transaksi</p>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg">
+                    <i class="fas fa-arrow-up text-green-600 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-green-600">{{ number_format($setoranHariIni, 0, ',', '.') }}</p>
+                    <p class="text-sm text-gray-600">Setoran</p>
+                </div>
+                <div class="text-center p-4 bg-red-50 rounded-lg">
+                    <i class="fas fa-arrow-down text-red-600 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-red-600">{{ number_format($penarikanHariIni, 0, ',', '.') }}</p>
+                    <p class="text-sm text-gray-600">Penarikan</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Tasks -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Task Menunggu</h3>
+            @if($pendingTasks->count() > 0)
+                <div class="space-y-2">
+                    @foreach($pendingTasks as $task)
+                    <a href="{{ $task->url }}" class="block p-3 {{ $task->priority == 'high' ? 'bg-red-50 hover:bg-red-100 border-red-200' : 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200' }} border rounded-lg transition-colors">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-gray-900">{{ $task->task }}</span>
+                            <span class="text-sm font-bold {{ $task->priority == 'high' ? 'text-red-600' : 'text-yellow-600' }}">{{ $task->count }}</span>
+                        </div>
+                    </a>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-center text-gray-500 py-4">
+                    <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
+                    <p class="text-sm">Tidak ada task pending</p>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -89,10 +140,31 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Pengajuan Terbaru</h3>
             <div class="space-y-3">
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fas fa-inbox text-4xl mb-2"></i>
-                    <p>Belum ada pengajuan</p>
-                </div>
+                @if($recentPengajuan->count() > 0)
+                    @foreach($recentPengajuan as $pengajuan)
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="flex items-center">
+                                <span class="font-medium text-gray-900">{{ $pengajuan->kode_pengajuan }}</span>
+                                <span class="mx-2">•</span>
+                                <span class="text-sm text-gray-600">{{ $pengajuan->anggota->nama_lengkap }}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                {{ number_format($pengajuan->jumlah_pengajuan, 0, ',', '.') }} •
+                                {{ $pengajuan->created_at->format('d M H:i') }}
+                            </div>
+                        </div>
+                        <div>
+                            {!! $pengajuan->status_label !!}
+                        </div>
+                    </div>
+                    @endforeach
+                @else
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>Belum ada pengajuan</p>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -100,12 +172,80 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Transaksi Terbaru</h3>
             <div class="space-y-3">
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fas fa-exchange-alt text-4xl mb-2"></i>
-                    <p>Belum ada transaksi</p>
-                </div>
+                @if($recentTransaksi->count() > 0)
+                    @foreach($recentTransaksi as $transaksi)
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="flex items-center">
+                                <span class="font-medium text-gray-900">{{ $transaksi->kode_transaksi }}</span>
+                                <span class="mx-2">•</span>
+                                <span class="text-sm text-gray-600">{{ $transaksi->anggota->nama_lengkap }}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                {{ $transaksi->jenisSimpanan->nama_simpanan }} •
+                                {{ $transaksi->tanggal_transaksi->format('d M H:i') }}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold {{ $transaksi->jenis_transaksi == 'setor' ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $transaksi->jenis_transaksi == 'setor' ? '+' : '-' }}
+                                {{ number_format($transaksi->jumlah, 0, ',', '.') }}
+                            </div>
+                            <div class="text-xs text-gray-500">{{ $transaksi->jenis_transaksi }}</div>
+                        </div>
+                    </div>
+                    @endforeach
+                @else
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-exchange-alt text-4xl mb-2"></i>
+                        <p>Belum ada transaksi</p>
+                    </div>
+                @endif
             </div>
         </div>
+    </div>
+
+    <!-- Monthly Summary Chart -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Ringkasan Bulanan (6 Bulan Terakhir)</h3>
+        @if($monthlySummary->count() > 0)
+            <div class="space-y-3">
+                @foreach($monthlySummary as $summary)
+                <div class="flex items-center">
+                    <div class="w-32 text-sm font-medium text-gray-700">
+                        {{ \Carbon\Carbon::createFromDate($summary->year, $summary->month, 1)->format('M Y') }}
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1">
+                                <div class="bg-gray-200 rounded-full h-4">
+                                    <div class="bg-green-500 h-4 rounded-full" style="width: {{ $summary->total_setor > 0 ? min(($summary->total_setor / $monthlySummary->max('total_setor')) * 100, 100) : 0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="w-32 text-sm text-gray-600">
+                                Setor: {{ number_format($summary->total_setor, 0, ',', '.') }}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <div class="flex-1">
+                                <div class="bg-gray-200 rounded-full h-3">
+                                    <div class="bg-red-500 h-3 rounded-full" style="width: {{ $summary->total_tarik > 0 ? min(($summary->total_tarik / $monthlySummary->max('total_tarik')) * 100, 100) : 0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="w-32 text-sm text-gray-600">
+                                Tarik: {{ number_format($summary->total_tarik, 0, ',', '.') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        @else
+            <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-chart-bar text-4xl mb-2"></i>
+                <p>Belum ada data bulanan</p>
+            </div>
+        @endif
     </div>
 
     <!-- Info Panel -->

@@ -114,6 +114,70 @@
             </div>
         </div>
 
+        <!-- Laporan Simpanan per Anggota -->
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-teal-100 rounded-full">
+                        <i class="fas fa-users text-teal-600 text-xl"></i>
+                    </div>
+                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Simpanan per Anggota</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Lihat detail simpanan untuk anggota tertentu</p>
+                <a href="{{ route('pengurus.laporan.simpanan-per-anggota') }}" class="block w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md text-center transition-colors">
+                    <i class="fas fa-eye mr-2"></i>Lihat Laporan
+                </a>
+            </div>
+        </div>
+
+        <!-- Laporan Pembiayaan per Anggota -->
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-cyan-100 rounded-full">
+                        <i class="fas fa-hand-holding-usd text-cyan-600 text-xl"></i>
+                    </div>
+                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Pembiayaan per Anggota</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Lihat status pembiayaan untuk anggota tertentu</p>
+                <a href="{{ route('pengurus.laporan.pembiayaan-per-anggota') }}" class="block w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 px-4 rounded-md text-center transition-colors">
+                    <i class="fas fa-eye mr-2"></i>Lihat Laporan
+                </a>
+            </div>
+        </div>
+
+        <!-- Laporan Laba Rugi -->
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-emerald-100 rounded-full">
+                        <i class="fas fa-chart-line text-emerald-600 text-xl"></i>
+                    </div>
+                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Laba Rugi</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Laporan pendapatan dan beban per periode</p>
+                <a href="{{ route('pengurus.laporan.laba-rugi') }}" class="block w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-md text-center transition-colors">
+                    <i class="fas fa-eye mr-2"></i>Lihat Laporan
+                </a>
+            </div>
+        </div>
+
+        <!-- Laporan Neraca -->
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-slate-100 rounded-full">
+                        <i class="fas fa-balance-scale text-slate-600 text-xl"></i>
+                    </div>
+                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Neraca</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Laporan posisi keuangan koperasi</p>
+                <a href="{{ route('pengurus.laporan.neraca') }}" class="block w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-2 px-4 rounded-md text-center transition-colors">
+                    <i class="fas fa-eye mr-2"></i>Lihat Laporan
+                </a>
+            </div>
+        </div>
+
         <!-- Quick Stats Cards -->
         <div class="bg-white rounded-lg shadow-md">
             <div class="p-6">

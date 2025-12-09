@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\DataKoperasiController;
 use App\Http\Controllers\PengurusController;
 use App\Http\Controllers\AnggotaController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\Anggota\DashboardController as AnggotaDashboardController;
+use App\Http\Controllers\Anggota\PengajuanPembiayaanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,7 +102,10 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus-or-a
     // Manajemen Pembiayaan
     Route::get('/pembiayaan', [PengurusController::class, 'pembiayaanIndex'])->name('pembiayaan.index');
     Route::get('/pembiayaan/{id}', [PengurusController::class, 'pembiayaanShow'])->name('pembiayaan.show');
-    Route::post('/pembiayaan/{id}/bayar', [PengurusController::class, 'pembiayaanBayar'])->name('pembiayaan.bayar');
+    Route::get('/pembiayaan/{id}/bayar/{angsuranId}', [PengurusController::class, 'pembiayaanBayar'])->name('pembiayaan.bayar');
+    Route::post('/pembiayaan/{id}/bayar/{angsuranId}', [PengurusController::class, 'pembiayaanBayarStore'])->name('pembiayaan.bayar.store');
+    Route::post('/pembiayaan/{id}/generate-jadwal', [PengurusController::class, 'generateJadwalAngsuran'])->name('pembiayaan.generate-jadwal');
+    Route::get('/pembiayaan/{id}/print/{angsuranId}', [PengurusController::class, 'printBuktiBayar'])->name('pembiayaan.print-bukti');
 
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
@@ -108,13 +113,17 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus-or-a
     Route::get('/laporan/mingguan', [LaporanController::class, 'mingguan'])->name('laporan.mingguan');
     Route::get('/laporan/bulanan', [LaporanController::class, 'bulanan'])->name('laporan.bulanan');
     Route::get('/laporan/simpanan-wajib', [LaporanController::class, 'simpananWajib'])->name('laporan.simpanan-wajib');
+    Route::get('/laporan/simpanan-per-anggota', [LaporanController::class, 'simpananPerAnggota'])->name('laporan.simpanan-per-anggota');
+    Route::get('/laporan/pembiayaan-per-anggota', [LaporanController::class, 'pembiayaanPerAnggota'])->name('laporan.pembiayaan-per-anggota');
+    Route::get('/laporan/laba-rugi', [LaporanController::class, 'labaRugi'])->name('laporan.laba-rugi');
+    Route::get('/laporan/neraca', [LaporanController::class, 'neraca'])->name('laporan.neraca');
     Route::get('/laporan/print/{type}', [LaporanController::class, 'print'])->name('laporan.print');
     Route::get('/laporan/export/{type}', [LaporanController::class, 'export'])->name('laporan.export');
 });
 
 // Anggota Routes (All authenticated users)
 Route::prefix('anggota')->name('anggota.')->middleware(['auth', 'anggota'])->group(function () {
-    Route::get('/dashboard', [AnggotaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [AnggotaDashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [AnggotaController::class, 'profile'])->name('profile');
     Route::put('/profile', [AnggotaController::class, 'profileUpdate'])->name('profile.update');
 

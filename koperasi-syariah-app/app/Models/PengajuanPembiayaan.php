@@ -71,22 +71,50 @@ class PengajuanPembiayaan extends Model
     ];
 
     // Static method untuk generate kode pengajuan
-    public static function generateKodePengajuan()
+    public static function generateKodePengajuan($jenisPembiayaanId = null)
     {
-        $date = now()->format('ym');
-        $lastPengajuan = self::whereMonth('created_at', now()->month)
+        // Format: YY + MM + KODEJENIS + . + 4digit
+        // Example: 2512PM.0001 for December 2025, Pembiayaan Murabahah
+
+        // Get kode jenis if provided
+        $kodeJenis = '';
+        if ($jenisPembiayaanId) {
+            $jenis = JenisPembiayaan::find($jenisPembiayaanId);
+            if ($jenis) {
+                // Extract first 2 characters from kodejenis (PM from PM001)
+                $kodeJenis = substr($jenis->kode_jenis, 0, 2);
+            }
+        }
+
+        // Default to PM if no jenis found
+        if (empty($kodeJenis)) {
+            $kodeJenis = 'PM';
+        }
+
+        // Create date format: YYMM (Year+Month)
+        $dateMonth = now()->format('ym');
+
+        // Get last pengajuan for this jenis in this month
+        // Pattern: 2512PM.% (YYMM + KODEJENIS + . + anything)
+        $pattern = $dateMonth . $kodeJenis . '.%';
+        $lastPengajuan = self::where('kode_pengajuan', 'like', $pattern)
+                             ->whereMonth('created_at', now()->month)
                              ->whereYear('created_at', now()->year)
                              ->orderBy('created_at', 'desc')
                              ->first();
 
         if ($lastPengajuan) {
-            $lastNumber = intval(substr($lastPengajuan->kode_pengajuan, -4));
+            // Extract last 4 digits for sequence number
+            $parts = explode('.', $lastPengajuan->kode_pengajuan);
+            $lastNumber = intval(end($parts));
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        return 'PFM' . $date . '.' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        // Format: YYMMKODEJENIS.4digit
+        // Example: 2512PM.0001 for Pembiayaan Murabahah in December 2025
+        return $dateMonth . $kodeJenis . '.' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 
     // Accessors
@@ -135,6 +163,11 @@ class PengajuanPembiayaan extends Model
         return $this->created_at->format('d M Y H:i');
     }
 
+    public function getJumlahCairFormattedAttribute()
+    {
+        return 'Rp ' . number_format($this->jumlah_cair, 0, ',', '.');
+    }
+
     // Relationships
     public function anggota()
     {
@@ -164,6 +197,36 @@ class PengajuanPembiayaan extends Model
     public function pencair()
     {
         return $this->belongsTo(User::class, 'pencair_id');
+    }
+
+    public function angsurans()
+    {
+        return $this->hasMany(Angsuran::class);
+    }
+
+    public function totalDibayar()
+    {
+        return $this->angsurans()->where('status', 'terbayar')->sum('jumlah_angsuran');
+    }
+
+    public function totalDenda()
+    {
+        return $this->angsurans()->sum('denda');
+    }
+
+    public function sisaPokok()
+    {
+        return max(0, ($this->jumlah_pengajuan - $this->totalDibayar()) / 2);
+    }
+
+    public function sisaMargin()
+    {
+        return max(0, ($this->jumlah_margin - $this->totalDibayar() + $this->totalDenda()) / 2);
+    }
+
+    public function sisaTotal()
+    {
+        return $this->sisaPokok() + $this->sisaMargin();
     }
 
     // Scopes
