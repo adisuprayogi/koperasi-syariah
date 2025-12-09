@@ -94,7 +94,6 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus-or-a
     Route::get('/pengajuan', [PengurusController::class, 'pengajuanIndex'])->name('pengajuan.index');
     Route::get('/pengajuan/{id}', [PengurusController::class, 'pengajuanShow'])->name('pengajuan.show');
     Route::post('/pengajuan/{id}/verifikasi', [PengurusController::class, 'pengajuanVerifikasi'])->name('pengajuan.verifikasi');
-    Route::post('/pengajuan/{id}/approve', [PengurusController::class, 'pengajuanApprove'])->name('pengajuan.approve');
     Route::post('/pengajuan/{id}/reject', [PengurusController::class, 'pengajuanReject'])->name('pengajuan.reject');
     Route::post('/pengajuan/{id}/cairkan', [PengurusController::class, 'pengajuanCairkan'])->name('pengajuan.cairkan');
 

@@ -11,7 +11,7 @@
     </div>
 
     <!-- Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
                 <div class="p-3 bg-gray-100 rounded-full">
@@ -32,19 +32,6 @@
                     <p class="text-sm font-medium text-gray-500">Menunggu Verifikasi</p>
                     <p class="text-2xl font-bold text-blue-600">
                         {{ $stats['total_diajukan'] }}
-                    </p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 bg-yellow-100 rounded-full">
-                    <i class="fas fa-search text-yellow-600"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Sedang Diverifikasi</p>
-                    <p class="text-2xl font-bold text-yellow-600">
-                        {{ $stats['total_verifikasi'] }}
                     </p>
                 </div>
             </div>
@@ -88,10 +75,6 @@
                class="whitespace-nowrap py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 Menunggu Verifikasi
             </a>
-            <a href="?status=verifikasi"
-               class="whitespace-nowrap py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                Sedang Diverifikasi
-            </a>
             <a href="?status=approved"
                class="whitespace-nowrap py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 Disetujui
@@ -118,7 +101,6 @@
                     <option value="">Semua Status</option>
                     <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="diajukan" {{ request('status') == 'diajukan' ? 'selected' : '' }}>Diajukan</option>
-                    <option value="verifikasi" {{ request('status') == 'verifikasi' ? 'selected' : '' }}>Verifikasi</option>
                     <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
                     <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                     <option value="cair" {{ request('status') == 'cair' ? 'selected' : '' }}>Cair</option>
@@ -197,48 +179,34 @@
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 @if($pengajuan->status == 'diajukan')
-                                    <form action="{{ route('pengurus.pengajuan.verifikasi', $pengajuan->id) }}"
-                                          method="POST" class="inline ml-2">
-                                        @csrf
-                                        <button type="submit" class="text-blue-600 hover:text-blue-900"
-                                                title="Verifikasi"
-                                                onclick="return confirm('Apakah Anda yakin ingin memverifikasi pengajuan ini?')">
-                                            <i class="fas fa-search"></i>
-                                        </button>
-                                    </form>
-                                @endif
-                                @if($pengajuan->status == 'verifikasi')
-                                    <form action="{{ route('pengurus.pengajuan.approve', $pengajuan->id) }}"
-                                          method="POST" class="inline ml-2">
-                                        @csrf
-                                        <button type="submit" class="text-green-600 hover:text-green-900"
-                                                title="Setujui"
-                                                onclick="return confirm('Apakah Anda yakin ingin menyetujui pengajuan ini?')">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                    </form>
-                                    <form action="{{ route('pengurus.pengajuan.reject', $pengajuan->id) }}"
-                                          method="POST" class="inline ml-2">
-                                        @csrf
-                                        <button type="submit" class="text-red-600 hover:text-red-900"
-                                                title="Tolak"
-                                                onclick="return confirm('Apakah Anda yakin ingin menolak pengajuan ini?')">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </form>
+                                    {{-- Show verifikasi button to Ketua, Sekretaris, & Pengurus Lainnya --}}
+                                    @if(auth()->user()->pengurus && in_array(auth()->user()->pengurus->posisi, ['ketua', 'sekretaris', 'pengurus_lainnya']))
+                                        <form action="{{ route('pengurus.pengajuan.verifikasi', $pengajuan->id) }}"
+                                              method="POST" class="inline ml-2">
+                                            @csrf
+                                            <button type="submit" class="text-green-600 hover:text-green-900"
+                                                    title="Verifikasi & Setujui"
+                                                    onclick="return confirm('Apakah Anda yakin ingin memverifikasi dan menyetujui pengajuan ini?')">
+                                                <i class="fas fa-check-circle"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                 @endif
                                 @if($pengajuan->status == 'approved')
-                                    <button type="button" class="text-purple-600 hover:text-purple-900 ml-2"
-                                            title="Cairkan"
-                                            onclick="openCairkanModal({{ $pengajuan->id }}, '{{ $pengajuan->kode_pengajuan }}')">
-                                        <i class="fas fa-money-bill-wave"></i>
-                                    </button>
+                                    {{-- Only show cairkan button to Bendahara --}}
+                                    @if(auth()->user()->pengurus && auth()->user()->pengurus->posisi == 'bendahara')
+                                        <button type="button" class="text-purple-600 hover:text-purple-900 ml-2"
+                                                title="Cairkan"
+                                                onclick="openCairkanModal({{ $pengajuan->id }}, '{{ $pengajuan->kode_pengajuan }}')">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </button>
+                                    @endif
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                                 <i class="fas fa-folder-open text-4xl text-gray-300 mb-4"></i>
                                 <p class="text-lg">Belum ada pengajuan pembiayaan</p>
                             </td>
@@ -321,7 +289,7 @@
 function openCairkanModal(id, kode) {
     document.getElementById('cairkanId').value = id;
     document.getElementById('cairkanKode').textContent = kode;
-    document.getElementById('cairkanForm').action = '{{ route("pengurus.pengajuan.cairkan", "") }}'.replace('/cairkan', '/cairkan/' + id);
+    document.getElementById('cairkanForm').action = '{{ route("pengurus.pengajuan.cairkan", ":ID") }}'.replace(':ID', id);
 
     // Set default tanggal jatuh tempo (hari ini + 1 bulan)
     const today = new Date();

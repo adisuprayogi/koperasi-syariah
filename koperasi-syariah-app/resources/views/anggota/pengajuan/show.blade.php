@@ -112,8 +112,8 @@
                             </div>
                             <div class="ml-4 flex-1">
                                 <p class="text-sm font-medium text-gray-900">4. Pencairan Dana</p>
-                                @if($pengajuan->disbursed_at)
-                                    <p class="text-xs text-gray-500">{{ $pengajuan->disbursed_at->format('d M Y H:i') }} - {{ $pengajuan->disbursedBy->nama_lengkap }}</p>
+                                @if($pengajuan->tanggal_cair)
+                                    <p class="text-xs text-gray-500">{{ $pengajuan->tanggal_cair->format('d M Y H:i') }} - {{ $pengajuan->pencair ? $pengajuan->pencair->name : 'Admin' }}</p>
                                 @else
                                     <p class="text-xs text-gray-500">Menunggu pencairan</p>
                                 @endif
@@ -206,6 +206,39 @@
                 </div>
                 @endif
             </div>
+
+            <!-- Bukti Pencairan -->
+            @if($pengajuan->bukti_pencairan)
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Bukti Pencairan</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Dokumen Bukti Pencairan</p>
+                        <a href="{{ asset('storage/' . $pengajuan->bukti_pencairan) }}" target="_blank"
+                           class="text-blue-600 hover:text-blue-800 text-sm mt-1 inline-flex items-center">
+                            <i class="fas fa-file-download mr-1"></i> Download Bukti Pencairan
+                        </a>
+                        @if($pengajuan->bukti_pencairan_original)
+                            <p class="text-xs text-gray-400 mt-1">File: {{ $pengajuan->bukti_pencairan_original }}</p>
+                        @endif
+                    </div>
+
+                    @if($pengajuan->tanggal_jatuh_tempo_pertama)
+                    <div>
+                        <p class="text-sm text-gray-500">Tanggal Jatuh Tempo Angsuran Pertama</p>
+                        <p class="text-sm font-medium text-gray-900">{{ $pengajuan->tanggal_jatuh_tempo_pertama_formatted }}</p>
+                    </div>
+                    @endif
+
+                    @if($pengajuan->keterangan_jatuh_tempo)
+                    <div>
+                        <p class="text-sm text-gray-500">Keterangan</p>
+                        <p class="text-sm text-gray-900">{{ $pengajuan->keterangan_jatuh_tempo }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
 
             <!-- Dokumen Pendukung -->
             <div class="bg-white rounded-lg shadow p-6">

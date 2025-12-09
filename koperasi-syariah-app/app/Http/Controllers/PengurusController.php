@@ -17,6 +17,33 @@ use Illuminate\Support\Facades\Validator;
 class PengurusController extends Controller
 {
     /**
+     * Check if current user can verify/approve (Ketua, Sekretaris, & Pengurus Lainnya)
+     */
+    private function canVerifyApprove()
+    {
+        $user = auth()->user();
+        if (!$user || !$user->pengurus) {
+            return false;
+        }
+
+        $posisi = $user->pengurus->posisi;
+        return in_array($posisi, ['ketua', 'sekretaris', 'pengurus_lainnya']);
+    }
+
+    /**
+     * Check if current user can disburse (Bendahara only)
+     */
+    private function canDisburse()
+    {
+        $user = auth()->user();
+        if (!$user || !$user->pengurus) {
+            return false;
+        }
+
+        return $user->pengurus->posisi === 'bendahara';
+    }
+
+    /**
      * Dashboard Pengurus
      */
     public function dashboard()
@@ -480,6 +507,12 @@ class PengurusController extends Controller
      */
     public function pengajuanVerifikasi(Request $request, $id)
     {
+        // Check permission - only Ketua, Sekretaris, & Pengurus Lainnya can verify/approve
+        if (!$this->canVerifyApprove()) {
+            return redirect()->route('pengurus.pengajuan.index')
+                ->with('error', 'Hanya Ketua, Sekretaris, dan Pengurus Lainnya yang berhak memverifikasi dan menyetujui pengajuan');
+        }
+
         $pengajuan = PengajuanPembiayaan::findOrFail($id);
 
         // Validasi status
@@ -488,46 +521,32 @@ class PengurusController extends Controller
                 ->with('error', 'Pengajuan tidak dapat diverifikasi karena status tidak sesuai');
         }
 
-        // Update status
-        $pengajuan->update([
-            'status' => 'verifikasi',
-            'tanggal_verifikasi' => now(),
-            'verifikator_id' => auth()->user()->id
-        ]);
-
-        return redirect()->route('pengurus.pengajuan.index')
-            ->with('success', 'Pengajuan berhasil diverifikasi');
-    }
-
-    /**
-     * Approve Pengajuan
-     */
-    public function pengajuanApprove(Request $request, $id)
-    {
-        $pengajuan = PengajuanPembiayaan::findOrFail($id);
-
-        // Validasi status
-        if ($pengajuan->status !== 'verifikasi') {
-            return redirect()->route('pengurus.pengajuan.index')
-                ->with('error', 'Pengajuan harus diverifikasi terlebih dahulu');
-        }
-
-        // Update status
+        // Update status langsung ke approved (verifikasi + approval digabung)
         $pengajuan->update([
             'status' => 'approved',
+            'tanggal_verifikasi' => now(),
+            'verifikator_id' => auth()->user()->id,
             'tanggal_approve' => now(),
             'approver_id' => auth()->user()->id
         ]);
 
         return redirect()->route('pengurus.pengajuan.index')
-            ->with('success', 'Pengajuan berhasil disetujui');
+            ->with('success', 'Pengajuan berhasil diverifikasi dan disetujui');
     }
+
+    // Approve method digabung dengan verifikasi, tidak digunakan lagi
 
     /**
      * Reject Pengajuan
      */
     public function pengajuanReject(Request $request, $id)
     {
+        // Check permission - only Ketua, Sekretaris, & Pengurus Lainnya can reject
+        if (!$this->canVerifyApprove()) {
+            return redirect()->route('pengurus.pengajuan.index')
+                ->with('error', 'Hanya Ketua, Sekretaris, dan Pengurus Lainnya yang berhak menolak pengajuan');
+        }
+
         $pengajuan = PengajuanPembiayaan::findOrFail($id);
 
         // Validasi status
@@ -553,6 +572,12 @@ class PengurusController extends Controller
      */
     public function pengajuanCairkan(Request $request, $id)
     {
+        // Check permission - only Bendahara can disburse
+        if (!$this->canDisburse()) {
+            return redirect()->route('pengurus.pengajuan.index')
+                ->with('error', 'Hanya Bendahara yang berhak mencairkan dana pembiayaan');
+        }
+
         $pengajuan = PengajuanPembiayaan::findOrFail($id);
 
         // Validasi status

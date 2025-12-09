@@ -12,39 +12,32 @@
         </div>
         <div class="flex space-x-3">
             @if($pengajuan->status == 'diajukan')
-                <form action="{{ route('pengurus.pengajuan.verifikasi', $pengajuan->id) }}" method="POST">
-                    @csrf
-                    <button type="submit"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-                            onclick="return confirm('Apakah Anda yakin ingin memverifikasi pengajuan ini?')">
-                        <i class="fas fa-search mr-2"></i>Verifikasi
+                {{-- Show verifikasi & tolak buttons to Ketua, Sekretaris, & Pengurus Lainnya --}}
+                @if(auth()->user()->pengurus && in_array(auth()->user()->pengurus->posisi, ['ketua', 'sekretaris', 'pengurus_lainnya']))
+                    <form action="{{ route('pengurus.pengajuan.verifikasi', $pengajuan->id) }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                                onclick="return confirm('Apakah Anda yakin ingin memverifikasi dan menyetujui pengajuan ini?')">
+                            <i class="fas fa-check-circle mr-2"></i>Verifikasi & Setujui
+                        </button>
+                    </form>
+                    <button type="button"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+                            onclick="document.getElementById('reject-form').classList.remove('hidden')">
+                        <i class="fas fa-times mr-2"></i>Tolak
                     </button>
-                </form>
-            @endif
-            @if($pengajuan->status == 'verifikasi')
-                <form action="{{ route('pengurus.pengajuan.approve', $pengajuan->id) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit"
-                            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
-                            onclick="return confirm('Apakah Anda yakin ingin menyetujui pengajuan ini?')">
-                        <i class="fas fa-check mr-2"></i>Setujui
-                    </button>
-                </form>
-                <button type="button"
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
-                        onclick="document.getElementById('reject-form').classList.remove('hidden')">
-                    <i class="fas fa-times mr-2"></i>Tolak
-                </button>
+                @endif
             @endif
             @if($pengajuan->status == 'approved')
-                <form action="{{ route('pengurus.pengajuan.cairkan', $pengajuan->id) }}" method="POST">
-                    @csrf
-                    <button type="submit"
+                {{-- Only show cairkan button to Bendahara --}}
+                @if(auth()->user()->pengurus && auth()->user()->pengurus->posisi == 'bendahara')
+                    <button type="button"
                             class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
-                            onclick="return confirm('Apakah Anda yakin ingin mencairkan dana untuk pengajuan ini?')">
+                            onclick="openCairkanModal({{ $pengajuan->id }}, '{{ $pengajuan->kode_pengajuan }}')">
                         <i class="fas fa-money-bill-wave mr-2"></i>Cairkan
                     </button>
-                </form>
+                @endif
             @endif
             <a href="{{ route('pengurus.pengajuan.index') }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>Kembali
@@ -131,8 +124,8 @@
                             </div>
                             <div class="ml-4 flex-1">
                                 <p class="text-sm font-medium text-gray-900">4. Pencairan Dana</p>
-                                @if($pengajuan->disbursed_at)
-                                    <p class="text-xs text-gray-500">{{ $pengajuan->disbursed_at->format('d M Y H:i') }} - {{ $pengajuan->disbursedBy->nama_lengkap }}</p>
+                                @if($pengajuan->tanggal_cair)
+                                    <p class="text-xs text-gray-500">{{ $pengajuan->tanggal_cair->format('d M Y H:i') }} - {{ $pengajuan->pencair ? $pengajuan->pencair->name : 'Admin' }}</p>
                                 @else
                                     <p class="text-xs text-gray-500">Menunggu pencairan</p>
                                 @endif
@@ -331,7 +324,7 @@
     </div>
 
     <!-- Reject Form (Hidden by default) -->
-    @if($pengajuan->status == 'verifikasi')
+    @if($pengajuan->status == 'diajukan' && auth()->user()->pengurus && in_array(auth()->user()->pengurus->posisi, ['ketua', 'sekretaris', 'pengurus_lainnya']))
     <form id="reject-form" action="{{ route('pengurus.pengajuan.reject', $pengajuan->id) }}" method="POST" class="hidden mt-6">
         @csrf
         <div class="bg-white rounded-lg shadow p-6">
@@ -358,4 +351,92 @@
     </form>
     @endif
 </div>
+
+<!-- Modal Upload Bukti Pencairan -->
+<div id="cairkanModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-lg overflow-hidden shadow-xl max-w-md w-full">
+            <div class="bg-purple-600 text-white px-6 py-4">
+                <h3 class="text-lg font-semibold">Upload Bukti Pencairan</h3>
+            </div>
+            <form id="cairkanForm" action="" method="POST" enctype="multipart/form-data" class="p-6">
+                @csrf
+                <input type="hidden" name="id" id="cairkanId">
+
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">
+                        Upload bukti pencairan untuk pengajuan: <span id="cairkanKode" class="font-semibold"></span>
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Bukti Pencairan <span class="text-red-500">*</span>
+                    </label>
+                    <input type="file" name="bukti_pencairan" id="bukti_pencairan" required
+                           accept=".pdf,.jpg,.jpeg,.png"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                    <p class="text-xs text-gray-500 mt-1">Format: PDF, JPG, PNG. Maks: 2MB</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Tanggal Jatuh Tempo Angsuran Pertama <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="tanggal_jatuh_tempo_pertama" id="tanggal_jatuh_tempo_pertama" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                           min="{{ date('Y-m-d') }}">
+                    <p class="text-xs text-gray-500 mt-1">Tanggal jatuh tempo untuk pembayaran angsuran pertama</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Keterangan (Opsional)
+                    </label>
+                    <textarea name="keterangan_jatuh_tempo" id="keterangan_jatuh_tempo" rows="2"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                              placeholder="Catatan tambahan mengenai jadwal angsuran..."></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeCairkanModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
+                        Cairkan & Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCairkanModal(id, kode) {
+    document.getElementById('cairkanId').value = id;
+    document.getElementById('cairkanKode').textContent = kode;
+    document.getElementById('cairkanForm').action = '{{ route("pengurus.pengajuan.cairkan", ":ID") }}'.replace(':ID', id);
+
+    // Set default tanggal jatuh tempo (hari ini + 1 bulan)
+    const today = new Date();
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    const formattedDate = nextMonth.toISOString().split('T')[0];
+    document.getElementById('tanggal_jatuh_tempo_pertama').value = formattedDate;
+
+    document.getElementById('cairkanModal').classList.remove('hidden');
+}
+
+function closeCairkanModal() {
+    document.getElementById('cairkanModal').classList.add('hidden');
+    document.getElementById('bukti_pencairan').value = '';
+}
+
+// Close modal when clicking outside
+document.getElementById('cairkanModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCairkanModal();
+    }
+});
+</script>
 @endsection

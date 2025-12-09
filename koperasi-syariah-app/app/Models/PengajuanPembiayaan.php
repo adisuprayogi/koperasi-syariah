@@ -34,6 +34,8 @@ class PengajuanPembiayaan extends Model
         'keputusan',
         'disbursed_by',
         'disbursed_at',
+        'pencair_id',
+        'tanggal_cair',
         'jumlah_cair',
         'no_rekening',
         'atas_nama',
@@ -63,6 +65,7 @@ class PengajuanPembiayaan extends Model
         'verified_at' => 'datetime',
         'approved_at' => 'datetime',
         'disbursed_at' => 'datetime',
+        'tanggal_cair' => 'datetime',
         'tanggal_jatuh_tempo' => 'date',
         'dokumen_lainnya' => 'json'
     ];
@@ -156,6 +159,11 @@ class PengajuanPembiayaan extends Model
     public function disbursedBy()
     {
         return $this->belongsTo(Pengurus::class, 'disbursed_by');
+    }
+
+    public function pencair()
+    {
+        return $this->belongsTo(User::class, 'pencair_id');
     }
 
     // Scopes
