@@ -669,9 +669,11 @@ class PengurusController extends Controller
         $pengajuan->update([
             'status' => 'approved',
             'tanggal_verifikasi' => now(),
-            'verifikator_id' => auth()->user()->id,
+            'verified_by' => auth()->user()->id,
+            'verified_at' => now(),
             'tanggal_approve' => now(),
-            'approver_id' => auth()->user()->id,
+            'approved_by' => auth()->user()->id,
+            'approved_at' => now(),
             'margin_percent' => $marginPercent,
             'jumlah_margin' => $jumlahMargin,
             'total_pembiayaan' => $totalPembiayaan,

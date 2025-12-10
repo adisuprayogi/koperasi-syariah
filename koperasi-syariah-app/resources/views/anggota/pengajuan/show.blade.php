@@ -113,7 +113,7 @@
                             <div class="ml-4 flex-1">
                                 <p class="text-sm font-medium text-gray-900">4. Pencairan Dana</p>
                                 @if($pengajuan->tanggal_cair)
-                                    <p class="text-xs text-gray-500">{{ $pengajuan->tanggal_cair->format('d M Y H:i') }} - {{ $pengajuan->pencair ? $pengajuan->pencair->name : 'Admin' }}</p>
+                                    <p class="text-xs text-gray-500">{{ $pengajuan->tanggal_cair->format('d M Y H:i') }} - {{ $pengajuan->pencair->pengurus->nama_lengkap ?? $pengajuan->pencair->name ?? 'Admin' }}</p>
                                 @else
                                     <p class="text-xs text-gray-500">Menunggu pencairan</p>
                                 @endif

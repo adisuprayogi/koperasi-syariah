@@ -10,6 +10,7 @@ use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\Anggota\DashboardController as AnggotaDashboardController;
 use App\Http\Controllers\Anggota\PengajuanPembiayaanController;
 use App\Http\Controllers\FileDownloadController;
+use App\Http\Controllers\Admin\KartuAnggotaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/jenis-pembiayaan/{id}/edit', [AdminController::class, 'jenisPembiayaanEdit'])->name('jenis-pembiayaan.edit');
     Route::put('/jenis-pembiayaan/{id}', [AdminController::class, 'jenisPembiayaanUpdate'])->name('jenis-pembiayaan.update');
     Route::delete('/jenis-pembiayaan/{id}', [AdminController::class, 'jenisPembiayaanDestroy'])->name('jenis-pembiayaan.destroy');
+
+    // Kartu Anggota Management
+    Route::prefix('kartu-anggota')->name('kartu-anggota.')->group(function() {
+        Route::get('/settings', [KartuAnggotaController::class, 'settings'])->name('settings');
+        Route::post('/settings', [KartuAnggotaController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/anggota-list', [KartuAnggotaController::class, 'anggotaList'])->name('anggota-list');
+        Route::get('/preview/{id}', [KartuAnggotaController::class, 'preview'])->name('preview');
+        Route::get('/html/{id}', [KartuAnggotaController::class, 'generateHTML'])->name('html');
+        Route::get('/download/{id}', [KartuAnggotaController::class, 'downloadPDF'])->name('download');
+
+        // File uploads
+        Route::post('/upload-logo', [KartuAnggotaController::class, 'uploadLogo'])->name('upload-logo');
+        Route::post('/upload-signature', [KartuAnggotaController::class, 'uploadSignature'])->name('upload-signature');
+        Route::post('/upload-background-front', [KartuAnggotaController::class, 'uploadBackgroundFront'])->name('upload-background-front');
+        Route::post('/upload-background-back', [KartuAnggotaController::class, 'uploadBackgroundBack'])->name('upload-background-back');
+    });
 });
 
 // Pengurus Routes (Admin & Pengurus)
@@ -127,6 +144,7 @@ Route::prefix('anggota')->name('anggota.')->middleware(['auth', 'anggota'])->gro
     Route::get('/dashboard', [AnggotaDashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [AnggotaController::class, 'profile'])->name('profile');
     Route::put('/profile', [AnggotaController::class, 'profileUpdate'])->name('profile.update');
+    Route::get('/download-kartu', [AnggotaController::class, 'downloadKartu'])->name('download-kartu');
 
     // Simpanan
     Route::get('/simpanan', [AnggotaController::class, 'simpananIndex'])->name('simpanan.index');
@@ -155,6 +173,8 @@ Route::prefix('files')->name('files.')->middleware(['auth'])->group(function () 
     Route::get('/pengajuan/{pengajuanId}/{field}/preview', [FileDownloadController::class, 'previewPengajuanFile'])
         ->name('pengajuan.preview');
 });
+
+
 
 // Default route untuk authenticated users
 Route::get('/dashboard', function () {

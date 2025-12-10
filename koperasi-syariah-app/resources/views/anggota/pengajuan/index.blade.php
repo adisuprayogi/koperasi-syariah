@@ -130,13 +130,13 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Jumlah
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                             Tenor
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                             Status
                         </th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                             Aksi
                         </th>
                     </tr>
@@ -156,13 +156,13 @@
                             <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {{ $pengajuan->jumlah_pengajuan_formatted }}
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
-                                {{ $pengajuan->tenor }} bulan
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                                {{ $pengajuan->tenor }} bln
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap truncate">
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
                                 {!! $pengajuan->status_label !!}
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
+                            <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                                 <a href="{{ route('anggota.pengajuan.show', $pengajuan->id) }}"
                                    class="text-indigo-600 hover:text-indigo-900 mr-2"
                                    title="Lihat Detail">

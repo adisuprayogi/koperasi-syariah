@@ -26,6 +26,7 @@ class Anggota extends Model
         'jenis_kelamin',
         'no_hp',
         'email',
+        'foto',
         'alamat_lengkap',
         'pekerjaan',
         'penghasilan',

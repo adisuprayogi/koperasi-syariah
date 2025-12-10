@@ -93,6 +93,10 @@
                                             <i class="fas fa-hand-holding-usd mr-3 {{ request()->routeIs('admin.jenis-pembiayaan*') ? 'text-primary-300' : 'text-primary-400' }}"></i>
                                             Jenis Pembiayaan
                                         </a>
+                                        <a href="{{ route('admin.kartu-anggota.settings') }}" class="{{ request()->routeIs('admin.kartu-anggota*') ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }} group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200">
+                                            <i class="fas fa-id-card mr-3 {{ request()->routeIs('admin.kartu-anggota*') ? 'text-primary-300' : 'text-primary-400' }}"></i>
+                                            Kartu Anggota
+                                        </a>
                                     </div>
                                 @endif
 

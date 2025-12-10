@@ -3,7 +3,7 @@
 @section('title', 'Ajukan Pembiayaan Baru')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Ajukan Pembiayaan Baru</h1>
@@ -31,9 +31,9 @@
     </div>
 
     <!-- Form -->
-    <form action="{{ route('anggota.pengajuan.store') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('anggota.pengajuan.store') }}" method="POST" enctype="multipart/form-data" class="w-full">
         @csrf
-        <div class="space-y-8">
+        <div class="space-y-6">
             <!-- Informasi Anggota -->
             <div class="bg-white shadow rounded-lg p-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Informasi Anggota</h2>
@@ -69,7 +69,9 @@
                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             <option value="">Pilih Jenis Pembiayaan</option>
                             @foreach($jenisPembiayaan as $jenis)
-                                <option value="{{ $jenis->id }}">{{ $jenis->nama_pembiayaan }}</option>
+                                <option value="{{ $jenis->id }}" data-margin="{{ $jenis->margin }}">
+                                    {{ $jenis->nama_pembiayaan }} ({{ $jenis->margin }}%)
+                                </option>
                             @endforeach
                         </select>
                         @error('jenis_pembiayaan_id')
@@ -223,30 +225,46 @@
             <!-- Simulation Results -->
             <div id="simulation" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 hidden">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Simulasi Angsuran</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-600">Pokok Pinjaman</p>
-                        <p id="sim-pokok" class="text-lg font-bold text-gray-900">Rp 0</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-medium text-gray-600">Informasi Pinjaman</span>
+                            <i class="fas fa-info-circle text-gray-400"></i>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-xs text-gray-500">Pokok Pinjaman</span>
+                                <span id="sim-pokok" class="text-sm font-bold text-gray-900">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-xs text-gray-500">Margin (<span id="margin-percent">10</span>%)</span>
+                                <span id="sim-margin" class="text-sm font-bold text-gray-900">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between pt-2 border-t">
+                                <span class="text-sm font-medium text-gray-700">Total Pinjaman</span>
+                                <span id="sim-total" class="text-base font-bold text-blue-600">Rp 0</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Margin (10%)</p>
-                        <p id="sim-margin" class="text-lg font-bold text-gray-900">Rp 0</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Total Pinjaman</p>
-                        <p id="sim-total" class="text-lg font-bold text-gray-900">Rp 0</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Angsuran Pokok/bln</p>
-                        <p id="sim-angsuran-pokok" class="text-lg font-bold text-gray-900">Rp 0</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Angsuran Margin/bln</p>
-                        <p id="sim-angsuran-margin" class="text-lg font-bold text-gray-900">Rp 0</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Total Angsuran/bln</p>
-                        <p id="sim-total-angsuran" class="text-lg font-bold text-green-600">Rp 0</p>
+                    <div class="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-medium text-gray-600">Informasi Angsuran</span>
+                            <i class="fas fa-calculator text-green-400"></i>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-xs text-gray-500">Angsuran Pokok/bln</span>
+                                <span id="sim-angsuran-pokok" class="text-sm font-bold text-gray-900">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-xs text-gray-500">Angsuran Margin/bln</span>
+                                <span id="sim-angsuran-margin" class="text-sm font-bold text-gray-900">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between pt-2 border-t border-green-200">
+                                <span class="text-sm font-medium text-gray-700">Total Angsuran/bln</span>
+                                <span id="sim-total-angsuran" class="text-base font-bold text-green-600">Rp 0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -270,19 +288,29 @@
 document.addEventListener('DOMContentLoaded', function() {
     const jumlahInput = document.getElementById('jumlah_pengajuan');
     const tenorInput = document.getElementById('tenor');
+    const jenisPembiayaanSelect = document.getElementById('jenis_pembiayaan_id');
     const simulation = document.getElementById('simulation');
+    const marginPercentSpan = document.getElementById('margin-percent');
+
+    function getMarginPercent() {
+        const selectedOption = jenisPembiayaanSelect.options[jenisPembiayaanSelect.selectedIndex];
+        return selectedOption ? parseFloat(selectedOption.getAttribute('data-margin')) || 10 : 10;
+    }
 
     function calculateSimulation() {
         const jumlah = parseFloat(jumlahInput.value) || 0;
         const tenor = parseInt(tenorInput.value) || 0;
+        const marginPercent = getMarginPercent();
 
         if (jumlah > 0 && tenor > 0) {
-            const marginPercent = 10; // Default 10%
             const jumlahMargin = jumlah * (marginPercent / 100);
             const totalPembiayaan = jumlah + jumlahMargin;
             const angsuranPokok = jumlah / tenor;
             const angsuranMargin = jumlahMargin / tenor;
             const totalAngsuran = angsuranPokok + angsuranMargin;
+
+            // Update margin percentage display
+            marginPercentSpan.textContent = marginPercent;
 
             // Update simulation display
             document.getElementById('sim-pokok').textContent = 'Rp ' + formatNumber(jumlah);
@@ -293,6 +321,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('sim-total-angsuran').textContent = 'Rp ' + formatNumber(totalAngsuran);
 
             simulation.classList.remove('hidden');
+        } else {
+            simulation.classList.add('hidden');
         }
     }
 
@@ -303,6 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calculate on input change
     jumlahInput.addEventListener('input', calculateSimulation);
     tenorInput.addEventListener('input', calculateSimulation);
+    jenisPembiayaanSelect.addEventListener('change', calculateSimulation);
 });
 </script>
 @endsection
