@@ -108,7 +108,8 @@
             @endphp
             <!-- Professional Barcode using Picqer Library - Direct with white background -->
             @php
-            $cleanNumber = preg_replace('/[^0-9]/', '', $nomorAnggota);
+            // Remove non-numeric characters except dots for barcode compatibility
+            $cleanNumber = preg_replace('/[^0-9.]/', '', $nomorAnggota);
 
             // Generate real barcode using professional library
             use Picqer\Barcode\BarcodeGeneratorHTML;

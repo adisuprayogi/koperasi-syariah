@@ -44,15 +44,23 @@ if ($settings->background_image_front) {
     $nomorAnggota = '001/ANG/2024';
     // Generate simple barcode pattern from member number
     $barcodePattern = '';
-    $cleanNumber = preg_replace('/[^0-9]/', '', $nomorAnggota); // Extract numbers only
+    $cleanNumber = preg_replace('/[^0-9.]/', '', $nomorAnggota); // Extract numbers and dots only
 
-    // Generate barcode bars based on the number
+    // Generate barcode bars based on the number and dots
     for ($i = 0; $i < strlen($cleanNumber); $i++) {
-        $digit = $cleanNumber[$i];
+        $character = $cleanNumber[$i];
         $bars = '';
 
-        // Each digit gets a unique pattern of bars
-        switch($digit) {
+        // Each digit gets a unique pattern of bars, dots get a special pattern
+        if ($character === '.') {
+            // Special pattern for dots
+            $bars = '<rect x="' . (5 + $i * 12) . '" y="8" width="1" height="19" fill="black"/>
+                    <rect x="' . (7 + $i * 12) . '" y="8" width="1" height="19" fill="black"/>
+                    <rect x="' . (9 + $i * 12) . '" y="8" width="1" height="19" fill="black"/>';
+        } else {
+            $digit = $character;
+            // Each digit gets a unique pattern of bars
+            switch($digit) {
             case '0':
                 $bars = '<rect x="' . (5 + $i * 12) . '" y="5" width="1" height="25" fill="black"/>
                         <rect x="' . (7 + $i * 12) . '" y="5" width="3" height="25" fill="black"/>
@@ -107,6 +115,7 @@ if ($settings->background_image_front) {
             default:
                 $bars = '<rect x="' . (5 + $i * 12) . '" y="5" width="2" height="25" fill="black"/>
                         <rect x="' . (8 + $i * 12) . '" y="5" width="2" height="25" fill="black"/>';
+        }
         }
 
         $barcodePattern .= $bars;
