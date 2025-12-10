@@ -22,23 +22,35 @@ if ($settings->background_image_back) {
 ?>
 
 <div style="{{ $bgStyle }} position: relative; width: 100%; height: 100%; padding: 15px;">
-    <?php $fontColorBack = $settings->font_color_back ?? '#ffffff'; ?>
+    <?php
+    $fontColorBack = $settings->font_color_back ?? '#ffffff';
+
+    // Get ketua data from pengurus table
+    use App\Models\Pengurus;
+    $ketua = Pengurus::getKetuaAktif();
+    $namaKetua = $ketua ? $ketua->nama_lengkap : ($settings->nama_ketua ?? 'Nama Ketua');
+
+    // Calculate text width for nama ketua (approximate: 3px per character for Arial 12px)
+    $actualChars = strlen(str_replace(' ', '', $namaKetua));
+    $textWidth = $actualChars * 3; // Approximate width calculation
+    $rightPosition = 10 + $textWidth; // 10px + text width (closer to edge)
+    ?>
 
     <!-- Tanda Tangan Ketua (Bottom Right) -->
     @if($settings->signature_path)
-    <div style="position: absolute; bottom: 70px; right: 20px; width: 120px; height: 60px;">
+    <div style="position: absolute; bottom: 65px; right: 15px; width: 120px; height: 60px;">
         <img src="{{ asset('storage/'.$settings->signature_path) }}" alt="Tanda Tangan"
              class="w-full h-full object-contain" style="filter: brightness(0) invert(1);">
     </div>
     @endif
 
-    <!-- Nama Ketua (Bottom Right) -->
-    <div class="card-text-back" style="position: absolute; bottom: 15px; right: 15px; color: {{ $fontColorBack }}; font-size: 12px; font-weight: bold; text-align: right;">
-        {{ $settings->nama_ketua ?? 'Nama Ketua' }}
+    <!-- Nama Ketua (Bottom Right) - Dynamic positioning based on text length -->
+    <div class="card-text-back" style="position: absolute; bottom: 15px; right: {{ $rightPosition }}px; color: {{ $fontColorBack }}; font-size: 10px; font-weight: bold; white-space: nowrap;">
+        {{ $namaKetua }}
     </div>
 
-    <!-- Jabatan Ketua (Centered above nama ketua) -->
-    <div class="card-text-back" style="position: absolute; bottom: 58px; right: 15px; color: {{ $fontColorBack }}; font-size: 12px; text-align: right;">
+    <!-- Jabatan Ketua (Above nama ketua) - Same dynamic positioning -->
+    <div class="card-text-back" style="position: absolute; bottom: 83px; right: {{ $rightPosition }}px; color: {{ $fontColorBack }}; font-size: 9px; white-space: nowrap;">
         Ketua
     </div>
 </div>

@@ -97,4 +97,14 @@ class Pengurus extends Model
     {
         return $query->where('status', $status);
     }
+
+    /**
+     * Get ketua yang aktif
+     */
+    public static function getKetuaAktif()
+    {
+        return self::where('posisi', 'ketua')
+                   ->where('status', 'aktif')
+                   ->first();
+    }
 }

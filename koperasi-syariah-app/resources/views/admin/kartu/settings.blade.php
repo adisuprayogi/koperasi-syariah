@@ -15,6 +15,7 @@
             <!-- Hidden fields for essential data -->
             <input type="hidden" name="nama_koperasi" value="{{ $settings->nama_koperasi ?? 'Koperasi Syariah' }}">
             <input type="hidden" name="nama_ketua" value="{{ $settings->nama_ketua ?? 'Nama Ketua' }}">
+            <input type="hidden" name="jabatan_ketua" value="{{ $settings->jabatan_ketua ?? 'Ketua' }}">
             <input type="hidden" name="syarat_ketentuan" value="{{ $settings->syarat_ketentuan ?? 'Kartu ini berlaku sebagai identitas resmi anggota koperasi.' }}">
 
             <div class="lg:col-span-3">

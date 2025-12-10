@@ -102,39 +102,28 @@
             </div>
             @endif
 
-            <!-- Simple Barcode (Bottom Left) - Using HTML table cells -->
-            <div style="position: absolute; bottom: 35px; left: 15px; width: 130px; height: 45px;">
-                <div style="border: 2px solid white; background: white; padding: 3px; text-align: center;">
-                    @php
-                    $nomorAnggota = $anggota->no_anggota;
-                    @endphp
-                    <!-- Professional Barcode using Picqer Library - Compact Version -->
-                    @php
-                    $cleanNumber = preg_replace('/[^0-9]/', '', $nomorAnggota);
+            <!-- Simple Barcode (Bottom Left) - With White Background -->
+            @php
+            $nomorAnggota = $anggota->no_anggota;
+            @endphp
+            <!-- Professional Barcode using Picqer Library - Direct with white background -->
+            @php
+            $cleanNumber = preg_replace('/[^0-9]/', '', $nomorAnggota);
 
-                    // Generate real barcode using professional library
-                    use Picqer\Barcode\BarcodeGeneratorHTML;
+            // Generate real barcode using professional library
+            use Picqer\Barcode\BarcodeGeneratorHTML;
 
-                    $generator = new BarcodeGeneratorHTML();
+            $generator = new BarcodeGeneratorHTML();
 
-                    // Generate Code 39 barcode fitted to container with 2px margin
-                    // Calculate optimal width factor for container (126px available width - 4px padding = 122px)
-                    $containerWidth = 122; // 130px - 8px total padding
-                    $barWidth = 1.8; // Width factor for fitting container
+            // Generate Code 128 barcode with compact width
+            $barWidth = 1.0; // Width factor for Code 128
 
-                    // Parameters: data, type, widthFactor, height, color, padding
-                    $barcodeHtml = $generator->getBarcode($cleanNumber, $generator::TYPE_CODE_39, $barWidth, 35, 'black', array(0, 0, 0, 0));
+            // Parameters: data, type, widthFactor, height, color, padding
+            $barcodeHtml = $generator->getBarcode($cleanNumber, $generator::TYPE_CODE_128, $barWidth, 20, 'black', array(0, 0, 0, 0));
+            @endphp
 
-                    // Container with 2px margin on all sides (4px total padding)
-                    $barcodeContainer = '<div style="text-align: center; background: white; padding: 2px; margin: 0 auto; width: auto; display: inline-block;">';
-                    $barcodeContainer .= $barcodeHtml;
-                    $barcodeContainer .= '</div>';
-                    @endphp
-
-                    <div>
-                        {!! $barcodeContainer !!}
-                    </div>
-                </div>
+            <div style="position: absolute; bottom: 45px; left: 15px; background-color: white; padding: 5px; display: inline-block;">
+                {!! $barcodeHtml !!}
             </div>
         </div>
           </div>
@@ -184,23 +173,36 @@
                 $imageInfoBack = getimagesize($backgroundImagePathBack);
                 $imageSrcBack = 'data:' . $imageInfoBack['mime'] . ';base64,' . $imageDataBack;
                 @endphp
-                <img src="{{ $imageSrcBack }}" style="position: absolute; top: -15px; left: -15px; width: 370px; height: 244px; object-fit: fill; z-index: -1;" alt="">
+                <img src="{{ $imageSrcBack }}" style="position: absolute; top: -15px; left: -15px; width: 370px; height: 244px; object-fit: cover; z-index: -1;" alt="">
             <?php endif; ?>
-            <!-- Tanda Tangan Ketua (Bottom Right) - Exact same positioning as preview -->
+            <!-- Tanda Tangan Ketua (Bottom Right) - Adjusted for PDF rendering -->
             @if($settings->signature_path)
-            <div style="position: absolute; bottom: 70px; right: 20px; width: 120px; height: 60px;">
+            <div style="position: absolute; bottom: 65px; right: 15px; width: 120px; height: 60px;">
                 <img src="{{ asset('storage/'.$settings->signature_path) }}" alt="Tanda Tangan"
                      style="width: 100%; height: 100%; object-fit: contain; filter: brightness(0) invert(1);">
             </div>
             @endif
 
-            <!-- Nama Ketua (Bottom Right) - Exact same positioning as preview -->
-            <div style="position: absolute; bottom: 15px; right: 15px; color: {{ $fontColorBack }}; font-size: 12px; font-weight: bold; text-align: right;">
-                {{ $settings->nama_ketua ?? 'Nama Ketua' }}
+            @php
+            // Get ketua data from pengurus table
+            use App\Models\Pengurus;
+            $ketua = Pengurus::getKetuaAktif();
+            $namaKetua = $ketua ? $ketua->nama_lengkap : ($settings->nama_ketua ?? 'Nama Ketua');
+
+            // Calculate text width for nama ketua (approximate: 3px per character for Arial 12px)
+            // Remove spaces and calculate only actual characters
+            $actualChars = strlen(str_replace(' ', '', $namaKetua));
+            $textWidth = $actualChars * 3; // Approximate width calculation
+            $rightPosition = 5 + $textWidth; // 5px + text width (closer to edge)
+            @endphp
+
+            <!-- Nama Ketua (Bottom Right) - Dynamic positioning based on text length -->
+            <div style="position: absolute; bottom: 40px; right: {{ $rightPosition }}px; color: {{ $fontColorBack }}; font-size: 10px; font-weight: bold; white-space: nowrap;">
+                {{ $namaKetua }}
             </div>
 
-            <!-- Jabatan Ketua (Centered above nama ketua) - Exact same positioning as preview -->
-            <div style="position: absolute; bottom: 58px; right: 15px; color: {{ $fontColorBack }}; font-size: 12px; text-align: right;">
+            <!-- Jabatan Ketua (Centered above nama ketua) - Same dynamic positioning -->
+            <div style="position: absolute; bottom: 83px; right: {{ $rightPosition }}px; color: {{ $fontColorBack }}; font-size: 9px; white-space: nowrap;">
                 Ketua
             </div>
               </div>

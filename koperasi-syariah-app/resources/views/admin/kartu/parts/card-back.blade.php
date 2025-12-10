@@ -82,19 +82,25 @@ function getBackBackgroundStyle($settings, $side) {
 
     <!-- Nama Ketua -->
     @if($settings->show_nama_ketua_back)
+    @php
+    // Get ketua data from pengurus table
+    use App\Models\Pengurus;
+    $ketua = Pengurus::getKetuaAktif();
+    $namaKetua = $ketua ? $ketua->nama_lengkap : ($settings->nama_ketua ?? 'Nama Ketua');
+    @endphp
     <div class="card-element text-white" style="
         left: {{ $preview ? ($positions['nama_ketua']['x'] . 'px') : ($positions['nama_ketua']['x'] / 3.4 . 'mm') }};
         top: {{ $preview ? ($positions['nama_ketua']['y'] . 'px') : ($positions['nama_ketua']['y'] / 3.4 . 'mm') }};
-        font-size: {{ $preview ? ($fontSizes['small'] . 'px') : ($fontSizes['small'] / 3.4 . 'mm') }};
+        font-size: {{ $preview ? '10px' : '3mm' }};
         font-weight: bold;
     ">
-        {{ $settings->nama_ketua }}
+        {{ $namaKetua }}
     </div>
 
     <div class="card-element text-white" style="
         left: {{ $preview ? ($positions['nama_ketua']['x'] . 'px') : ($positions['nama_ketua']['x'] / 3.4 . 'mm') }};
         top: {{ $preview ? ($positions['nama_ketua']['y'] + 15 . 'px') : (($positions['nama_ketua']['y'] + 15) / 3.4 . 'mm') }};
-        font-size: {{ $preview ? '9px' : '3mm' }};
+        font-size: {{ $preview ? '9px' : '2.5mm' }};
     ">
         {{ $settings->jabatan_ketua ?? 'Ketua Koperasi' }}
     </div>
