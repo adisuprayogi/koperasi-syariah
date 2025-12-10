@@ -15,7 +15,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // Fix PHP 8.5+ PDO deprecation warnings by overriding constants early
+        if (PHP_VERSION_ID >= 80500) {
+            // Define the new constants to prevent deprecation warnings
+            if (!defined('Pdo\Mysql::ATTR_SSL_CA') && defined('PDO::MYSQL_ATTR_SSL_CA')) {
+                // Create namespace and constants if they don't exist
+                if (!class_exists('Pdo\Mysql')) {
+                    class_alias('PDO', 'Pdo\Mysql');
+                }
+            }
+        }
     }
 
     /**
@@ -25,11 +34,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Suppress PHP 8.5+ deprecation warnings for PDO constants
-        if (PHP_VERSION_ID >= 80500) {
-            error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
-        }
-
         // Share koperasi data to all views
         View::composer('*', function ($view) {
             $koperasi = Koperasi::first();
