@@ -10,9 +10,12 @@ use App\Models\PengajuanPembiayaan;
 use App\Models\Angsuran;
 use App\Models\Transaksi;
 use App\Models\Koperasi;
+use App\Exports\SimpananExport;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 
 class LaporanController extends Controller
 {
@@ -342,6 +345,28 @@ class LaporanController extends Controller
     }
 
     /**
+     * Print simpanan per anggota report.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function printSimpananPerAnggota(Request $request)
+    {
+        $request->validate([
+            'anggota_id' => 'required|exists:anggota,id'
+        ]);
+
+        $anggotaId = $request->get('anggota_id');
+        $anggota = Anggota::find($anggotaId);
+        $reportData = $this->generateSimpananReportForAnggota($anggotaId);
+
+        return view('pengurus.laporan.print.simpanan_per_anggota', compact(
+            'reportData',
+            'anggota'
+        ));
+    }
+
+    /**
      * Generate pembiayaan per anggota report.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -388,9 +413,9 @@ class LaporanController extends Controller
         $tahun = $request->get('tahun', now()->year);
 
         // Pendapatan - Margin dari pembiayaan yang dibayar
-        $marginReceived = Transaksi::whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
-            ->where('jenis_transaksi', 'angsuran')
+        $marginReceived = Angsuran::whereMonth('tanggal_bayar', $bulan)
+            ->whereYear('tanggal_bayar', $tahun)
+            ->where('status', 'terbayar')
             ->sum('jumlah_margin');
 
         // Pendapatan lainnya (bisa ditambahkan nanti)
@@ -443,7 +468,7 @@ class LaporanController extends Controller
         // Piutang anggota - Sisa pembiayaan yang belum dibayar
         $totalPiutang = PengajuanPembiayaan::where('status', 'cair')
             ->whereDate('tanggal_cair', '<=', $tanggal)
-            ->with('angsuran')
+            ->with('angsurans')
             ->get()
             ->sum(function($pengajuan) {
                 return $pengajuan->sisaTotal();
@@ -496,8 +521,56 @@ class LaporanController extends Controller
      */
     public function export(Request $request, $type)
     {
-        // TODO: Implement Excel export functionality
-        return redirect()->back()->with('info', 'Fitur export akan segera tersedia');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $jenisSimpananId = $request->get('jenis_simpanan_id');
+        $format = $request->get('format', 'excel'); // excel or pdf
+
+        try {
+            $filename = 'Laporan_Simpanan_' . date('Y-m-d_H-i-s');
+
+            if ($format === 'pdf') {
+                // Export to PDF
+                $query = TransaksiSimpanan::with(['anggota', 'jenisSimpanan']);
+
+                if ($startDate) {
+                    $query->whereDate('tanggal_transaksi', '>=', $startDate);
+                }
+                if ($endDate) {
+                    $query->whereDate('tanggal_transaksi', '<=', $endDate);
+                }
+                if ($jenisSimpananId) {
+                    $query->where('jenis_simpanan_id', $jenisSimpananId);
+                }
+
+                $transaksi = $query->orderBy('tanggal_transaksi', 'desc')->get();
+                $totalSimpananWajib = $transaksi->where('jenis_simpanan_id', 1)->sum('jumlah');
+                $totalSimpananSukarela = $transaksi->where('jenis_simpanan_id', 2)->sum('jumlah');
+                $totalSimpananWajibBulanan = $transaksi->where('jenis_simpanan_id', 3)->sum('jumlah');
+
+                $data = [
+                    'transaksi' => $transaksi,
+                    'totalSimpananWajib' => $totalSimpananWajib,
+                    'totalSimpananSukarela' => $totalSimpananSukarela,
+                    'totalSimpananWajibBulanan' => $totalSimpananWajibBulanan,
+                    'startDate' => $startDate,
+                    'endDate' => $endDate,
+                    'jenisSimpanan' => $jenisSimpananId ? JenisSimpanan::find($jenisSimpananId) : null,
+                ];
+
+                $pdf = PDF::loadView('exports.simpanan_pdf', $data);
+                $pdf->setPaper('A4', 'landscape');
+
+                return $pdf->download($filename . '.pdf');
+            } else {
+                // Export to Excel
+                return Excel::download(new SimpananExport($startDate, $endDate, $jenisSimpananId), $filename . '.xlsx');
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Export error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat export laporan: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -554,7 +627,7 @@ class LaporanController extends Controller
     private function generatePembiayaanReportForAnggota($anggotaId, $status)
     {
         $query = PengajuanPembiayaan::where('anggota_id', $anggotaId)
-            ->with('jenisPembiayaan', 'angsuran');
+            ->with('jenisPembiayaan', 'angsurans');
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -564,11 +637,15 @@ class LaporanController extends Controller
 
         $reportData = [];
         $totalPlafond = 0;
+        $totalMargin = 0;
+        $totalPinjaman = 0;
         $totalDibayar = 0;
         $totalSisa = 0;
 
         foreach ($pengajuan as $p) {
             $totalPlafond += $p->jumlah_pengajuan;
+            $totalMargin += $p->jumlah_margin;
+            $totalPinjaman += ($p->jumlah_pengajuan + $p->jumlah_margin);
             $totalDibayar += $p->totalDibayar();
             $totalSisa += $p->sisaTotal();
 
@@ -589,6 +666,8 @@ class LaporanController extends Controller
         return [
             'pengajuan' => $reportData,
             'total_plafond' => $totalPlafond,
+            'total_margin' => $totalMargin,
+            'total_pinjaman' => $totalPinjaman,
             'total_dibayar' => $totalDibayar,
             'total_sisa' => $totalSisa
         ];
@@ -622,8 +701,8 @@ class LaporanController extends Controller
         $year = date('Y', strtotime($tanggal));
 
         // Margin received from all installments this year
-        $marginReceived = Transaksi::whereYear('tanggal', $year)
-            ->where('jenis_transaksi', 'angsuran')
+        $marginReceived = Angsuran::whereYear('tanggal_bayar', $year)
+            ->where('status', 'terbayar')
             ->sum('jumlah_margin');
 
         // Placeholder for other income and expenses
@@ -649,8 +728,16 @@ class LaporanController extends Controller
                 return $this->printMingguan($request);
             case 'bulanan':
                 return $this->printBulanan($request);
+            case 'laba-rugi':
+                return $this->printLabaRugi($request);
+            case 'neraca':
+                return $this->printNeraca($request);
             case 'simpanan-wajib':
                 return $this->printSimpananWajib($request);
+            case 'simpanan-per-anggota':
+                return $this->printSimpananPerAnggota($request);
+            case 'pembiayaan-per-anggota':
+                return $this->printPembiayaanPerAnggota($request);
             default:
                 return redirect()->back()->with('error', 'Jenis laporan tidak valid');
         }
@@ -792,6 +879,125 @@ class LaporanController extends Controller
             'totalTerbayar',
             'totalTunggakan',
             'persentasePembayaran'
+        ));
+    }
+
+    /**
+     * Print pembiayaan per anggota report.
+     */
+    private function printPembiayaanPerAnggota(Request $request)
+    {
+        $request->validate([
+            'anggota_id' => 'required|exists:anggota,id',
+            'status' => 'nullable|in:all,cair,lunas,approved'
+        ]);
+
+        $anggotaId = $request->get('anggota_id');
+        $status = $request->get('status', 'all');
+        $anggota = Anggota::find($anggotaId);
+        $reportData = $this->generatePembiayaanReportForAnggota($anggotaId, $status);
+
+        return view('pengurus.laporan.print.pembiayaan_per_anggota', compact(
+            'reportData',
+            'anggota',
+            'status'
+        ));
+    }
+
+    /**
+     * Print laba rugi report.
+     */
+    private function printLabaRugi(Request $request)
+    {
+        $bulan = $request->get('bulan', now()->month);
+        $tahun = $request->get('tahun', now()->year);
+
+        // Pendapatan - Margin dari pembiayaan yang dibayar
+        $marginReceived = Angsuran::whereMonth('tanggal_bayar', $bulan)
+            ->whereYear('tanggal_bayar', $tahun)
+            ->where('status', 'terbayar')
+            ->sum('jumlah_margin');
+
+        // Pendapatan lainnya (bisa ditambahkan nanti)
+        $otherIncome = 0;
+
+        $totalPendapatan = $marginReceived + $otherIncome;
+
+        // Beban operasional (contoh, bisa disesuaikan)
+        $bebanOperasional = 0; // Placeholder
+        $bebanAdministrasi = 0; // Placeholder
+
+        $totalBeban = $bebanOperasional + $bebanAdministrasi;
+
+        // SHU sebelum pajak
+        $shuSebelumPajak = $totalPendapatan - $totalBeban;
+
+        // Pajak (jika ada, untuk koperasi biasanya ada keringanan)
+        $pajak = $shuSebelumPajak * 0.05; // Contoh 5%
+        $shuSetelahPajak = $shuSebelumPajak - $pajak;
+
+        return view('pengurus.laporan.print.laba_rugi', compact(
+            'bulan',
+            'tahun',
+            'marginReceived',
+            'otherIncome',
+            'totalPendapatan',
+            'bebanOperasional',
+            'bebanAdministrasi',
+            'totalBeban',
+            'shuSebelumPajak',
+            'pajak',
+            'shuSetelahPajak'
+        ));
+    }
+
+    /**
+     * Print neraca report.
+     */
+    private function printNeraca(Request $request)
+    {
+        $tanggal = $request->get('tanggal', now()->format('Y-m-d'));
+
+        // Aset
+        // Kas - Total simpanan anggota
+        $totalSimpanan = $this->calculateTotalSimpanan($tanggal);
+
+        // Piutang anggota - Sisa pembiayaan yang belum dibayar
+        $totalPiutang = PengajuanPembiayaan::where('status', 'cair')
+            ->whereDate('tanggal_cair', '<=', $tanggal)
+            ->with('angsurans')
+            ->get()
+            ->sum(function($pengajuan) {
+                return $pengajuan->sisaTotal();
+            });
+
+        $totalAset = $totalSimpanan + $totalPiutang;
+
+        // Kewajiban
+        // Simpanan anggota (kewajiban koperasi kepada anggota)
+        $kewajibanSimpanan = $totalSimpanan;
+
+        // Ekuitas
+        // Modal awal (contoh, bisa disesuaikan)
+        $modalAwal = 0; // Placeholder
+
+        // SHU berjalan
+        $shuBerjalan = $this->calculateSHUBerjalan($tanggal);
+
+        $totalEkuitas = $modalAwal + $shuBerjalan;
+
+        $totalKewajibanEkuitas = $kewajibanSimpanan + $totalEkuitas;
+
+        return view('pengurus.laporan.print.neraca', compact(
+            'tanggal',
+            'totalSimpanan',
+            'totalPiutang',
+            'totalAset',
+            'kewajibanSimpanan',
+            'modalAwal',
+            'shuBerjalan',
+            'totalEkuitas',
+            'totalKewajibanEkuitas'
         ));
     }
 }

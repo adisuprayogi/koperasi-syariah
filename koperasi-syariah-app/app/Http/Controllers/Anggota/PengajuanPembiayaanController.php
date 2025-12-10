@@ -89,12 +89,16 @@ class PengajuanPembiayaanController extends Controller
             'slip_gaji_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'proposal_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
             'jaminan_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'jaminan_files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'dokumen_lainnya_files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
         ], [
             'jumlah_pengajuan.min' => 'Minimal pengajuan Rp 1.000.000',
             'tenor.max' => 'Maksimal tenor 60 bulan',
             'deskripsi.min' => 'Deskripsi minimal 20 karakter',
             'ktp_file.required' => 'KTP wajib diupload',
             'ktp_file.max' => 'Ukuran file maksimal 2MB',
+            'jaminan_files.*.max' => 'Ukuran file jaminan maksimal 2MB',
+            'dokumen_lainnya_files.*.max' => 'Ukuran file dokumen lainnya maksimal 2MB',
         ]);
 
         try {
@@ -128,12 +132,34 @@ class PengajuanPembiayaanController extends Controller
             $data['status'] = 'diajukan';
             $data['tanggal_jatuh_tempo'] = now()->addMonths($request->tenor);
 
-            // Handle file uploads
+            // Handle single file uploads
             $files = ['ktp_file', 'kk_file', 'slip_gaji_file', 'proposal_file', 'jaminan_file'];
             foreach ($files as $file) {
                 if ($request->hasFile($file)) {
                     $path = $request->file($file)->store('dokumen/pengajuan/' . date('Y/m'), 'public');
                     $data[$file] = $path;
+                }
+            }
+
+            // Handle multiple jaminan files
+            if ($request->hasFile('jaminan_files')) {
+                $jaminanFiles = $request->file('jaminan_files');
+                foreach ($jaminanFiles as $index => $file) {
+                    if ($index < 3) { // Store max 3 additional jaminan files
+                        $path = $file->store('dokumen/pengajuan/' . date('Y/m'), 'public');
+                        $data["jaminan_file_" . ($index + 2)] = $path; // jaminan_file_2, jaminan_file_3
+                    }
+                }
+            }
+
+            // Handle multiple dokumen lainnya files
+            if ($request->hasFile('dokumen_lainnya_files')) {
+                $dokumenLainnyaFiles = $request->file('dokumen_lainnya_files');
+                foreach ($dokumenLainnyaFiles as $index => $file) {
+                    if ($index < 5) { // Store max 5 dokumen lainnya files
+                        $path = $file->store('dokumen/pengajuan/' . date('Y/m'), 'public');
+                        $data["dokumen_lainnya_" . ($index + 1)] = $path; // dokumen_lainnya_1, ..., dokumen_lainnya_5
+                    }
                 }
             }
 

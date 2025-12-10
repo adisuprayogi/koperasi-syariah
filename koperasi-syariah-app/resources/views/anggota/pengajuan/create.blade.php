@@ -169,77 +169,54 @@
             <div class="bg-white shadow rounded-lg p-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Dokumen Pendukung</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="ktp_file" class="block text-sm font-medium text-gray-700">
-                            Scan KTP <span class="text-red-500">*</span>
-                        </label>
-                        <input type="file" id="ktp_file" name="ktp_file" required
-                               accept=".jpg,.jpeg,.png,.pdf"
-                               class="mt-1 block w-full text-sm text-gray-500
-                                      file:mr-4 file:py-2 file:px-4
-                                      file:rounded-full file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, PDF. Max: 2MB</p>
-                        @error('ktp_file')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-file-upload
+                        name="ktp_file"
+                        label="Scan KTP"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        :required="true"
+                        maxSize="2MB" />
 
-                    <div>
-                        <label for="kk_file" class="block text-sm font-medium text-gray-700">
-                            Scan KK
-                        </label>
-                        <input type="file" id="kk_file" name="kk_file"
-                               accept=".jpg,.jpeg,.png,.pdf"
-                               class="mt-1 block w-full text-sm text-gray-500
-                                      file:mr-4 file:py-2 file:px-4
-                                      file:rounded-full file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, PDF. Max: 2MB</p>
-                        @error('kk_file')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-file-upload
+                        name="kk_file"
+                        label="Scan KK"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        maxSize="2MB" />
 
-                    <div>
-                        <label for="slip_gaji_file" class="block text-sm font-medium text-gray-700">
-                            Slip Gaji
-                        </label>
-                        <input type="file" id="slip_gaji_file" name="slip_gaji_file"
-                               accept=".jpg,.jpeg,.png,.pdf"
-                               class="mt-1 block w-full text-sm text-gray-500
-                                      file:mr-4 file:py-2 file:px-4
-                                      file:rounded-full file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, PDF. Max: 2MB</p>
-                        @error('slip_gaji_file')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-file-upload
+                        name="slip_gaji_file"
+                        label="Slip Gaji"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        maxSize="2MB" />
 
-                    <div>
-                        <label for="proposal_file" class="block text-sm font-medium text-gray-700">
-                            Proposal Bisnis
-                        </label>
-                        <input type="file" id="proposal_file" name="proposal_file"
-                               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                               class="mt-1 block w-full text-sm text-gray-500
-                                      file:mr-4 file:py-2 file:px-4
-                                      file:rounded-full file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, PDF, DOC, DOCX. Max: 5MB</p>
-                        @error('proposal_file')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-file-upload
+                        name="proposal_file"
+                        label="Proposal Bisnis"
+                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                        maxSize="5MB" />
+                </div>
+
+                <!-- Dokumen Jaminan Tambahan -->
+                <div class="mt-6">
+                    <h4 class="text-sm font-medium text-gray-900 mb-3">Dokumen Jaminan (Opsional)</h4>
+                    <x-multiple-file-upload
+                        name="jaminan_files"
+                        label="Upload Dokumen Jaminan"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        :maxFiles="3"
+                        maxSize="2MB"
+                        help="Upload Sertifikat, BPKB, atau dokumen jaminan lainnya" />
+                </div>
+
+                <!-- Dokumen Lainnya -->
+                <div class="mt-6">
+                    <h4 class="text-sm font-medium text-gray-900 mb-3">Dokumen Pendukung Lainnya (Opsional)</h4>
+                    <x-multiple-file-upload
+                        name="dokumen_lainnya_files"
+                        label="Upload Dokumen Pendukung"
+                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                        :maxFiles="5"
+                        maxSize="2MB"
+                        help="Upload dokumen pendukung lainnya seperti surat keterangan, rekening listrik, dll" />
                 </div>
             </div>
 

@@ -11,23 +11,23 @@
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-primary-500 hover:shadow-xl transition-shadow duration-300">
             <div class="flex items-center">
-                <div class="p-3 bg-blue-100 rounded-full">
-                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                <div class="p-3 bg-primary-100 rounded-lg">
+                    <i class="fas fa-users text-primary-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
                     <h3 class="text-lg font-semibold text-gray-900">Total Pengurus</h3>
-                    <p class="text-2xl font-bold text-blue-600">{{ $totalPengurus }}</p>
+                    <p class="text-2xl font-bold text-primary-600">{{ $totalPengurus }}</p>
                     <p class="text-sm text-gray-600">{{ $pengurusAktif }} aktif</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-secondary-500 hover:shadow-xl transition-shadow duration-300">
             <div class="flex items-center">
-                <div class="p-3 bg-green-100 rounded-full">
-                    <i class="fas fa-user-friends text-green-600 text-xl"></i>
+                <div class="p-3 bg-secondary-100 rounded-lg">
+                    <i class="fas fa-user-friends text-secondary-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
                     <h3 class="text-lg font-semibold text-gray-900">Total Anggota</h3>

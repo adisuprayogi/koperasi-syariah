@@ -9,6 +9,7 @@ use App\Http\Controllers\AnggotaController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\Anggota\DashboardController as AnggotaDashboardController;
 use App\Http\Controllers\Anggota\PengajuanPembiayaanController;
+use App\Http\Controllers\FileDownloadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -145,6 +146,14 @@ Route::prefix('anggota')->name('anggota.')->middleware(['auth', 'anggota'])->gro
     // Pembiayaan
     Route::get('/pembiayaan', [AnggotaController::class, 'pembiayaanIndex'])->name('pembiayaan.index');
     Route::get('/pembiayaan/{id}', [AnggotaController::class, 'pembiayaanShow'])->name('pembiayaan.show');
+});
+
+// Secure File Download Routes
+Route::prefix('files')->name('files.')->middleware(['auth'])->group(function () {
+    Route::get('/pengajuan/{pengajuanId}/{field}/download', [FileDownloadController::class, 'downloadPengajuanFile'])
+        ->name('pengajuan.download');
+    Route::get('/pengajuan/{pengajuanId}/{field}/preview', [FileDownloadController::class, 'previewPengajuanFile'])
+        ->name('pengajuan.preview');
 });
 
 // Default route untuk authenticated users

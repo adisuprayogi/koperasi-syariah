@@ -164,93 +164,37 @@
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Dokumen Pendukung</h2>
                 <p class="text-sm text-gray-600 mb-4">Upload ulang dokumen yang diperlukan. Kosongkan jika tidak ingin mengubah.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="ktp_file" class="block text-sm font-medium text-gray-700">
-                            Scan KTP <span class="text-red-500">*</span>
-                            @if($pengajuan->ktp_file)
-                                <a href="{{ asset('storage/' . $pengajuan->ktp_file) }}" target="_blank"
-                                   class="text-xs text-blue-600 hover:text-blue-800 ml-2">Lihat file sekarang</a>
-                            @endif
-                        </label>
-                        <input type="file" id="ktp_file" name="ktp_file"
-                               accept=".jpg,.jpeg,.png,.pdf"
-                               class="mt-1 block w-full text-sm text-gray-500
-                                      file:mr-4 file:py-2 file:px-4
-                                      file:rounded-full file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, PDF. Max: 2MB</p>
-                        @error('ktp_file')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-file-upload
+                        name="ktp_file"
+                        label="Scan KTP"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        maxSize="2MB"
+                        :existingFile="$pengajuan->ktp_file"
+                        existingLabel="KTP Terupload" />
 
-                    <div>
-                        <label for="kk_file" class="block text-sm font-medium text-gray-700">
-                            Scan KK
-                            @if($pengajuan->kk_file)
-                                <a href="{{ asset('storage/' . $pengajuan->kk_file) }}" target="_blank"
-                                   class="text-xs text-blue-600 hover:text-blue-800 ml-2">Lihat file sekarang</a>
-                            @endif
-                        </label>
-                        <input type="file" id="kk_file" name="kk_file"
-                               accept=".jpg,.jpeg,.png,.pdf"
-                               class="mt-1 block w-full text-sm text-gray-500
-                                      file:mr-4 file:py-2 file:px-4
-                                      file:rounded-full file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, PDF. Max: 2MB</p>
-                        @error('kk_file')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-file-upload
+                        name="kk_file"
+                        label="Scan KK"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        maxSize="2MB"
+                        :existingFile="$pengajuan->kk_file"
+                        existingLabel="KK Terupload" />
 
-                    <div>
-                        <label for="slip_gaji_file" class="block text-sm font-medium text-gray-700">
-                            Slip Gaji
-                            @if($pengajuan->slip_gaji_file)
-                                <a href="{{ asset('storage/' . $pengajuan->slip_gaji_file) }}" target="_blank"
-                                   class="text-xs text-blue-600 hover:text-blue-800 ml-2">Lihat file sekarang</a>
-                            @endif
-                        </label>
-                        <input type="file" id="slip_gaji_file" name="slip_gaji_file"
-                               accept=".jpg,.jpeg,.png,.pdf"
-                               class="mt-1 block w-full text-sm text-gray-500
-                                      file:mr-4 file:py-2 file:px-4
-                                      file:rounded-full file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, PDF. Max: 2MB</p>
-                        @error('slip_gaji_file')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-file-upload
+                        name="slip_gaji_file"
+                        label="Slip Gaji"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        maxSize="2MB"
+                        :existingFile="$pengajuan->slip_gaji_file"
+                        existingLabel="Slip Gaji Terupload" />
 
-                    <div>
-                        <label for="proposal_file" class="block text-sm font-medium text-gray-700">
-                            Proposal Bisnis
-                            @if($pengajuan->proposal_file)
-                                <a href="{{ asset('storage/' . $pengajuan->proposal_file) }}" target="_blank"
-                                   class="text-xs text-blue-600 hover:text-blue-800 ml-2">Lihat file sekarang</a>
-                            @endif
-                        </label>
-                        <input type="file" id="proposal_file" name="proposal_file"
-                               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                               class="mt-1 block w-full text-sm text-gray-500
-                                      file:mr-4 file:py-2 file:px-4
-                                      file:rounded-full file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, PDF, DOC, DOCX. Max: 5MB</p>
-                        @error('proposal_file')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-file-upload
+                        name="proposal_file"
+                        label="Proposal Bisnis"
+                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                        maxSize="5MB"
+                        :existingFile="$pengajuan->proposal_file"
+                        existingLabel="Proposal Terupload" />
                 </div>
             </div>
 

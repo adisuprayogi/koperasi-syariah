@@ -49,7 +49,14 @@ class PengajuanPembiayaan extends Model
         'slip_gaji_file',
         'proposal_file',
         'jaminan_file',
+        'jaminan_file_2',
+        'jaminan_file_3',
         'dokumen_lainnya',
+        'dokumen_lainnya_1',
+        'dokumen_lainnya_2',
+        'dokumen_lainnya_3',
+        'dokumen_lainnya_4',
+        'dokumen_lainnya_5',
         'alasan_penolakan',
         'tanggal_jatuh_tempo'
     ];
@@ -209,6 +216,16 @@ class PengajuanPembiayaan extends Model
         return $this->angsurans()->where('status', 'terbayar')->sum('jumlah_angsuran');
     }
 
+    public function totalPokokDibayar()
+    {
+        return $this->angsurans()->where('status', 'terbayar')->sum('jumlah_pokok');
+    }
+
+    public function totalMarginDibayar()
+    {
+        return $this->angsurans()->where('status', 'terbayar')->sum('jumlah_margin');
+    }
+
     public function totalDenda()
     {
         return $this->angsurans()->sum('denda');
@@ -216,12 +233,12 @@ class PengajuanPembiayaan extends Model
 
     public function sisaPokok()
     {
-        return max(0, ($this->jumlah_pengajuan - $this->totalDibayar()) / 2);
+        return max(0, $this->jumlah_pengajuan - $this->totalPokokDibayar());
     }
 
     public function sisaMargin()
     {
-        return max(0, ($this->jumlah_margin - $this->totalDibayar() + $this->totalDenda()) / 2);
+        return max(0, $this->jumlah_margin - $this->totalMarginDibayar());
     }
 
     public function sisaTotal()
@@ -284,5 +301,100 @@ class PengajuanPembiayaan extends Model
 
         // Tambahkan 1 bulan
         return \Carbon\Carbon::parse($startDate)->addMonth();
+    }
+
+    /**
+     * Get all jaminan files
+     */
+    public function getAllJaminanFilesAttribute()
+    {
+        $files = [];
+
+        if ($this->jaminan_file) {
+            $files[] = $this->jaminan_file;
+        }
+        if ($this->jaminan_file_2) {
+            $files[] = $this->jaminan_file_2;
+        }
+        if ($this->jaminan_file_3) {
+            $files[] = $this->jaminan_file_3;
+        }
+
+        return $files;
+    }
+
+    /**
+     * Get all dokumen lainnya files
+     */
+    public function getAllDokumenLainnyaFilesAttribute()
+    {
+        $files = [];
+
+        for ($i = 1; $i <= 5; $i++) {
+            $field = "dokumen_lainnya_{$i}";
+            if ($this->$field) {
+                $files[] = $this->$field;
+            }
+        }
+
+        // Also check legacy dokumen_lainnya (JSON format)
+        if ($this->dokumen_lainnya) {
+            if (is_string($this->dokumen_lainnya)) {
+                $decoded = json_decode($this->dokumen_lainnya, true);
+                if (is_array($decoded)) {
+                    $files = array_merge($files, $decoded);
+                } else {
+                    $files[] = $this->dokumen_lainnya;
+                }
+            }
+        }
+
+        return array_unique($files);
+    }
+
+    /**
+     * Get all uploaded files
+     */
+    public function getAllFilesAttribute()
+    {
+        $allFiles = [];
+
+        // Required documents
+        if ($this->ktp_file) {
+            $allFiles[] = ['file' => $this->ktp_file, 'label' => 'Scan KTP', 'type' => 'required'];
+        }
+
+        // Optional documents
+        $optionalDocs = [
+            'kk_file' => 'Scan KK',
+            'slip_gaji_file' => 'Slip Gaji',
+            'proposal_file' => 'Proposal Bisnis'
+        ];
+
+        foreach ($optionalDocs as $field => $label) {
+            if ($this->$field) {
+                $allFiles[] = ['file' => $this->$field, 'label' => $label, 'type' => 'optional'];
+            }
+        }
+
+        // Jaminan files
+        foreach ($this->all_jaminan_files as $index => $file) {
+            $allFiles[] = [
+                'file' => $file,
+                'label' => 'Dokumen Jaminan ' . ($index + 1),
+                'type' => 'jaminan'
+            ];
+        }
+
+        // Other documents
+        foreach ($this->all_dokumen_lainnya_files as $index => $file) {
+            $allFiles[] = [
+                'file' => $file,
+                'label' => 'Dokumen Lainnya ' . ($index + 1),
+                'type' => 'lainnya'
+            ];
+        }
+
+        return $allFiles;
     }
 }

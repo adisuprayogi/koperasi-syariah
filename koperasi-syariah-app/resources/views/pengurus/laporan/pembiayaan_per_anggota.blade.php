@@ -75,15 +75,26 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
                 <div class="p-3 bg-purple-100 rounded-full">
                     <i class="fas fa-hand-holding-usd text-purple-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Total Plafond</h3>
-                    <p class="text-2xl font-bold text-purple-600">{{ number_format($reportData['total_plafond'], 0, ',', '.') }}</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Total Pembiayaan</h3>
+                    <p class="text-2xl font-bold text-purple-600">{{ number_format($reportData['total_pinjaman'], 0, ',', '.') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-indigo-100 rounded-full">
+                    <i class="fas fa-percentage text-indigo-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Total Margin</h3>
+                    <p class="text-2xl font-bold text-indigo-600">{{ number_format($reportData['total_margin'], 0, ',', '.') }}</p>
                 </div>
             </div>
         </div>
@@ -120,7 +131,7 @@
                 <div>{!! $item['pengajuan']->status_label !!}</div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                 <div>
                     <p class="text-sm text-gray-600">Jenis Pembiayaan</p>
                     <p class="font-semibold">{{ $item['pengajuan']->jenisPembiayaan->nama_pembiayaan }}</p>
@@ -134,6 +145,10 @@
                     <p class="font-semibold">{{ number_format($item['pengajuan']->jumlah_margin, 0, ',', '.') }}</p>
                 </div>
                 <div>
+                    <p class="text-sm text-gray-600">Total Pembiayaan</p>
+                    <p class="font-semibold text-purple-600">{{ number_format($item['pengajuan']->jumlah_pengajuan + $item['pengajuan']->jumlah_margin, 0, ',', '.') }}</p>
+                </div>
+                <div>
                     <p class="text-sm text-gray-600">Tenor</p>
                     <p class="font-semibold">{{ $item['pengajuan']->tenor }} Bulan</p>
                 </div>
@@ -141,8 +156,8 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div class="text-center p-3 bg-gray-50 rounded">
-                    <p class="text-sm text-gray-600">Total Pinjaman</p>
-                    <p class="text-lg font-bold text-purple-600">{{ number_format($item['pengajuan']->jumlah_pengajuan, 0, ',', '.') }}</p>
+                    <p class="text-sm text-gray-600">Total Pembiayaan</p>
+                    <p class="text-lg font-bold text-purple-600">{{ number_format($item['pengajuan']->jumlah_pengajuan + $item['pengajuan']->jumlah_margin, 0, ',', '.') }}</p>
                 </div>
                 <div class="text-center p-3 bg-gray-50 rounded">
                     <p class="text-sm text-gray-600">Total Dibayar</p>
@@ -162,7 +177,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Angsuran Dibayar / Total</p>
-                    <p class="font-semibold">{{ $item['pengajuan']->angsuran()->where('status', 'terbayar')->count() }} / {{ $item['pengajuan']->angsuran()->count() }}</p>
+                    <p class="font-semibold">{{ $item['pengajuan']->angsurans()->where('status', 'terbayar')->count() }} / {{ $item['pengajuan']->angsurans()->count() }}</p>
                 </div>
             </div>
             @endif

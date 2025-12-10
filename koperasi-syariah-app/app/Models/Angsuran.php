@@ -162,6 +162,12 @@ class Angsuran extends Model
         return $this->belongsTo(User::class, 'dibayar_oleh');
     }
 
+    public function transaksi()
+    {
+        return $this->hasMany(Transaksi::class, 'pengajuan_pembiayaan_id', 'pengajuan_pembiayaan_id')
+                    ->where('jenis_transaksi', 'angsuran');
+    }
+
     // Scopes
     public function scopeByStatus($query, $status)
     {

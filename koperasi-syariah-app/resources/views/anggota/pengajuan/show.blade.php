@@ -212,16 +212,7 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Bukti Pencairan</h3>
                 <div class="space-y-4">
-                    <div>
-                        <p class="text-sm text-gray-500">Dokumen Bukti Pencairan</p>
-                        <a href="{{ asset('storage/' . $pengajuan->bukti_pencairan) }}" target="_blank"
-                           class="text-blue-600 hover:text-blue-800 text-sm mt-1 inline-flex items-center">
-                            <i class="fas fa-file-download mr-1"></i> Download Bukti Pencairan
-                        </a>
-                        @if($pengajuan->bukti_pencairan_original)
-                            <p class="text-xs text-gray-400 mt-1">File: {{ $pengajuan->bukti_pencairan_original }}</p>
-                        @endif
-                    </div>
+                    <x-file-display :file="$pengajuan->bukti_pencairan" label="Bukti Pencairan" :pengajuanId="$pengajuan->id" field="bukti_pencairan" />
 
                     @if($pengajuan->tanggal_jatuh_tempo_pertama)
                     <div>
@@ -243,57 +234,40 @@
             <!-- Dokumen Pendukung -->
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Dokumen Pendukung</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @if($pengajuan->ktp_file)
-                    <div>
-                        <p class="text-sm text-gray-500">KTP</p>
-                        <a href="{{ asset('storage/' . $pengajuan->ktp_file) }}" target="_blank"
-                           class="text-blue-600 hover:text-blue-800 text-sm mt-1">
-                            <i class="fas fa-file-pdf mr-1"></i> Lihat KTP
-                        </a>
-                    </div>
-                    @endif
 
-                    @if($pengajuan->kk_file)
-                    <div>
-                        <p class="text-sm text-gray-500">KK</p>
-                        <a href="{{ asset('storage/' . $pengajuan->kk_file) }}" target="_blank"
-                           class="text-blue-600 hover:text-blue-800 text-sm mt-1">
-                            <i class="fas fa-file-pdf mr-1"></i> Lihat KK
-                        </a>
-                    </div>
-                    @endif
-
-                    @if($pengajuan->slip_gaji_file)
-                    <div>
-                        <p class="text-sm text-gray-500">Slip Gaji</p>
-                        <a href="{{ asset('storage/' . $pengajuan->slip_gaji_file) }}" target="_blank"
-                           class="text-blue-600 hover:text-blue-800 text-sm mt-1">
-                            <i class="fas fa-file-pdf mr-1"></i> Lihat Slip Gaji
-                        </a>
-                    </div>
-                    @endif
-
-                    @if($pengajuan->proposal_file)
-                    <div>
-                        <p class="text-sm text-gray-500">Proposal</p>
-                        <a href="{{ asset('storage/' . $pengajuan->proposal_file) }}" target="_blank"
-                           class="text-blue-600 hover:text-blue-800 text-sm mt-1">
-                            <i class="fas fa-file-pdf mr-1"></i> Lihat Proposal
-                        </a>
-                    </div>
-                    @endif
-
-                    @if($pengajuan->jaminan_file)
-                    <div>
-                        <p class="text-sm text-gray-500">Dokumen Jaminan</p>
-                        <a href="{{ asset('storage/' . $pengajuan->jaminan_file) }}" target="_blank"
-                           class="text-blue-600 hover:text-blue-800 text-sm mt-1">
-                            <i class="fas fa-file-pdf mr-1"></i> Lihat Jaminan
-                        </a>
-                    </div>
-                    @endif
+                <!-- Required Documents -->
+                <div class="space-y-3 mb-6">
+                    <h4 class="text-sm font-medium text-gray-900">Dokumen Wajib</h4>
+                    <x-file-display :file="$pengajuan->ktp_file" label="Scan KTP" :pengajuanId="$pengajuan->id" field="ktp_file" />
                 </div>
+
+                <!-- Optional Documents -->
+                <div class="space-y-3 mb-6">
+                    <h4 class="text-sm font-medium text-gray-900">Dokumen Tambahan</h4>
+                    <x-file-display :file="$pengajuan->kk_file" label="Scan KK" :pengajuanId="$pengajuan->id" field="kk_file" />
+                    <x-file-display :file="$pengajuan->slip_gaji_file" label="Slip Gaji" :pengajuanId="$pengajuan->id" field="slip_gaji_file" />
+                    <x-file-display :file="$pengajuan->proposal_file" label="Proposal Bisnis" :pengajuanId="$pengajuan->id" field="proposal_file" />
+                </div>
+
+                <!-- Jaminan Documents -->
+                @if(count($pengajuan->all_jaminan_files) > 0)
+                <div class="space-y-3 mb-6">
+                    <h4 class="text-sm font-medium text-gray-900">Dokumen Jaminan</h4>
+                    @foreach($pengajuan->all_jaminan_files as $index => $file)
+                        <x-file-display :file="$file" :label="'Dokumen Jaminan ' . ($index + 1)" />
+                    @endforeach
+                </div>
+                @endif
+
+                <!-- Other Documents -->
+                @if(count($pengajuan->all_dokumen_lainnya_files) > 0)
+                <div class="space-y-3">
+                    <h4 class="text-sm font-medium text-gray-900">Dokumen Lainnya</h4>
+                    @foreach($pengajuan->all_dokumen_lainnya_files as $index => $file)
+                        <x-file-display :file="$file" :label="'Dokumen Lainnya ' . ($index + 1)" />
+                    @endforeach
+                </div>
+                @endif
             </div>
         </div>
 
