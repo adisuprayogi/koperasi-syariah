@@ -15,7 +15,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // Fix PHP 8.5+ PDO deprecation warnings by overriding constants early
+        if (PHP_VERSION_ID >= 80500) {
+            // Define the new constants to prevent deprecation warnings
+            if (!defined('Pdo\Mysql::ATTR_SSL_CA') && defined('PDO::MYSQL_ATTR_SSL_CA')) {
+                // Create namespace and constants if they don't exist
+                if (!class_exists('Pdo\Mysql')) {
+                    class_alias('PDO', 'Pdo\Mysql');
+                }
+            }
+        }
     }
 
     /**

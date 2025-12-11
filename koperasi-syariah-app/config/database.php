@@ -58,9 +58,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                version_compare(PHP_VERSION, '8.1.0', '>=') ? 1024 : PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            // 'options' => [], // Disabled for PHP 8.5+ compatibility
         ],
 
         'pgsql' => [
