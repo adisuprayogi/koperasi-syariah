@@ -123,32 +123,33 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto lg:overflow-x-visible">
-            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
+        <!-- Mobile Responsive Table -->
+        <div class="overflow-x-auto shadow rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
-                            Kode Transaksi
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Kode
                         </th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">
+                        <th class="hidden sm:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tanggal
                         </th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 18%;">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Anggota
                         </th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
+                        <th class="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Jenis
                         </th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
+                        <th class="hidden lg:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Jumlah
                         </th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
+                        <th class="hidden xl:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Saldo
                         </th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">
+                        <th class="hidden 2xl:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
                         </th>
-                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 6%;">
+                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Aksi
                         </th>
                     </tr>
@@ -156,34 +157,48 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($transaksi as $t)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-3 py-3 truncate">
+                            <td class="px-3 py-3">
                                 <div class="text-sm font-medium text-gray-900">{{ $t->kode_transaksi }}</div>
+                                <div class="sm:hidden text-xs text-gray-400">
+                                    {{ $t->tanggal_transaksi->format('d M') }}
+                                </div>
                                 @if($t->verified_at)
                                     <div class="text-xs text-gray-400">
                                         <i class="fas fa-check-circle mr-1"></i>{{ $t->verified_at->format('H:i') }}
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-3 py-3 truncate">
+                            <td class="hidden sm:table-cell px-3 py-3">
                                 <div class="text-sm text-gray-900">{{ $t->tanggal_transaksi->format('d M Y') }}</div>
                                 <div class="text-xs text-gray-400">{{ $t->tanggal_transaksi->format('H:i') }}</div>
                             </td>
-                            <td class="px-3 py-3 truncate">
+                            <td class="px-3 py-3">
                                 <div class="text-sm font-medium text-gray-900">{{ $t->anggota->nama_lengkap }}</div>
                                 <div class="text-xs text-gray-500">{{ $t->anggota->no_anggota }}</div>
+                                <div class="md:hidden text-xs text-gray-400 mt-1">
+                                    {{ $t->jenisSimpanan->nama }}
+                                </div>
+                                <div class="lg:hidden text-xs text-gray-400">
+                                    <span class="inline-flex px-1 py-0.5 text-xs font-semibold rounded-full {{ $t->jenis_transaksi == 'setor' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ $t->jenis_transaksi_label }}
+                                    </span>
+                                    <span class="ml-1 font-bold {{ $t->jenis_transaksi == 'setor' ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ $t->jenis_transaksi == 'setor' ? '+' : '-' }} {{ number_format($t->jumlah, 0, ',', '.') }}
+                                    </span>
+                                </div>
                             </td>
-                            <td class="px-3 py-3 truncate">
+                            <td class="hidden md:table-cell px-3 py-3">
                                 <div class="text-sm text-gray-900 truncate">{{ $t->jenisSimpanan->nama }}</div>
                                 <span class="inline-flex px-1 py-0.5 text-xs font-semibold rounded-full {{ $t->jenis_transaksi == 'setor' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                     {{ $t->jenis_transaksi_label }}
                                 </span>
                             </td>
-                            <td class="px-3 py-3 truncate">
+                            <td class="hidden lg:table-cell px-3 py-3">
                                 <div class="text-sm font-bold {{ $t->jenis_transaksi == 'setor' ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $t->jenis_transaksi == 'setor' ? '+' : '-' }} {{ number_format($t->jumlah, 0, ',', '.') }}
                                 </div>
                             </td>
-                            <td class="px-3 py-3 truncate">
+                            <td class="hidden xl:table-cell px-3 py-3">
                                 <div class="text-sm font-medium text-gray-900">
                                     {{ number_format($t->saldo_setelahnya, 0, ',', '.') }}
                                 </div>
@@ -191,7 +206,7 @@
                                     Sebelum: {{ number_format($t->saldo_sebelumnya, 0, ',', '.') }}
                                 </div>
                             </td>
-                            <td class="px-3 py-3 truncate">
+                            <td class="hidden 2xl:table-cell px-3 py-3">
                                 <span class="inline-flex px-1 py-0.5 text-xs font-semibold rounded-full
                                     @if($t->status == 'verified')
                                         bg-green-100 text-green-800

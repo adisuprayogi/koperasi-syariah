@@ -10,6 +10,9 @@ use App\Models\PengajuanPembiayaan;
 use App\Models\Angsuran;
 use App\Models\Transaksi;
 use App\Models\Koperasi;
+use App\Exports\SimpananPerAnggotaExport;
+use App\Exports\RekapSimpananExport;
+use App\Exports\PembiayaanPerAnggotaExport;
 use App\Exports\SimpananExport;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -999,5 +1002,76 @@ class LaporanController extends Controller
             'totalEkuitas',
             'totalKewajibanEkuitas'
         ));
+    }
+
+    /**
+     * Export Simpanan Per Anggota to Excel.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportSimpananPerAnggota(Request $request)
+    {
+        $request->validate([
+            'anggota_id' => 'required|exists:anggota,id',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'jenis_simpanan_id' => 'nullable|exists:jenis_simpanan,id'
+        ]);
+
+        $anggotaId = $request->get('anggota_id');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $jenisSimpananId = $request->get('jenis_simpanan_id');
+
+        $anggota = Anggota::find($anggotaId);
+
+        $filename = 'Laporan_Simpanan_' . str_replace(' ', '_', $anggota->nama_lengkap) . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new SimpananPerAnggotaExport($anggotaId, $startDate, $endDate, $jenisSimpananId), $filename);
+    }
+
+    /**
+     * Export Rekap Simpanan to Excel.
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportRekapSimpanan(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'jenis_simpanan_id' => 'nullable|exists:jenis_simpanan,id'
+        ]);
+
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $jenisSimpananId = $request->get('jenis_simpanan_id');
+
+        $filename = 'Rekap_Simpanan_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new RekapSimpananExport($startDate, $endDate, $jenisSimpananId), $filename);
+    }
+
+    /**
+     * Export Pembiayaan Per Anggota to Excel.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportPembiayaanPerAnggota(Request $request)
+    {
+        $request->validate([
+            'anggota_id' => 'required|exists:anggota,id',
+            'status' => 'nullable|in:all,cair,lunas,approved'
+        ]);
+
+        $anggotaId = $request->get('anggota_id');
+        $status = $request->get('status', 'all');
+        $anggota = Anggota::find($anggotaId);
+
+        $filename = 'Laporan_Pembiayaan_' . str_replace(' ', '_', $anggota->nama_lengkap) . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new PembiayaanPerAnggotaExport($anggotaId, $status), $filename);
     }
 }

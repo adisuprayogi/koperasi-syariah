@@ -18,7 +18,7 @@
 
                 <div class="mx-auto flex items-center justify-center mb-4">
                     @if($koperasi && $koperasi->logo)
-                        <img class="h-20 w-auto rounded-lg shadow-lg"
+                        <img class="h-20 w-auto rounded-lg"
                              src="{{ asset('storage/' . $koperasi->logo) }}"
                              alt="{{ $koperasi->nama_koperasi }}">
                     @else

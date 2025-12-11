@@ -26,7 +26,7 @@ class SimpananExport implements FromView, WithColumnWidths, WithStyles, WithTitl
 
     public function view(): View
     {
-        $query = TransaksiSimpanan::with(['anggota', 'jenisSimpanan']);
+        $query = TransaksiSimpanan::with(['anggota', 'jenisSimpanan', 'pengurus']);
 
         // Filter berdasarkan tanggal
         if ($this->startDate) {
@@ -102,15 +102,7 @@ class SimpananExport implements FromView, WithColumnWidths, WithStyles, WithTitl
                     ],
                 ],
             ],
-            // Style untuk total row
-            'total' => [
-                'font' => ['bold' => true],
-                'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'FFF3E0']
-                ],
-            ],
-        ];
+          ];
     }
 
     public function title(): string

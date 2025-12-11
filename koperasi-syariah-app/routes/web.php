@@ -137,6 +137,11 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus-or-a
     Route::get('/laporan/neraca', [LaporanController::class, 'neraca'])->name('laporan.neraca');
     Route::get('/laporan/print/{type}', [LaporanController::class, 'print'])->name('laporan.print');
     Route::get('/laporan/export/{type}', [LaporanController::class, 'export'])->name('laporan.export');
+
+    // Excel Export Routes
+    Route::get('/laporan/export/simpanan-per-anggota', [LaporanController::class, 'exportSimpananPerAnggota'])->name('laporan.export-simpanan-per-anggota');
+    Route::get('/laporan/export/rekap-simpanan', [LaporanController::class, 'exportRekapSimpanan'])->name('laporan.export-rekap-simpanan');
+    Route::get('/laporan/export/pembiayaan-per-anggota', [LaporanController::class, 'exportPembiayaanPerAnggota'])->name('laporan.export-pembiayaan-per-anggota');
 });
 
 // Anggota Routes (All authenticated users)
