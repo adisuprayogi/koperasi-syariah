@@ -7,6 +7,34 @@ define('LARAVEL_START', microtime(true));
 
 /*
 |--------------------------------------------------------------------------
+| Suppress PHP 8.5+ PDO Deprecation Warnings for Development
+|--------------------------------------------------------------------------
+|
+| These warnings come from Laravel vendor files and don't affect functionality.
+| Suppressing them provides a cleaner development experience.
+|
+*/
+
+if (PHP_VERSION_ID >= 80500) {
+    // Suppress all deprecation warnings for cleaner development output
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
+    // Also suppress specific PDO warnings that still get through
+    set_error_handler(function ($severity, $message, $file, $line) {
+        // Suppress PDO deprecation warnings from Laravel vendor files
+        if ($severity === E_DEPRECATED &&
+            (strpos($message, 'PDO::MYSQL_ATTR_SSL_CA') !== false ||
+             strpos($message, 'deprecated since 8.5') !== false)) {
+            return true; // Suppress warning
+        }
+
+        // Let PHP handle other errors normally
+        return false;
+    });
+}
+
+/*
+|--------------------------------------------------------------------------
 | Check If The Application Is Under Maintenance
 |--------------------------------------------------------------------------
 |
