@@ -66,7 +66,7 @@
                                     </div>
                                 @endif
 
-                                @if(Auth::user()->isPengurus() || Auth::user()->isAdmin())
+                                @if(Auth::user()->isPengurus())
                                     <!-- Pengurus Menu -->
                                     <div class="mb-4">
                                         <h3 class="text-xs font-semibold text-primary-300 uppercase tracking-wider mb-2">Menu Pengurus</h3>
@@ -290,7 +290,7 @@
                             </div>
                         @endif
 
-                        @if(Auth::user()->isPengurus() || Auth::user()->isAdmin())
+                        @if(Auth::user()->isPengurus())
                             <!-- Pengurus Menu -->
                             <div class="space-y-2 mb-6">
                                 <h3 class="text-xs font-semibold text-primary-300 uppercase tracking-wider">Menu Pengurus</h3>

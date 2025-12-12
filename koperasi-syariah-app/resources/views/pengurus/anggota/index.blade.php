@@ -70,6 +70,87 @@
         </div>
     </div>
 
+    <!-- Filters Section -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <form action="{{ route('pengurus.anggota.index') }}" method="GET" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Search -->
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cari Anggota</label>
+                    <input type="text"
+                           name="search"
+                           value="{{ request('search') }}"
+                           placeholder="Nama, No. Anggota, NIK, Email, No. HP..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status Keanggotaan</label>
+                    <select name="status_keanggotaan"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="">Semua Status</option>
+                        <option value="aktif" {{ request('status_keanggotaan') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                        <option value="nonaktif" {{ request('status_keanggotaan') == 'nonaktif' ? 'selected' : '' }}>Non-aktif</option>
+                        <option value="keluar" {{ request('status_keanggotaan') == 'keluar' ? 'selected' : '' }}>Keluar</option>
+                        <option value="meninggal" {{ request('status_keanggotaan') == 'meninggal' ? 'selected' : '' }}>Meninggal</option>
+                    </select>
+                </div>
+
+                <!-- Jenis Anggota Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Anggota</label>
+                    <select name="jenis_anggota"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="">Semua Jenis</option>
+                        <option value="biasa" {{ request('jenis_anggota') == 'biasa' ? 'selected' : '' }}>Biasa</option>
+                        <option value="luar_biasa" {{ request('jenis_anggota') == 'luar_biasa' ? 'selected' : '' }}>Luar Biasa</option>
+                        <option value="kehormatan" {{ request('jenis_anggota') == 'kehormatan' ? 'selected' : '' }}>Kehormatan</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Date Range Filter -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Gabung Mulai</label>
+                    <input type="date"
+                           name="tanggal_mulai"
+                           value="{{ request('tanggal_mulai') }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Gabung Selesai</label>
+                    <input type="date"
+                           name="tanggal_selesai"
+                           value="{{ request('tanggal_selesai') }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <!-- Filter Actions -->
+            <div class="flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                    Menampilkan <span class="font-semibold">{{ $anggota->count() }}</span> data
+                    @if(request()->hasAny(['search', 'status_keanggotaan', 'jenis_anggota', 'tanggal_mulai', 'tanggal_selesai']))
+                        dari hasil filter
+                    @endif
+                </div>
+                <div class="space-x-2">
+                    <button type="submit"
+                            class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 transition-colors">
+                        <i class="fas fa-filter mr-2"></i>Filter
+                    </button>
+                    <a href="{{ route('pengurus.anggota.index') }}"
+                       class="px-4 py-2 bg-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-400 transition-colors">
+                        <i class="fas fa-times mr-2"></i>Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
     <!-- Anggota Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-3 py-3 border-b border-gray-200">
@@ -87,13 +168,7 @@
                         <th class="hidden sm:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Kontak
                         </th>
-                        <th class="hidden lg:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th class="hidden lg:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Jenis
-                        </th>
-                        <th class="hidden xl:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th class="hidden xl:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tanggal Gabung
                         </th>
                         <th class="hidden xl:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -113,11 +188,32 @@
                                         {{ $a->nama_lengkap }}
                                     </div>
                                     <div class="text-xs text-gray-500">{{ $a->no_anggota_formatted ?? $a->no_anggota }}</div>
-                                    <div class="text-xs text-gray-400 sm:hidden">
-                                        <i class="fas fa-phone text-gray-400 mr-1"></i>{{ $a->no_hp }}
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full
+                                            @if($a->status_keanggotaan == 'aktif')
+                                                bg-green-100 text-green-800
+                                            @elseif($a->status_keanggotaan == 'nonaktif')
+                                                bg-gray-100 text-gray-800
+                                            @elseif($a->status_keanggotaan == 'keluar')
+                                                bg-yellow-100 text-yellow-800
+                                            @else
+                                                bg-red-100 text-red-800
+                                            @endif">
+                                            {{ $a->status_label }}
+                                        </span>
+                                        <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full
+                                            @if($a->jenis_anggota == 'biasa')
+                                                bg-blue-100 text-blue-800
+                                            @elseif($a->jenis_anggota == 'luar_biasa')
+                                                bg-purple-100 text-purple-800
+                                            @else
+                                                bg-orange-100 text-orange-800
+                                            @endif">
+                                            {{ $a->jenis_label }}
+                                        </span>
                                     </div>
-                                    <div class="text-xs text-gray-400 lg:hidden">
-                                        {{ $a->jenis_anggota_label }}
+                                    <div class="text-xs text-gray-400 sm:hidden mt-1">
+                                        <i class="fas fa-phone text-gray-400 mr-1"></i>{{ $a->no_hp }}
                                     </div>
                                     <div class="text-xs text-gray-400">
                                         {{ $a->nik }} • {{ $a->jenis_kelamin_label }} • {{ $a->usia ?? 0 }} th
@@ -135,33 +231,7 @@
                                     <i class="fas fa-briefcase text-gray-400 mr-1"></i>{{ $a->pekerjaan }}
                                 </div>
                             </td>
-                            <td class="hidden lg:table-cell px-3 py-3 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                    @if($a->status_keanggotaan == 'aktif')
-                                        bg-green-100 text-green-800
-                                    @elseif($a->status_keanggotaan == 'nonaktif')
-                                        bg-gray-100 text-gray-800
-                                    @elseif($a->status_keanggotaan == 'keluar')
-                                        bg-yellow-100 text-yellow-800
-                                    @else
-                                        bg-red-100 text-red-800
-                                    @endif">
-                                    {{ $a->status_label }}
-                                </span>
-                            </td>
-                            <td class="hidden lg:table-cell px-3 py-3 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                    @if($a->jenis_anggota == 'biasa')
-                                        bg-blue-100 text-blue-800
-                                    @elseif($a->jenis_anggota == 'luar_biasa')
-                                        bg-purple-100 text-purple-800
-                                    @else
-                                        bg-orange-100 text-orange-800
-                                    @endif">
-                                    {{ $a->jenis_label }}
-                                </span>
-                            </td>
-                            <td class="hidden xl:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                              <td class="hidden xl:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                                 {{ $a->tanggal_gabung->format('d M Y') }}
                             </td>
                             <td class="hidden xl:table-cell px-3 py-3 whitespace-nowrap">

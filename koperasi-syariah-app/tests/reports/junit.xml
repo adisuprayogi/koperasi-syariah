@@ -1,0 +1,85 @@
+<testsuites id="" name="" tests="1" failures="1" skipped="0" errors="0" time="75.972061">
+<testsuite name="functional/anggota-management.spec.js" timestamp="2025-12-12T12:38:10.786Z" hostname="chromium" tests="1" failures="1" skipped="0" time="73.737" errors="0">
+<testcase name="Manajemen Anggota - Functional Tests › [ANGGOTA-001] Create new anggota with valid data" classname="functional/anggota-management.spec.js" time="73.737">
+<failure message="anggota-management.spec.js:39:5 [ANGGOTA-001] Create new anggota with valid data" type="FAILURE">
+<![CDATA[  [chromium] › functional/anggota-management.spec.js:39:5 › Manajemen Anggota - Functional Tests › [ANGGOTA-001] Create new anggota with valid data 
+
+    Error: Menu item "Data Anggota" not found
+
+       at ../pages/BasePage.js:194
+
+      192 |         }
+      193 |
+    > 194 |         throw new Error(`Menu item "${menuText}" not found`);
+          |               ^
+      195 |     }
+      196 |
+      197 |     async clickMenuItem(menuText) {
+        at BasePage.navigateToMenu (/Users/yogi/Documents/Data/Kerjaan/Yogi/koperasi-syariah/koperasi-syariah-app/tests/e2e/pages/BasePage.js:194:15)
+        at /Users/yogi/Documents/Data/Kerjaan/Yogi/koperasi-syariah/koperasi-syariah-app/tests/e2e/tests/functional/anggota-management.spec.js:32:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: Menu item "Data Anggota" not found
+
+       at ../pages/BasePage.js:194
+
+      192 |         }
+      193 |
+    > 194 |         throw new Error(`Menu item "${menuText}" not found`);
+          |               ^
+      195 |     }
+      196 |
+      197 |     async clickMenuItem(menuText) {
+        at BasePage.navigateToMenu (/Users/yogi/Documents/Data/Kerjaan/Yogi/koperasi-syariah/koperasi-syariah-app/tests/e2e/pages/BasePage.js:194:15)
+        at /Users/yogi/Documents/Data/Kerjaan/Yogi/koperasi-syariah/koperasi-syariah-app/tests/e2e/tests/functional/anggota-management.spec.js:32:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../e2e/test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|../e2e/test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium/video.webm]]
+
+[[ATTACHMENT|../e2e/test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium/error-context.md]]
+
+[[ATTACHMENT|../e2e/test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/test-failed-1.png]]
+
+[[ATTACHMENT|../e2e/test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../e2e/test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../e2e/test-results/functional-anggota-managem-224aa-new-anggota-with-valid-data-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>

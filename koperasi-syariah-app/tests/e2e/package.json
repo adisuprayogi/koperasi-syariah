@@ -1,0 +1,27 @@
+{
+  "name": "koperasi-syariah-e2e-tests",
+  "version": "1.0.0",
+  "description": "E2E testing for Koperasi Syariah application",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:auth": "npx playwright test tests/auth/",
+    "test:anggota": "npx playwright test tests/anggota/",
+    "test:pengurus": "npx playwright test tests/pengurus/",
+    "test:admin": "npx playwright test tests/admin/",
+    "test:functional": "npx playwright test tests/functional/",
+    "test:anggota-management": "npx playwright test tests/functional/anggota-management.spec.js",
+    "test:simpanan": "npx playwright test tests/functional/simpanan.spec.js",
+    "test:pinjaman": "npx playwright test tests/functional/pinjaman.spec.js",
+    "test:angsuran": "npx playwright test tests/functional/angsuran.spec.js",
+    "test:laporan": "npx playwright test tests/functional/laporan.spec.js",
+    "test:debug": "npx playwright test --debug",
+    "test:ui": "npx playwright test --ui",
+    "test:report": "npx playwright show-report",
+    "install:playwright": "npx playwright install",
+    "clean": "rm -rf reports/ test-results/ playwright-report/"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "playwright": "^1.40.0"
+  }
+}

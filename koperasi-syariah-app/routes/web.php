@@ -13,6 +13,8 @@ use App\Http\Controllers\FileDownloadController;
 use App\Http\Controllers\Admin\KartuAnggotaController;
 use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\ManualPreviewController;
+use App\Models\Koperasi;
+use App\Models\Anggota;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,7 +43,14 @@ Route::get('/', function () {
                 return view('welcome');
         }
     }
-    return view('welcome');
+
+    // Load data koperasi untuk guest
+    $koperasi = Koperasi::first();
+
+    // Hitung jumlah anggota aktif
+    $totalAnggotaAktif = Anggota::aktif()->count();
+
+    return view('welcome', compact('koperasi', 'totalAnggotaAktif'));
 })->name('home');
 
 // Authentication Routes
@@ -106,8 +115,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     });
 });
 
-// Pengurus Routes (Admin & Pengurus)
-Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus-or-admin'])->group(function () {
+// Pengurus Routes (Pengurus only)
+Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->group(function () {
     Route::get('/dashboard', [PengurusController::class, 'dashboard'])->name('dashboard');
 
     // Anggota Management
