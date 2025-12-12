@@ -22,11 +22,11 @@
                     <td><strong>Periode:</strong></td>
                     <td>
                         @if($startDate && $endDate)
-                            {{ date('d F Y', strtotime($startDate)) }} - {{ date('d F Y', strtotime($endDate)) }}
+                            {{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}
                         @elseif($startDate)
-                            Dari {{ date('d F Y', strtotime($startDate)) }} sampai Sekarang
+                            Dari {{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} sampai Sekarang
                         @elseif($endDate)
-                            Sampai {{ date('d F Y', strtotime($endDate)) }}
+                            Sampai {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}
                         @else
                             Semua Periode
                         @endif
@@ -40,7 +40,7 @@
                 @endif
                 <tr>
                     <td><strong>Tanggal Cetak:</strong></td>
-                    <td>{{ date('d F Y H:i:s') }}</td>
+                    <td>{{ \Carbon\Carbon::now()->format('d F Y H:i:s') }}</td>
                 </tr>
             </table>
         </td>
@@ -99,7 +99,7 @@
                         <ul style="margin: 5px 0; padding-left: 20px; font-size: 12px;">
                             <li>Laporan ini menampilkan rekapitulasi simpanan anggota per jenis</li>
                             <li>Saldo = Total Setoran - Total Penarikan</li>
-                            <li>Data per {{ strtolower(date('d F Y')) }}</li>
+                            <li>Data per {{ strtolower(\Carbon\Carbon::now()->format('d F Y')) }}</li>
                         </ul>
                     </td>
                     <td style="width: 40%; text-align: center;">

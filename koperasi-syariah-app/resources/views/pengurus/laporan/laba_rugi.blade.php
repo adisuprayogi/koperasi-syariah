@@ -43,6 +43,12 @@
                         <i class="fas fa-print mr-2"></i>Cetak
                     </a>
                 </div>
+                <div class="flex items-end">
+                    <a href="{{ route('pengurus.laporan.export-laba-rugi') }}?{{ http_build_query(request()->query()) }}"
+                       class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                        <i class="fas fa-file-excel mr-2"></i>Export Excel
+                    </a>
+                </div>
             </div>
         </form>
     </div>

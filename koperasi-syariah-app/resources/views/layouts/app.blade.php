@@ -352,8 +352,17 @@
                             </div>
                         @endif
 
+                        <!-- Manual Penggunaan -->
+                        <div class="mt-6">
+                            <a href="{{ route('manual.landing') }}" target="_blank" class="flex items-center px-3 py-2.5 text-sm font-medium text-primary-200 hover:bg-primary-700 hover:text-white rounded-lg transition-colors duration-200">
+                                <i class="fas fa-book mr-3 text-primary-400"></i>
+                                <span>Manual Penggunaan</span>
+                                <i class="fas fa-external-link-alt ml-auto text-xs text-primary-400"></i>
+                            </a>
+                        </div>
+
                         <!-- Logout Section -->
-                        <div class="mt-8 pt-6 border-t border-primary-700">
+                        <div class="mt-6 pt-6 border-t border-primary-700">
                             <form action="{{ route('logout') }}" method="POST" class="px-3">
                                 @csrf
                                 <button type="submit" class="w-full flex items-center px-3 py-2.5 text-sm font-medium text-primary-200 hover:bg-primary-700 hover:text-white rounded-lg transition-colors duration-200">

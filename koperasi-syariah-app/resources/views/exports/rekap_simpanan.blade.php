@@ -19,7 +19,7 @@
                 </tr>
                 <tr>
                     <td><strong>Tanggal Cetak:</strong></td>
-                    <td>{{ date('d F Y H:i:s') }}</td>
+                    <td>{{ \Carbon\Carbon::now()->format('d F Y H:i:s') }}</td>
                 </tr>
                 <tr>
                     <td><strong>Total Anggota Aktif:</strong></td>
@@ -84,7 +84,7 @@
                             <li>Laporan ini menampilkan rekapitulasi simpanan per jenis</li>
                             <li>Rata-rata = Total Saldo / Jumlah Anggota yang memiliki simpanan jenis tersebut</li>
                             <li>% Total = Persentase saldo jenis simpanan terhadap total seluruh simpanan</li>
-                            <li>Data per {{ strtolower(date('d F Y')) }}</li>
+                            <li>Data per {{ strtolower(\Carbon\Carbon::now()->format('d F Y')) }}</li>
                         </ul>
                     </td>
                     <td style="width: 40%; text-align: center;">

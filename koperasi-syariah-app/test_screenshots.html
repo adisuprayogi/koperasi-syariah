@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Screenshot Paths</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .screenshot { max-width: 400px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Test Screenshot Paths</h1>
+
+    <div class="test-section">
+        <h2>Login Page Screenshot</h2>
+        <img src="public/login-page.png" class="screenshot" alt="Login Page" onerror="this.style.border='2px solid red'; this.alt='Image not found';">
+        <p>Path: public/login-page.png</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Dashboard Screenshot</h2>
+        <img src="public/dashboard.png" class="screenshot" alt="Dashboard" onerror="this.style.border='2px solid red'; this.alt='Image not found';">
+        <p>Path: public/dashboard.png</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Profile Screenshot</h2>
+        <img src="public/profile.png" class="screenshot" alt="Profile" onerror="this.style.border='2px solid red'; this.alt='Image not found';">
+        <p>Path: public/profile.png</p>
+    </div>
+</body>
+</html>

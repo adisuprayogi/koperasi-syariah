@@ -24,7 +24,7 @@
                 </tr>
                 <tr>
                     <td><strong>Tanggal Cetak:</strong></td>
-                    <td>{{ date('d F Y H:i:s') }}</td>
+                    <td>{{ \Carbon\Carbon::now()->format('d F Y H:i:s') }}</td>
                 </tr>
             </table>
         </td>

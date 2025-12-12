@@ -14,6 +14,8 @@ use App\Exports\SimpananPerAnggotaExport;
 use App\Exports\RekapSimpananExport;
 use App\Exports\PembiayaanPerAnggotaExport;
 use App\Exports\SimpananExport;
+use App\Exports\LabaRugiExport;
+use App\Exports\NeracaExport;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
@@ -530,7 +532,7 @@ class LaporanController extends Controller
         $format = $request->get('format', 'excel'); // excel or pdf
 
         try {
-            $filename = 'Laporan_Simpanan_' . date('Y-m-d_H-i-s');
+            $filename = 'Laporan_Simpanan_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s');
 
             if ($format === 'pdf') {
                 // Export to PDF
@@ -701,7 +703,7 @@ class LaporanController extends Controller
      */
     private function calculateSHUBerjalan($tanggal)
     {
-        $year = date('Y', strtotime($tanggal));
+        $year = Carbon::parse($tanggal)->year;
 
         // Margin received from all installments this year
         $marginReceived = Angsuran::whereYear('tanggal_bayar', $year)
@@ -1026,7 +1028,7 @@ class LaporanController extends Controller
 
         $anggota = Anggota::find($anggotaId);
 
-        $filename = 'Laporan_Simpanan_' . str_replace(' ', '_', $anggota->nama_lengkap) . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $filename = 'Laporan_Simpanan_' . str_replace(' ', '_', $anggota->nama_lengkap) . '_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.xlsx';
 
         return Excel::download(new SimpananPerAnggotaExport($anggotaId, $startDate, $endDate, $jenisSimpananId), $filename);
     }
@@ -1048,7 +1050,7 @@ class LaporanController extends Controller
         $endDate = $request->get('end_date');
         $jenisSimpananId = $request->get('jenis_simpanan_id');
 
-        $filename = 'Rekap_Simpanan_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $filename = 'Rekap_Simpanan_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.xlsx';
 
         return Excel::download(new RekapSimpananExport($startDate, $endDate, $jenisSimpananId), $filename);
     }
@@ -1070,8 +1072,54 @@ class LaporanController extends Controller
         $status = $request->get('status', 'all');
         $anggota = Anggota::find($anggotaId);
 
-        $filename = 'Laporan_Pembiayaan_' . str_replace(' ', '_', $anggota->nama_lengkap) . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $filename = 'Laporan_Pembiayaan_' . str_replace(' ', '_', $anggota->nama_lengkap) . '_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.xlsx';
 
         return Excel::download(new PembiayaanPerAnggotaExport($anggotaId, $status), $filename);
+    }
+
+    /**
+     * Export Laba Rugi to Excel.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportLabaRugi(Request $request)
+    {
+        $request->validate([
+            'bulan' => 'required|integer|min:1|max:12',
+            'tahun' => 'required|integer|min:2020|max:' . (\Carbon\Carbon::now()->year + 1)
+        ]);
+
+        $bulan = $request->get('bulan');
+        $tahun = $request->get('tahun');
+
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        $filename = 'Laporan_Laba_Rugi_' . $namaBulan[$bulan] . '_' . $tahun . '_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new LabaRugiExport($bulan, $tahun), $filename);
+    }
+
+    /**
+     * Export Neraca to Excel.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportNeraca(Request $request)
+    {
+        $request->validate([
+            'tanggal' => 'required|date|before_or_equal:today'
+        ]);
+
+        $tanggal = $request->get('tanggal');
+        $formattedDate = \Carbon\Carbon::parse($tanggal)->format('d-m-Y');
+        $filename = 'Laporan_Neraca_' . $formattedDate . '_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new NeracaExport($tanggal), $filename);
     }
 }

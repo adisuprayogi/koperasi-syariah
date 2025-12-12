@@ -10,11 +10,11 @@
     <tr>
         <td colspan="10" style="text-align: center;">
             @if($startDate && $endDate)
-                Periode: {{ date('d F Y', strtotime($startDate)) }} - {{ date('d F Y', strtotime($endDate)) }}
+                Periode: {{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}
             @elseif($startDate)
-                Periode: {{ date('d F Y', strtotime($startDate)) }} - Sekarang
+                Periode: {{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} - Sekarang
             @elseif($endDate)
-                Periode: Awal - {{ date('d F Y', strtotime($endDate)) }}
+                Periode: Awal - {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}
             @else
                 Semua Periode
             @endif
@@ -131,7 +131,7 @@
             Pengurus
         </td>
         <td colspan="5" style="text-align: center; padding: 8px;">
-            {{ date('d F Y') }}<br><br><br><br>
+            {{ \Carbon\Carbon::now()->format('d F Y') }}<br><br><br><br>
             <strong>_________________________</strong><br>
             Petugas
         </td>
