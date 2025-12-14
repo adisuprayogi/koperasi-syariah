@@ -114,18 +114,35 @@
             <h2 class="text-lg font-semibold text-gray-900">Daftar Pembiayaan</h2>
         </div>
         @if($pembiayaans->count() > 0)
-        <div class="overflow-x-auto lg:overflow-x-visible">
-            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
+        <!-- Mobile Responsive Table -->
+        <div class="overflow-x-auto shadow rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 5%;">No</th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 25%;">Informasi</th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 18%;">Anggota</th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">Jumlah</th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%;">Tenor</th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">Status</th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 14%;">Progress</th>
-                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%;">Aksi</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            No
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Informasi
+                        </th>
+                        <th class="hidden sm:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Anggota
+                        </th>
+                        <th class="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Jumlah
+                        </th>
+                        <th class="hidden lg:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tenor
+                        </th>
+                        <th class="hidden xl:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="hidden 2xl:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Progress
+                        </th>
+                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Aksi
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -133,13 +150,27 @@
                     @foreach($pembiayaans as $pembiayaan)
                     <tr class="hover:bg-gray-50">
                         <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{{ $no++ }}</td>
-                        <td class="px-3 py-3 whitespace-nowrap">
+                        <td class="px-3 py-3">
                             <div class="text-sm">
                                 <div class="font-medium text-gray-900">{{ $pembiayaan->kode_pengajuan }}</div>
                                 <div class="text-gray-500">{{ $pembiayaan->jenisPembiayaan->nama_pembiayaan }}</div>
+                                <div class="sm:hidden text-xs text-gray-400 mt-1">
+                                    {{ $pembiayaan->anggota->nama_lengkap }}
+                                </div>
+                                <div class="md:hidden text-xs text-gray-400">
+                                    {{ $pembiayaan->jumlah_pengajuan_formatted }}
+                                </div>
+                                <div class="lg:hidden text-xs text-gray-400">
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        {{ $pembiayaan->tenor }} bulan
+                                    </span>
+                                </div>
+                                <div class="xl:hidden mt-1">
+                                    {!! $pembiayaan->status_label !!}
+                                </div>
                             </div>
                         </td>
-                        <td class="px-3 py-3 whitespace-nowrap">
+                        <td class="hidden sm:table-cell px-3 py-3">
                             <div class="flex items-center">
                                 <div class="h-10 w-10 flex-shrink-0">
                                     <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -152,21 +183,21 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-3 py-3 whitespace-nowrap">
+                        <td class="hidden md:table-cell px-3 py-3">
                             <div class="text-sm">
                                 <div class="font-medium text-gray-900">{{ $pembiayaan->jumlah_pengajuan_formatted }}</div>
                                 <div class="text-gray-500">{{ $pembiayaan->total_angsuran_formatted }}/bln</div>
                             </div>
                         </td>
-                        <td class="px-3 py-3 whitespace-nowrap">
+                        <td class="hidden lg:table-cell px-3 py-3">
                             <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                                 {{ $pembiayaan->tenor }} bulan
                             </span>
                         </td>
-                        <td class="px-3 py-3 whitespace-nowrap">
+                        <td class="hidden xl:table-cell px-3 py-3">
                             {!! $pembiayaan->status_label !!}
                         </td>
-                        <td class="px-3 py-3 whitespace-nowrap">
+                        <td class="hidden 2xl:table-cell px-3 py-3">
                             @if($pembiayaan->angsurans->count() > 0)
                                 <?php
                                 $totalAngsuran = $pembiayaan->angsurans->count();

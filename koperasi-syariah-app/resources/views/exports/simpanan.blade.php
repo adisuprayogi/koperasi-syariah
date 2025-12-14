@@ -10,11 +10,11 @@
     <tr>
         <td colspan="10" style="text-align: center;">
             @if($startDate && $endDate)
-                Periode: {{ date('d F Y', strtotime($startDate)) }} - {{ date('d F Y', strtotime($endDate)) }}
+                Periode: {{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}
             @elseif($startDate)
-                Periode: {{ date('d F Y', strtotime($startDate)) }} - Sekarang
+                Periode: {{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} - Sekarang
             @elseif($endDate)
-                Periode: Awal - {{ date('d F Y', strtotime($endDate)) }}
+                Periode: Awal - {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}
             @else
                 Semua Periode
             @endif
@@ -55,21 +55,21 @@
         <td style="text-align: center; border: 1px solid #000; padding: 8px;">{{ $item->anggota->no_anggota }}</td>
         <td style="border: 1px solid #000; padding: 8px;">{{ $item->jenisSimpanan->nama_simpanan }}</td>
         <td style="text-align: right; border: 1px solid #000; padding: 8px;">
-            @if($item->jenis_transaksi == 'debit')
+            @if($item->jenis_transaksi == 'setor')
                 {{ number_format($item->jumlah, 0, ',', '.') }}
             @else
                 -
             @endif
         </td>
         <td style="text-align: right; border: 1px solid #000; padding: 8px;">
-            @if($item->jenis_transaksi == 'kredit')
+            @if($item->jenis_transaksi == 'tarik')
                 {{ number_format($item->jumlah, 0, ',', '.') }}
             @else
                 -
             @endif
         </td>
         <td style="border: 1px solid #000; padding: 8px;">{{ $item->keterangan ?? '-' }}</td>
-        <td style="border: 1px solid #000; padding: 8px;">{{ $item->user->name ?? '-' }}</td>
+        <td style="border: 1px solid #000; padding: 8px;">{{ $item->pengurus->nama_lengkap ?? '-' }}</td>
     </tr>
     @endforeach
 
@@ -79,10 +79,10 @@
             TOTAL:
         </td>
         <td style="text-align: right; border: 1px solid #000; padding: 8px; font-weight: bold;">
-            {{ number_format($transaksi->where('jenis_transaksi', 'debit')->sum('jumlah'), 0, ',', '.') }}
+            {{ number_format($transaksi->where('jenis_transaksi', 'setor')->sum('jumlah'), 0, ',', '.') }}
         </td>
         <td style="text-align: right; border: 1px solid #000; padding: 8px; font-weight: bold;">
-            {{ number_format($transaksi->where('jenis_transaksi', 'kredit')->sum('jumlah'), 0, ',', '.') }}
+            {{ number_format($transaksi->where('jenis_transaksi', 'tarik')->sum('jumlah'), 0, ',', '.') }}
         </td>
         <td colspan="2" style="border: 1px solid #000; padding: 8px;"></td>
     </tr>
@@ -131,7 +131,7 @@
             Pengurus
         </td>
         <td colspan="5" style="text-align: center; padding: 8px;">
-            {{ date('d F Y') }}<br><br><br><br>
+            {{ \Carbon\Carbon::now()->format('d F Y') }}<br><br><br><br>
             <strong>_________________________</strong><br>
             Petugas
         </td>

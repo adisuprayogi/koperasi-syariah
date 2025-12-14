@@ -139,11 +139,11 @@
         <h1>LAPORAN TRANSAKSI SIMPANAN</h1>
         <p>
             @if($startDate && $endDate)
-                Periode: {{ date('d F Y', strtotime($startDate)) }} - {{ date('d F Y', strtotime($endDate)) }}
+                Periode: {{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}
             @elseif($startDate)
-                Periode: {{ date('d F Y', strtotime($startDate)) }} - Sekarang
+                Periode: {{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} - Sekarang
             @elseif($endDate)
-                Periode: Awal - {{ date('d F Y', strtotime($endDate)) }}
+                Periode: Awal - {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}
             @else
                 Semua Periode
             @endif
@@ -241,7 +241,7 @@
                 </td>
                 <td width="50%">
                     <div style="text-align: center;">
-                        <p>{{ date('d F Y') }}</p>
+                        <p>{{ \Carbon\Carbon::now()->format('d F Y') }}</p>
                         <div class="signature-line"></div>
                         <p><strong>Petugas</strong></p>
                     </div>

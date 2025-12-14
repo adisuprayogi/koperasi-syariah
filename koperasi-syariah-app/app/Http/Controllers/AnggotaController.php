@@ -64,8 +64,12 @@ class AnggotaController extends Controller
             if ($request->hasFile('foto')) {
                 $file = $request->file('foto');
                 $filename = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('anggota/photos', $filename, 'public');
+                $path = 'anggota/photos/' . $filename;
+                $file->storeAs('anggota/photos', $filename, 'public');
                 $anggota->update(['foto' => $path]);
+
+                // Sync to public/storage for direct access
+                \App\Helpers\StorageSyncHelper::syncToPublic($path);
             }
 
             return redirect()->route('anggota.profile')->with('success', 'Profil berhasil diperbarui');

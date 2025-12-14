@@ -167,9 +167,43 @@ class PengurusController extends Controller
     /**
      * Index Anggota
      */
-    public function anggotaIndex()
+    public function anggotaIndex(Request $request)
     {
-        $anggota = Anggota::with('user')->latest()->get();
+        $query = Anggota::with('user')->latest();
+
+        // Filter by status
+        if ($request->filled('status_keanggotaan')) {
+            $query->where('status_keanggotaan', $request->status_keanggotaan);
+        }
+
+        // Filter by jenis anggota
+        if ($request->filled('jenis_anggota')) {
+            $query->where('jenis_anggota', $request->jenis_anggota);
+        }
+
+        // Filter by search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('no_anggota', 'like', "%{$search}%")
+                  ->orWhere('nik', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('no_hp', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by date range
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('tanggal_gabung', '>=', $request->tanggal_mulai);
+        }
+
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('tanggal_gabung', '<=', $request->tanggal_selesai);
+        }
+
+        $anggota = $query->get();
+
         return view('pengurus.anggota.index', compact('anggota'));
     }
 

@@ -12,7 +12,7 @@
     <!-- Filter Form -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <form method="GET" action="{{ route('pengurus.laporan.neraca') }}" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Neraca</label>
                     <input type="date" name="tanggal" id="tanggal" value="{{ $tanggal }}"
@@ -28,6 +28,12 @@
                        target="_blank"
                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                         <i class="fas fa-print mr-2"></i>Cetak
+                    </a>
+                </div>
+                <div class="flex items-end">
+                    <a href="{{ route('pengurus.laporan.export-neraca') }}?{{ http_build_query(request()->query()) }}"
+                       class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                        <i class="fas fa-file-excel mr-2"></i>Export Excel
                     </a>
                 </div>
             </div>

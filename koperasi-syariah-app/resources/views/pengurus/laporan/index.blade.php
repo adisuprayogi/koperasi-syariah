@@ -71,7 +71,7 @@
                         <select name="bulan" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                             @for($i = 1; $i <= 12; $i++)
                                 <option value="{{ $i }}" {{ $i == now()->month ? 'selected' : '' }}>
-                                    {{ now()->month($i)->format('F') }}
+                                    {{ \Carbon\Carbon::createFromFormat('m', $i)->format('F') }}
                                 </option>
                             @endfor
                         </select>
@@ -100,7 +100,7 @@
                         <select name="bulan" class="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
                             @for($i = 1; $i <= 12; $i++)
                                 <option value="{{ $i }}" {{ $i == now()->month ? 'selected' : '' }}>
-                                    {{ now()->month($i)->format('F') }}
+                                    {{ \Carbon\Carbon::createFromFormat('m', $i)->format('F') }}
                                 </option>
                             @endfor
                         </select>

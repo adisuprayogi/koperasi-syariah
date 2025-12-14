@@ -73,8 +73,12 @@ class DataKoperasiController extends Controller
             if ($request->hasFile('logo')) {
                 $logo = $request->file('logo');
                 $logoName = time() . '_' . $logo->getClientOriginalName();
+                $logoPath = 'koperasi/logo/' . $logoName;
                 $logo->storeAs('public/koperasi/logo', $logoName);
-                $data['logo'] = 'koperasi/logo/' . $logoName;
+                $data['logo'] = $logoPath;
+
+                // Sync to public/storage for direct access
+                \App\Helpers\StorageSyncHelper::syncToPublic($logoPath);
             }
 
             Koperasi::create($data);
@@ -157,14 +161,18 @@ class DataKoperasiController extends Controller
             // Handle logo upload
             if ($request->hasFile('logo')) {
                 // Delete old logo if exists
-                if ($koperasi->logo && Storage::exists('public/' . $koperasi->logo)) {
-                    Storage::delete('public/' . $koperasi->logo);
+                if ($koperasi->logo) {
+                    \App\Helpers\StorageSyncHelper::deleteFromBoth($koperasi->logo);
                 }
 
                 $logo = $request->file('logo');
                 $logoName = time() . '_' . $logo->getClientOriginalName();
+                $logoPath = 'koperasi/logo/' . $logoName;
                 $logo->storeAs('public/koperasi/logo', $logoName);
-                $data['logo'] = 'koperasi/logo/' . $logoName;
+                $data['logo'] = $logoPath;
+
+                // Sync to public/storage for direct access
+                \App\Helpers\StorageSyncHelper::syncToPublic($logoPath);
             }
 
             $koperasi->update($data);
@@ -191,8 +199,8 @@ class DataKoperasiController extends Controller
 
         try {
             // Delete logo if exists
-            if ($koperasi->logo && Storage::exists('public/' . $koperasi->logo)) {
-                Storage::delete('public/' . $koperasi->logo);
+            if ($koperasi->logo) {
+                \App\Helpers\StorageSyncHelper::deleteFromBoth($koperasi->logo);
             }
 
             $koperasi->delete();

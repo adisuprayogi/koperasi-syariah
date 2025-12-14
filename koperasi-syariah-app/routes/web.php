@@ -11,6 +11,10 @@ use App\Http\Controllers\Anggota\DashboardController as AnggotaDashboardControll
 use App\Http\Controllers\Anggota\PengajuanPembiayaanController;
 use App\Http\Controllers\FileDownloadController;
 use App\Http\Controllers\Admin\KartuAnggotaController;
+use App\Http\Controllers\DocumentationController;
+use App\Http\Controllers\ManualPreviewController;
+use App\Models\Koperasi;
+use App\Models\Anggota;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,9 +27,30 @@ use App\Http\Controllers\Admin\KartuAnggotaController;
 |
 */
 
-// Landing Page
+// Landing Page dengan redirect logic
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        // User sudah login, redirect ke dashboard sesuai role
+        $user = auth()->user();
+        switch ($user->role) {
+            case 'admin':
+                return redirect()->route('admin.dashboard');
+            case 'pengurus':
+                return redirect()->route('pengurus.dashboard');
+            case 'anggota':
+                return redirect()->route('anggota.dashboard');
+            default:
+                return view('welcome');
+        }
+    }
+
+    // Load data koperasi untuk guest
+    $koperasi = Koperasi::first();
+
+    // Hitung jumlah anggota aktif
+    $totalAnggotaAktif = Anggota::aktif()->count();
+
+    return view('welcome', compact('koperasi', 'totalAnggotaAktif'));
 })->name('home');
 
 // Authentication Routes
@@ -90,8 +115,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     });
 });
 
-// Pengurus Routes (Admin & Pengurus)
-Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus-or-admin'])->group(function () {
+// Pengurus Routes (Pengurus only)
+Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->group(function () {
     Route::get('/dashboard', [PengurusController::class, 'dashboard'])->name('dashboard');
 
     // Anggota Management
@@ -136,6 +161,20 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus-or-a
     Route::get('/laporan/laba-rugi', [LaporanController::class, 'labaRugi'])->name('laporan.laba-rugi');
     Route::get('/laporan/neraca', [LaporanController::class, 'neraca'])->name('laporan.neraca');
     Route::get('/laporan/print/{type}', [LaporanController::class, 'print'])->name('laporan.print');
+
+    // Excel Export Routes - MUST be defined BEFORE the generic /{type} route
+    Route::get('/laporan/export/simpanan-per-anggota', [LaporanController::class, 'exportSimpananPerAnggota'])->name('laporan.export-simpanan-per-anggota');
+    Route::get('/laporan/export/rekap-simpanan', [LaporanController::class, 'exportRekapSimpanan'])->name('laporan.export-rekap-simpanan');
+    Route::get('/laporan/export/pembiayaan-per-anggota', [LaporanController::class, 'exportPembiayaanPerAnggota'])->name('laporan.export-pembiayaan-per-anggota');
+    Route::get('/laporan/export/laba-rugi', [LaporanController::class, 'exportLabaRugi'])->name('laporan.export-laba-rugi');
+    Route::get('/laporan/export/neraca', [LaporanController::class, 'exportNeraca'])->name('laporan.export-neraca');
+
+    // Additional Export Routes for Laporan Lainnya
+    Route::get('/laporan/export/tunggakan', [LaporanController::class, 'exportTunggakan'])->name('laporan.export-tunggakan');
+    Route::get('/laporan/export/periode-transaksi', [LaporanController::class, 'exportPeriodeTransaksi'])->name('laporan.export-periode-transaksi');
+    Route::get('/laporan/export/angsuran', [LaporanController::class, 'exportAngsuran'])->name('laporan.export-angsuran');
+
+    // Generic export route - MUST be defined AFTER all specific export routes
     Route::get('/laporan/export/{type}', [LaporanController::class, 'export'])->name('laporan.export');
 });
 
@@ -190,3 +229,23 @@ Route::get('/dashboard', function () {
             return redirect('/');
     }
 })->middleware('auth')->name('dashboard');
+
+// Documentation Routes
+Route::prefix('documentation')->name('documentation.')->group(function () {
+    Route::get('/user-manual-pdf', [DocumentationController::class, 'generateUserManualPDF'])->name('user-manual-pdf');
+    Route::get('/user-manual-preview', [DocumentationController::class, 'previewUserManualPDF'])->name('user-manual-preview');
+    Route::get('/user-manual-anggota-pdf', [DocumentationController::class, 'generateUserManualAnggotaPDF'])->name('user-manual-anggota-pdf');
+    Route::get('/user-manual-admin-pdf', [DocumentationController::class, 'generateUserManualAdminPDF'])->name('user-manual-admin-pdf');
+    Route::get('/user-manual-pengurus-pdf', [DocumentationController::class, 'generateUserManualPengurusPDF'])->name('user-manual-pengurus-pdf');
+    Route::post('/upload-screenshot', [DocumentationController::class, 'uploadScreenshot'])->name('upload-screenshot');
+});
+
+// Manual Preview Routes
+Route::prefix('manual-preview')->name('manual-preview.')->group(function () {
+    Route::get('/', [ManualPreviewController::class, 'index'])->name('index');
+    Route::get('/api/manual/{role}', [ManualPreviewController::class, 'getManualData'])->name('data');
+    Route::get('/api/manuals', [ManualPreviewController::class, 'getAllManuals'])->name('all');
+});
+
+// Manual Landing Page
+Route::get('/manual', [ManualPreviewController::class, 'index'])->name('manual.landing');

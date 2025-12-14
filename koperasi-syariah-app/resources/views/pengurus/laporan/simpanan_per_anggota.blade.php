@@ -30,11 +30,15 @@
                     </button>
                 </div>
                 @if($reportData && count($reportData) > 0)
-                <div class="flex items-end">
+                <div class="flex items-end space-x-2">
                     <a href="{{ route('pengurus.laporan.print', 'simpanan-per-anggota') }}?{{ http_build_query(request()->query()) }}"
                        target="_blank"
                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                         <i class="fas fa-print mr-2"></i>Cetak
+                    </a>
+                    <a href="{{ route('pengurus.laporan.export-simpanan-per-anggota') }}?{{ http_build_query(request()->query()) }}"
+                       class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-file-excel mr-2"></i>Export Excel
                     </a>
                 </div>
                 @endif

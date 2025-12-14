@@ -7,7 +7,7 @@ use App\Models\KartuAnggotaSetting;
 use App\Models\Anggota;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\PDF;
+use Dompdf\Dompdf;
 
 class KartuAnggotaController extends Controller
 {
@@ -249,12 +249,27 @@ class KartuAnggotaController extends Controller
             set_time_limit(300);
             ini_set('memory_limit', '512M');
 
-            // Generate PDF using DomPDF
-            $pdf = PDF::loadView('admin.kartu.pdf', compact('anggota', 'settings'));
-            $pdf->setPaper('A4', 'portrait');
-            $pdf->setOptions(['defaultFont' => 'Arial']);
+            // Generate PDF using DomPDF (tanpa Facade)
+            $dompdf = new Dompdf();
 
-            return $pdf->download('kartu-anggota-' . str_replace(' ', '-', strtolower($anggota->nama_lengkap)) . '.pdf');
+            // Set options
+            $options = new Dompdf\Options();
+            $options->set('defaultFont', 'Arial');
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('defaultPaperSize', 'A4');
+            $options->set('defaultOrientation', 'portrait');
+            $dompdf->setOptions($options);
+
+            // Load view HTML
+            $html = view('admin.kartu.pdf', compact('anggota', 'settings'))->render();
+            $dompdf->loadHtml($html);
+
+            // Render PDF
+            $dompdf->render();
+
+            // Download
+            return $dompdf->stream('kartu-anggota-' . str_replace(' ', '-', strtolower($anggota->nama_lengkap)) . '.pdf');
 
         } catch (\Exception $e) {
             \Log::error('PDF download error: ' . $e->getMessage());

@@ -112,31 +112,31 @@
         </nav>
     </div>
 
-    <!-- Pengajuan List -->
+    <!-- Mobile Responsive Pengajuan List -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto lg:overflow-x-visible">
-            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
+        <div class="overflow-x-auto shadow rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Kode
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden sm:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tanggal
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Jenis Pembiayaan
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Jumlah
                         </th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                        <th class="hidden lg:table-cell px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tenor
                         </th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                        <th class="hidden xl:table-cell px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
                         </th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Aksi
                         </th>
                     </tr>
@@ -144,25 +144,37 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($pengajuans as $pengajuan)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-3 py-3 whitespace-nowrap truncate">
-                                <div class="text-sm font-medium text-gray-900">{{ $pengajuan->kode_pengajuan }}</div>
+                            <td class="px-3 py-3">
+                                <div class="text-sm font-medium text-gray-900 truncate">{{ $pengajuan->kode_pengajuan }}</div>
+                                <div class="sm:hidden text-xs text-gray-400">
+                                    {{ $pengajuan->created_at_formatted }}
+                                </div>
+                                <div class="md:hidden text-xs text-gray-400">
+                                    {{ $pengajuan->jumlah_pengajuan_formatted }}
+                                </div>
+                                <div class="lg:hidden text-xs text-gray-400">
+                                    {{ $pengajuan->tenor }} bln
+                                </div>
+                                <div class="xl:hidden mt-1">
+                                    {!! $pengajuan->status_label !!}
+                                </div>
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                            <td class="hidden sm:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                                 {{ $pengajuan->created_at_formatted }}
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                                 {{ $pengajuan->jenisPembiayaan->nama_pembiayaan }}
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td class="hidden md:table-cell px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {{ $pengajuan->jumlah_pengajuan_formatted }}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                            <td class="hidden lg:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                                 {{ $pengajuan->tenor }} bln
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                            <td class="hidden xl:table-cell px-3 py-3 whitespace-nowrap text-center">
                                 {!! $pengajuan->status_label !!}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
+                            <td class="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                                 <a href="{{ route('anggota.pengajuan.show', $pengajuan->id) }}"
                                    class="text-indigo-600 hover:text-indigo-900 mr-2"
                                    title="Lihat Detail">

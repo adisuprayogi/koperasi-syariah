@@ -129,37 +129,37 @@
         </form>
     </div>
 
-    <!-- Financing Table -->
+    <!-- Mobile Responsive Financing Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Daftar Pembiayaan</h2>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto shadow rounded-lg">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Kode
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Kode Pengajuan
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Jenis Pembiayaan
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Plafond
+                        <th class="hidden sm:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Jumlah Pengajuan
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Margin
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden lg:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Total Pinjaman
                         </th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                        <th class="hidden xl:table-cell px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tenor
                         </th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                        <th class="hidden 2xl:table-cell px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
                         </th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Aksi
                         </th>
                     </tr>
@@ -168,25 +168,70 @@
                     @if(isset($pembiayaan) && $pembiayaan->count() > 0)
                         @foreach($pembiayaan as $item)
                             <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ $item->kode_pembiayaan }}
+                                <td class="px-3 py-3">
+                                    <div class="text-sm font-medium text-gray-900">{{ $item->kode_pengajuan }}</div>
+                                    <div class="sm:hidden text-xs text-gray-400">
+                                        Plafond: {{ number_format($item->jumlah_pengajuan, 0, ',', '.') }}
+                                    </div>
+                                    <div class="md:hidden text-xs text-gray-400">
+                                        Margin: {{ number_format($item->jumlah_margin, 0, ',', '.') }}
+                                    </div>
+                                    <div class="lg:hidden text-xs text-gray-400">
+                                        Total: {{ number_format($item->jumlah_pengajuan + $item->jumlah_margin, 0, ',', '.') }}
+                                    </div>
+                                    <div class="xl:hidden text-xs text-gray-400">
+                                        {{ $item->tenor }} Bulan
+                                    </div>
+                                    <div class="2xl:hidden mt-1">
+                                        @switch($item->status)
+                                            @case('pengajuan')
+                                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                    <i class="fas fa-clock mr-1"></i>Pengajuan
+                                                </span>
+                                                @break
+                                            @case('disetujui')
+                                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    <i class="fas fa-check mr-1"></i>Disetujui
+                                                </span>
+                                                @break
+                                            @case('ditolak')
+                                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                    <i class="fas fa-times mr-1"></i>Ditolak
+                                                </span>
+                                                @break
+                                            @case('aktif')
+                                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    <i class="fas fa-play mr-1"></i>Aktif
+                                                </span>
+                                                @break
+                                            @case('lunas')
+                                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>Lunas
+                                                </span>
+                                                @break
+                                            @default
+                                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                    {{ $item->status }}
+                                                </span>
+                                        @endswitch
+                                    </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                                     {{ $item->jenisPembiayaan->nama_pembiayaan ?? '-' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    Rp {{ number_format($item->plafond, 0, ',', '.') }}
+                                <td class="hidden sm:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    Rp {{ number_format($item->jumlah_pengajuan, 0, ',', '.') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    Rp {{ number_format($item->margin, 0, ',', '.') }}
+                                <td class="hidden md:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    Rp {{ number_format($item->jumlah_margin, 0, ',', '.') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                    Rp {{ number_format($item->plafond + $item->margin, 0, ',', '.') }}
+                                <td class="hidden lg:table-cell px-3 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                    Rp {{ number_format($item->jumlah_pengajuan + $item->jumlah_margin, 0, ',', '.') }}
                                 </td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                                <td class="hidden xl:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                                     {{ $item->tenor }} Bulan
                                 </td>
-                                <td class="px-4 py-4 whitespace-nowrap text-center">
+                                <td class="hidden 2xl:table-cell px-3 py-3 whitespace-nowrap text-center">
                                     @switch($item->status)
                                         @case('pengajuan')
                                             <span class="inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
@@ -219,7 +264,7 @@
                                             </span>
                                     @endswitch
                                 </td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-center">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-center">
                                     <a href="{{ route('anggota.pembiayaan.show', $item->id) }}"
                                        class="text-primary-600 hover:text-primary-900 inline-flex items-center">
                                         <i class="fas fa-eye"></i>

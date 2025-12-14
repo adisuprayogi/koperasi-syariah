@@ -88,32 +88,33 @@
             <h2 class="text-lg font-semibold text-gray-900">Daftar Jenis Simpanan</h2>
         </div>
 
-        <div class="overflow-x-auto lg:overflow-x-visible">
-            <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
+        <!-- Mobile Responsive Table -->
+        <div class="overflow-x-auto shadow rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Kode
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Nama Simpanan
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden sm:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tipe
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Nisbah
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden lg:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Batas Setoran
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden xl:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tarik
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="hidden 2xl:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
                         </th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Aksi
                         </th>
                     </tr>
@@ -126,7 +127,7 @@
                                     {{ $js->kode_jenis }}
                                 </span>
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap">
+                            <td class="px-3 py-3">
                                 <div class="text-sm font-medium text-gray-900">
                                     {{ $js->nama_simpanan }}
                                 </div>
@@ -135,8 +136,22 @@
                                         {{ $js->keterangan }}
                                     </div>
                                 @endif
+                                <div class="sm:hidden text-xs text-gray-400 mt-1">
+                                    {{ $js->tipe_simpanan_label }}
+                                </div>
+                                <div class="md:hidden text-xs text-gray-400">
+                                    Nisbah: {{ $js->nisbah ? $js->nisbah . '%' : '-' }}
+                                </div>
+                                <div class="lg:hidden text-xs text-gray-400">
+                                    Min: {{ $js->batas_min_setoran ? number_format($js->batas_min_setoran, 0, ',', '.') : '-' }}
+                                </div>
+                                <div class="xl:hidden mt-1">
+                                    <span class="inline-flex px-1 py-0.5 text-xs font-semibold rounded-full {{ $js->status == 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ $js->status == 1 ? 'Aktif' : 'Tidak Aktif' }}
+                                    </span>
+                                </div>
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap">
+                            <td class="hidden sm:table-cell px-3 py-3 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
                                     @if($js->tipe_simpanan == 'modal')
                                         bg-purple-100 text-purple-800

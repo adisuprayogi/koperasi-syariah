@@ -1,0 +1,176 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e5]:
+      - link "Koperasi Syariah Bersama" [ref=e7] [cursor=pointer]:
+        - /url: http://localhost:8010/dashboard
+        - img "Koperasi Syariah Bersama" [ref=e8]
+      - navigation [ref=e10]:
+        - generic [ref=e11]:
+          - heading "Admin Menu" [level=3] [ref=e12]
+          - link " Dashboard" [ref=e13] [cursor=pointer]:
+            - /url: http://localhost:8010/admin/dashboard
+            - generic [ref=e14]: 
+            - text: Dashboard
+          - link " Pengurus" [ref=e15] [cursor=pointer]:
+            - /url: http://localhost:8010/admin/pengurus
+            - generic [ref=e16]: 
+            - text: Pengurus
+          - link " Data Koperasi" [ref=e17] [cursor=pointer]:
+            - /url: http://localhost:8010/admin/koperasi
+            - generic [ref=e18]: 
+            - text: Data Koperasi
+          - link " Jenis Simpanan" [ref=e19] [cursor=pointer]:
+            - /url: http://localhost:8010/admin/jenis-simpanan
+            - generic [ref=e20]: 
+            - text: Jenis Simpanan
+          - link " Jenis Pembiayaan" [ref=e21] [cursor=pointer]:
+            - /url: http://localhost:8010/admin/jenis-pembiayaan
+            - generic [ref=e22]: 
+            - text: Jenis Pembiayaan
+          - link " Kartu Anggota" [ref=e23] [cursor=pointer]:
+            - /url: http://localhost:8010/admin/kartu-anggota/settings
+            - generic [ref=e24]: 
+            - text: Kartu Anggota
+        - generic [ref=e25]:
+          - heading "Menu Pengurus" [level=3] [ref=e26]
+          - link " Dashboard" [ref=e27] [cursor=pointer]:
+            - /url: http://localhost:8010/pengurus/dashboard
+            - generic [ref=e28]: 
+            - text: Dashboard
+          - link " Manajemen Anggota" [ref=e29] [cursor=pointer]:
+            - /url: http://localhost:8010/pengurus/anggota
+            - generic [ref=e30]: 
+            - text: Manajemen Anggota
+          - link " Transaksi Simpanan" [ref=e31] [cursor=pointer]:
+            - /url: http://localhost:8010/pengurus/simpanan
+            - generic [ref=e32]: 
+            - text: Transaksi Simpanan
+          - link " Verifikasi Pengajuan" [ref=e33] [cursor=pointer]:
+            - /url: http://localhost:8010/pengurus/pengajuan
+            - generic [ref=e34]: 
+            - text: Verifikasi Pengajuan
+          - link " Manajemen Pembiayaan" [ref=e35] [cursor=pointer]:
+            - /url: http://localhost:8010/pengurus/pembiayaan
+            - generic [ref=e36]: 
+            - text: Manajemen Pembiayaan
+          - link " Laporan" [ref=e37] [cursor=pointer]:
+            - /url: http://localhost:8010/pengurus/laporan
+            - generic [ref=e38]: 
+            - text: Laporan
+  - generic [ref=e39]:
+    - banner [ref=e40]:
+      - generic [ref=e42]:
+        - generic: 
+        - generic [ref=e43]:
+          - text: 
+          - generic [ref=e44]:
+            - generic [ref=e45]: 
+            - text: Administrator Admin
+          - button "" [ref=e47] [cursor=pointer]:
+            - generic [ref=e48]: 
+    - main [ref=e49]:
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - heading "Dashboard Admin" [level=1] [ref=e53]
+          - paragraph [ref=e54]: Selamat datang di halaman Administrator Koperasi Syariah
+        - generic [ref=e55]:
+          - generic [ref=e57]:
+            - generic [ref=e59]: 
+            - generic [ref=e60]:
+              - heading "Total Pengurus" [level=3] [ref=e61]
+              - paragraph [ref=e62]: "3"
+              - paragraph [ref=e63]: 3 aktif
+          - generic [ref=e65]:
+            - generic [ref=e67]: 
+            - generic [ref=e68]:
+              - heading "Total Anggota" [level=3] [ref=e69]
+              - paragraph [ref=e70]: "2"
+              - paragraph [ref=e71]: 2 aktif
+          - generic [ref=e73]:
+            - generic [ref=e75]: 
+            - generic [ref=e76]:
+              - heading "Jenis Simpanan" [level=3] [ref=e77]
+              - paragraph [ref=e78]: "4"
+              - paragraph [ref=e79]: 4 aktif
+          - generic [ref=e81]:
+            - generic [ref=e83]: 
+            - generic [ref=e84]:
+              - heading "Jenis Pembiayaan" [level=3] [ref=e85]
+              - paragraph [ref=e86]: "1"
+              - paragraph [ref=e87]: 1 aktif
+        - generic [ref=e88]:
+          - generic [ref=e89]:
+            - heading "Distribusi Pengurus" [level=3] [ref=e90]
+            - generic [ref=e91]:
+              - generic [ref=e92]:
+                - generic [ref=e93]: Bendahara
+                - generic [ref=e94]: "1"
+              - generic [ref=e97]:
+                - generic [ref=e98]: Ketua
+                - generic [ref=e99]: "1"
+              - generic [ref=e102]:
+                - generic [ref=e103]: Sekretaris
+                - generic [ref=e104]: "1"
+          - generic [ref=e107]:
+            - heading "Distribusi Anggota" [level=3] [ref=e108]
+            - generic [ref=e110]:
+              - generic [ref=e111]: Biasa
+              - generic [ref=e112]: "2"
+        - generic [ref=e115]:
+          - generic [ref=e116]:
+            - heading "Informasi Koperasi" [level=3] [ref=e117]
+            - generic [ref=e118]:
+              - generic [ref=e119]:
+                - paragraph [ref=e120]: Nama Koperasi
+                - paragraph [ref=e121]: Koperasi Syariah Bersama
+              - generic [ref=e122]:
+                - paragraph [ref=e123]: No. Koperasi
+                - paragraph [ref=e124]: 001/BH/KOP-SYR/2024
+              - generic [ref=e125]:
+                - paragraph [ref=e126]: Telepon
+                - paragraph [ref=e127]: (021) 1234567
+              - generic [ref=e128]:
+                - paragraph [ref=e129]: Email
+                - paragraph [ref=e130]: info@koperasibersama.com
+              - generic [ref=e131]:
+                - paragraph [ref=e132]: Alamat
+                - paragraph [ref=e133]: Jl. Cengkeh No. 789, Jakarta Pusat
+          - generic [ref=e134]:
+            - heading "Aktivitas Terkini" [level=3] [ref=e135]
+            - generic [ref=e136]:
+              - generic [ref=e137]:
+                - generic [ref=e138]: Login Administrator
+                - generic [ref=e139]: 12:38
+              - generic [ref=e140]:
+                - generic [ref=e141]: System Check
+                - generic [ref=e142]: 12:33
+        - generic [ref=e143]:
+          - heading "Quick Actions" [level=2] [ref=e144]
+          - generic [ref=e145]:
+            - link " Manajemen Pengurus" [ref=e146] [cursor=pointer]:
+              - /url: http://localhost:8010/admin/pengurus
+              - generic [ref=e147]: 
+              - generic [ref=e148]: Manajemen Pengurus
+            - link " Data Koperasi" [ref=e149] [cursor=pointer]:
+              - /url: http://localhost:8010/admin/koperasi
+              - generic [ref=e150]: 
+              - generic [ref=e151]: Data Koperasi
+            - link " Jenis Simpanan" [ref=e152] [cursor=pointer]:
+              - /url: http://localhost:8010/admin/jenis-simpanan
+              - generic [ref=e153]: 
+              - generic [ref=e154]: Jenis Simpanan
+        - generic [ref=e155]:
+          - heading " Informasi" [level=3] [ref=e156]:
+            - generic [ref=e157]: 
+            - text: Informasi
+          - paragraph [ref=e158]: "Selamat datang di sistem manajemen Koperasi Syariah. Sebagai Administrator, Anda memiliki akses penuh untuk mengelola:"
+          - list [ref=e159]:
+            - listitem [ref=e160]: Data pengurus koperasi
+            - listitem [ref=e161]: Profil koperasi
+            - listitem [ref=e162]: Master data jenis simpanan
+            - listitem [ref=e163]: Master data jenis pembiayaan
+  - text:               
+```

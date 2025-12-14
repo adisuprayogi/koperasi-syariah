@@ -13,6 +13,21 @@ class AuthController extends Controller
      */
     public function showLoginForm()
     {
+        // Jika user sudah login, redirect ke dashboard sesuai role
+        if (auth()->check()) {
+            $user = auth()->user();
+            switch ($user->role) {
+                case 'admin':
+                    return redirect()->route('admin.dashboard');
+                case 'pengurus':
+                    return redirect()->route('pengurus.dashboard');
+                case 'anggota':
+                    return redirect()->route('anggota.dashboard');
+                default:
+                    return redirect()->route('home');
+            }
+        }
+
         return view('auth.login');
     }
 

@@ -7,41 +7,7 @@
     <title>@yield('title', $koperasi->nama_koperasi ?? 'Koperasi Syariah') - {{ $koperasi->nama_koperasi ?? 'Koperasi Syariah' }}</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            200: '#bbf7d0',
-                            300: '#86efac',
-                            400: '#4ade80',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            800: '#166534',
-                            900: '#14532d',
-                        },
-                        secondary: {
-                            50: '#fdf4ff',
-                            100: '#fae8ff',
-                            200: '#f5d0fe',
-                            300: '#f0abfc',
-                            400: '#e879f9',
-                            500: '#d946ef',
-                            600: '#c026d3',
-                            700: '#a21caf',
-                            800: '#86198f',
-                            900: '#701a75',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -100,7 +66,7 @@
                                     </div>
                                 @endif
 
-                                @if(Auth::user()->isPengurus() || Auth::user()->isAdmin())
+                                @if(Auth::user()->isPengurus())
                                     <!-- Pengurus Menu -->
                                     <div class="mb-4">
                                         <h3 class="text-xs font-semibold text-primary-300 uppercase tracking-wider mb-2">Menu Pengurus</h3>
@@ -324,7 +290,7 @@
                             </div>
                         @endif
 
-                        @if(Auth::user()->isPengurus() || Auth::user()->isAdmin())
+                        @if(Auth::user()->isPengurus())
                             <!-- Pengurus Menu -->
                             <div class="space-y-2 mb-6">
                                 <h3 class="text-xs font-semibold text-primary-300 uppercase tracking-wider">Menu Pengurus</h3>
@@ -386,8 +352,17 @@
                             </div>
                         @endif
 
+                        <!-- Manual Penggunaan -->
+                        <div class="mt-6">
+                            <a href="{{ route('manual.landing') }}" target="_blank" class="flex items-center px-3 py-2.5 text-sm font-medium text-primary-200 hover:bg-primary-700 hover:text-white rounded-lg transition-colors duration-200">
+                                <i class="fas fa-book mr-3 text-primary-400"></i>
+                                <span>Manual Penggunaan</span>
+                                <i class="fas fa-external-link-alt ml-auto text-xs text-primary-400"></i>
+                            </a>
+                        </div>
+
                         <!-- Logout Section -->
-                        <div class="mt-8 pt-6 border-t border-primary-700">
+                        <div class="mt-6 pt-6 border-t border-primary-700">
                             <form action="{{ route('logout') }}" method="POST" class="px-3">
                                 @csrf
                                 <button type="submit" class="w-full flex items-center px-3 py-2.5 text-sm font-medium text-primary-200 hover:bg-primary-700 hover:text-white rounded-lg transition-colors duration-200">
