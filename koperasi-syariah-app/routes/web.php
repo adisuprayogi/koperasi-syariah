@@ -169,6 +169,11 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->
     Route::get('/laporan/export/laba-rugi', [LaporanController::class, 'exportLabaRugi'])->name('laporan.export-laba-rugi');
     Route::get('/laporan/export/neraca', [LaporanController::class, 'exportNeraca'])->name('laporan.export-neraca');
 
+    // Additional Export Routes for Laporan Lainnya
+    Route::get('/laporan/export/tunggakan', [LaporanController::class, 'exportTunggakan'])->name('laporan.export-tunggakan');
+    Route::get('/laporan/export/periode-transaksi', [LaporanController::class, 'exportPeriodeTransaksi'])->name('laporan.export-periode-transaksi');
+    Route::get('/laporan/export/angsuran', [LaporanController::class, 'exportAngsuran'])->name('laporan.export-angsuran');
+
     // Generic export route - MUST be defined AFTER all specific export routes
     Route::get('/laporan/export/{type}', [LaporanController::class, 'export'])->name('laporan.export');
 });
