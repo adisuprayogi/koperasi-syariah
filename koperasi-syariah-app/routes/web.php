@@ -11,10 +11,13 @@ use App\Http\Controllers\Anggota\DashboardController as AnggotaDashboardControll
 use App\Http\Controllers\Anggota\PengajuanPembiayaanController;
 use App\Http\Controllers\FileDownloadController;
 use App\Http\Controllers\Admin\KartuAnggotaController;
+use App\Http\Controllers\Admin\AnggotaImportController;
 use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\ManualPreviewController;
 use App\Models\Koperasi;
 use App\Models\Anggota;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +85,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     ]);
     Route::post('/data-koperasi/{id}/toggle-status', [DataKoperasiController::class, 'toggleStatus'])->name('data-koperasi.toggle-status');
 
+    
     // Jenis Simpanan
     Route::get('/jenis-simpanan', [AdminController::class, 'jenisSimpananIndex'])->name('jenis-simpanan.index');
     Route::get('/jenis-simpanan/create', [AdminController::class, 'jenisSimpananCreate'])->name('jenis-simpanan.create');
@@ -126,6 +130,17 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->
     Route::get('/anggota/{id}/edit', [PengurusController::class, 'anggotaEdit'])->name('anggota.edit');
     Route::put('/anggota/{id}', [PengurusController::class, 'anggotaUpdate'])->name('anggota.update');
     Route::delete('/anggota/{id}', [PengurusController::class, 'anggotaDestroy'])->name('anggota.destroy');
+
+    // Status Management
+    Route::get('/anggota/{id}/keluar', [PengurusController::class, 'anggotaKeluar'])->name('anggota.keluar');
+    Route::post('/anggota/{id}/keluar', [PengurusController::class, 'anggotaProcessKeluar'])->name('anggota.process.keluar');
+    Route::get('/anggota/{id}/reaktif', [PengurusController::class, 'anggotaReaktif'])->name('anggota.reaktif');
+
+    // Anggota Import (Pengurus only)
+    Route::get('/anggota/import', [AnggotaImportController::class, 'create'])->name('anggota.import');
+    Route::post('/anggota/import-process', [AnggotaImportController::class, 'import'])->name('anggota.import.store');
+    Route::get('/anggota/import/template', [AnggotaImportController::class, 'downloadTemplate'])->name('anggota.import.template');
+    Route::get('/anggota/import/error-report', [AnggotaImportController::class, 'downloadErrorReport'])->name('anggota.import.error-report');
 
     // Transaksi Simpanan
     Route::get('/simpanan', [PengurusController::class, 'simpananIndex'])->name('simpanan.index');
@@ -185,9 +200,10 @@ Route::prefix('anggota')->name('anggota.')->middleware(['auth', 'anggota'])->gro
     Route::put('/profile', [AnggotaController::class, 'profileUpdate'])->name('profile.update');
     Route::get('/download-kartu', [AnggotaController::class, 'downloadKartu'])->name('download-kartu');
 
-    // Simpanan
+    // Simpanan (View Only - Anggota cannot create)
     Route::get('/simpanan', [AnggotaController::class, 'simpananIndex'])->name('simpanan.index');
     Route::get('/simpanan/{id}', [AnggotaController::class, 'simpananShow'])->name('simpanan.show');
+    Route::get('/simpanan/{id}/print', [AnggotaController::class, 'simpananPrint'])->name('simpanan.print');
 
     // Pengajuan Pembiayaan
     Route::get('/pengajuan-test', function() {
@@ -249,3 +265,22 @@ Route::prefix('manual-preview')->name('manual-preview.')->group(function () {
 
 // Manual Landing Page
 Route::get('/manual', [ManualPreviewController::class, 'index'])->name('manual.landing');
+
+// Temporary route untuk buat user pengurus (development only)
+Route::get('/create-pengurus', function() {
+    // Cek apakah sudah ada
+    $existing = User::where('email', 'pengurus@koperasi.local')->first();
+    if ($existing) {
+        return 'User pengurus sudah ada! Email: pengurus@koperasi.local, Password: password123';
+    }
+
+    $user = User::create([
+        'name' => 'Pengurus Koperasi',
+        'email' => 'pengurus@koperasi.local',
+        'password' => Hash::make('password123'),
+        'role' => 'pengurus',
+        'email_verified_at' => now()
+    ]);
+
+    return 'User pengurus berhasil dibuat!<br>Email: pengurus@koperasi.local<br>Password: password123<br><a href="/login">Klik Login</a>';
+});

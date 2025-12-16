@@ -362,4 +362,5 @@ class AnggotaController extends Controller
             return redirect()->back()->with('error', 'Gagal download kartu anggota');
         }
     }
-}
+
+    }

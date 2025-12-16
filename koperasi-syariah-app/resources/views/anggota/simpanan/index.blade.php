@@ -6,8 +6,8 @@
 <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Data Simpanan Saya</h1>
-        <p class="text-gray-600 mt-2">Lihat riwayat transaksi simpanan Anda</p>
+        <h1 class="text-3xl font-bold text-gray-900">Riwayat Simpanan</h1>
+        <p class="text-gray-600 mt-2">Lihat riwayat transaksi simpanan Anda. Untuk menambah simpanan, silakan hubungi pengurus koperasi.</p>
     </div>
 
     <!-- Summary Cards -->
@@ -264,12 +264,6 @@
                             <i class="fas fa-home mr-2"></i>
                             Dashboard
                         </a>
-                        @if(isset($jenisSimpanan) && $jenisSimpanan->count() > 0)
-                            <a href="{{ route('anggota.simpanan.create') }}" class="inline-flex items-center justify-center px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-lg transition-all duration-200 shadow hover:shadow-lg">
-                                <i class="fas fa-plus-circle mr-2"></i>
-                                Setor Simpanan
-                            </a>
-                        @endif
                     </div>
                 </div>
             </div>

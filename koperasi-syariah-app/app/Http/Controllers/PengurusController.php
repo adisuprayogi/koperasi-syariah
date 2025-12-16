@@ -342,7 +342,7 @@ class PengurusController extends Controller
             'pekerjaan' => 'required|string|max:100',
             'penghasilan' => 'nullable|numeric|min:0',
             'no_npwp' => 'nullable|string|max:20',
-            'status_keanggotaan' => 'required|in:aktif,nonaktif,keluar,meninggal',
+            'status_keanggotaan' => 'required|in:aktif,tidak_aktif,keluar',
             'jenis_anggota' => 'required|in:biasa,luar_biasa,kehormatan',
         ]);
 
@@ -424,6 +424,83 @@ class PengurusController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Gagal menghapus anggota: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show form to change anggota status to keluar
+     */
+    public function anggotaKeluar($id)
+    {
+        $anggota = Anggota::findOrFail($id);
+        return view('pengurus.anggota.keluar', compact('anggota'));
+    }
+
+    /**
+     * Process anggota keluar status change
+     */
+    public function anggotaProcessKeluar(Request $request, $id)
+    {
+        $request->validate([
+            'alasan_keluar' => 'required|string|max:500'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $anggota = Anggota::findOrFail($id);
+
+            // Update status to keluar
+            $anggota->update([
+                'status_keanggotaan' => 'keluar',
+                'tanggal_keluar' => now(),
+                'alasan_keluar' => $request->alasan_keluar
+            ]);
+
+            // Soft delete the associated user account to deactivate it
+            if ($anggota->user) {
+                $anggota->user->delete();
+            }
+
+            DB::commit();
+
+            return redirect()->route('pengurus.anggota.index')
+                ->with('success', 'Anggota ' . $anggota->nama_lengkap . ' telah ditandai sebagai keluar dan akun pengguna telah dinonaktifkan');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal mengupdate status anggota: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reactivate anggota (change status back to aktif)
+     */
+    public function anggotaReaktif($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $anggota = Anggota::findOrFail($id);
+
+            // Update status back to aktif
+            $anggota->update([
+                'status_keanggotaan' => 'aktif',
+                'tanggal_keluar' => null,
+                'alasan_keluar' => null
+            ]);
+
+            // Restore the associated user account if it was soft deleted
+            if ($anggota->user && $anggota->user->trashed()) {
+                $anggota->user->restore();
+            }
+
+            DB::commit();
+
+            return redirect()->route('pengurus.anggota.index')
+                ->with('success', 'Anggota ' . $anggota->nama_lengkap . ' telah diaktifkan kembali dan akun pengguna telah dipulihkan');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal mengaktifkan kembali anggota: ' . $e->getMessage());
         }
     }
 
