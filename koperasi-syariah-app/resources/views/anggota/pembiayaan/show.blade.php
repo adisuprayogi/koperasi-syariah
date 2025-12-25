@@ -31,7 +31,7 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Kode Pembiayaan</label>
-                            <p class="text-lg font-semibold text-gray-900">{{ $pembiayaan->kode_pembiayaan }}</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ $pembiayaan->kode_pengajuan }}</p>
                         </div>
 
                         <div>
@@ -48,17 +48,17 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Plafond</label>
-                            <p class="text-lg font-semibold text-blue-600">Rp {{ number_format($pembiayaan->plafond, 0, ',', '.') }}</p>
+                            <p class="text-lg font-semibold text-blue-600">Rp {{ number_format($pembiayaan->jumlah_pengajuan, 0, ',', '.') }}</p>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Margin</label>
-                            <p class="text-lg font-semibold text-orange-600">Rp {{ number_format($pembiayaan->margin, 0, ',', '.') }}</p>
+                            <p class="text-lg font-semibold text-orange-600">Rp {{ number_format($pembiayaan->jumlah_margin, 0, ',', '.') }}</p>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Total Pinjaman</label>
-                            <p class="text-xl font-bold text-purple-600">Rp {{ number_format($pembiayaan->plafond + $pembiayaan->margin, 0, ',', '.') }}</p>
+                            <p class="text-xl font-bold text-purple-600">Rp {{ number_format($pembiayaan->jumlah_pengajuan + $pembiayaan->jumlah_margin, 0, ',', '.') }}</p>
                         </div>
                     </div>
 
@@ -70,31 +70,41 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Angsuran per Bulan</label>
-                            <p class="text-lg font-semibold text-green-600">Rp {{ number_format(($pembiayaan->plafond + $pembiayaan->margin) / (int)$pembiayaan->tenor, 0, ',', '.') }}</p>
+                            <p class="text-lg font-semibold text-green-600">Rp {{ number_format($pembiayaan->angsuran_margin, 0, ',', '.') }}</p>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Status</label>
                             <div class="flex items-center">
                                 @switch($pembiayaan->status)
-                                    @case('pengajuan')
-                                        <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                            <i class="fas fa-clock mr-2"></i>Pengajuan
+                                    @case('draft')
+                                        <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            <i class="fas fa-edit mr-2"></i>Draft
                                         </span>
                                         @break
-                                    @case('disetujui')
+                                    @case('diajukan')
+                                        <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            <i class="fas fa-paper-plane mr-2"></i>Diajukan
+                                        </span>
+                                        @break
+                                    @case('verifikasi')
                                         <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            <i class="fas fa-search mr-2"></i>Verifikasi
+                                        </span>
+                                        @break
+                                    @case('approved')
+                                        <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
                                             <i class="fas fa-check mr-2"></i>Disetujui
                                         </span>
                                         @break
-                                    @case('ditolak')
+                                    @case('rejected')
                                         <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                                             <i class="fas fa-times mr-2"></i>Ditolak
                                         </span>
                                         @break
-                                    @case('aktif')
+                                    @case('cair')
                                         <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            <i class="fas fa-play mr-2"></i>Aktif
+                                            <i class="fas fa-money-bill-wave mr-2"></i>Cair
                                         </span>
                                         @break
                                     @case('lunas')
@@ -154,18 +164,18 @@
         </div>
 
         <!-- Installment Schedule -->
-        @if($pembiayaan->status == 'aktif' && isset($angsurans) && $angsurans->count() > 0)
+        @if(in_array($pembiayaan->status, ['cair', 'lunas']) && isset($angsurans) && $angsurans->count() > 0)
             <div class="bg-white rounded-lg shadow overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                     <h2 class="text-lg font-semibold text-gray-900">Jadwal Angsuran</h2>
                     <div class="text-sm text-gray-500">
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                              @if($angsurans->where('status', 'lunas')->count() == $angsurans->count())
+                              @if($angsurans->where('status', 'terbayar')->count() == $angsurans->count())
                                   bg-green-100 text-green-800
                               @else
                                   bg-blue-100 text-blue-800
                               @endif">
-                            {{ $angsurans->where('status', 'lunas')->count() }} dari {{ $angsurans->count() }} Angsuran Lunas
+                            {{ $angsurans->where('status', 'terbayar')->count() }} dari {{ $angsurans->count() }} Angsuran Lunas
                         </span>
                     </div>
                 </div>
@@ -204,15 +214,19 @@
                                         {{ $angsuran->tanggal_jatuh_tempo ? $angsuran->tanggal_jatuh_tempo->format('d/m/Y') : '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                        Rp {{ number_format($angsuran->jumlah, 0, ',', '.') }}
+                                        Rp {{ number_format($angsuran->jumlah_angsuran, 0, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($angsuran->status == 'lunas')
+                                        @if($angsuran->status == 'terbayar')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                 <i class="fas fa-check-circle mr-1"></i>Lunas
                                             </span>
+                                        @elseif($angsuran->status == 'terlambat')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>Terlambat
+                                            </span>
                                         @else
-                                            @if($angsuran->tanggal_jatuh_tempo->isPast())
+                                            @if($angsuran->tanggal_jatuh_tempo && $angsuran->tanggal_jatuh_tempo->isPast())
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                                                     <i class="fas fa-exclamation-triangle mr-1"></i>Terlambat
                                                 </span>
@@ -248,7 +262,7 @@
                         <div class="ml-4">
                             <h3 class="text-lg font-medium text-gray-900">Angsuran Lunas</h3>
                             <p class="text-2xl font-bold text-green-600">
-                                {{ $angsurans->where('status', 'lunas')->count() }} / {{ $angsurans->count() }}
+                                {{ $angsurans->where('status', 'terbayar')->count() }} / {{ $angsurans->count() }}
                             </p>
                         </div>
                     </div>
@@ -264,7 +278,7 @@
                         <div class="ml-4">
                             <h3 class="text-lg font-medium text-gray-900">Sisa Angsuran</h3>
                             <p class="text-2xl font-bold text-yellow-600">
-                                {{ $angsurans->where('status', '!=', 'lunas')->count() }}
+                                {{ $angsurans->where('status', '!=', 'terbayar')->count() }}
                             </p>
                         </div>
                     </div>
@@ -280,7 +294,7 @@
                         <div class="ml-4">
                             <h3 class="text-lg font-medium text-gray-900">Sisa Pinjaman</h3>
                             <p class="text-2xl font-bold text-blue-600">
-                                Rp {{ number_format($angsurans->where('status', '!=', 'lunas')->sum('jumlah'), 0, ',', '.') }}
+                                Rp {{ number_format($pembiayaan->sisaTotal(), 0, ',', '.') }}
                             </p>
                         </div>
                     </div>

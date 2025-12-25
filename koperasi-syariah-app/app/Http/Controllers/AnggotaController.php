@@ -448,9 +448,9 @@ class AnggotaController extends Controller
             return redirect()->route('anggota.pembiayaan.index')->with('error', 'Pembiayaan tidak ditemukan');
         }
 
-        // Get angsuran jika status approved/cair
+        // Get angsuran jika status cair/lunas
         $angsurans = null;
-        if (in_array($pembiayaan->status, ['approved', 'cair'])) {
+        if (in_array($pembiayaan->status, ['cair', 'lunas'])) {
             $angsurans = Angsuran::where('pengajuan_pembiayaan_id', $pembiayaan->id)
                                 ->orderBy('angsuran_ke')
                                 ->get();
