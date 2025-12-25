@@ -232,35 +232,46 @@ class AnggotaController extends Controller
         $transaksi = $query->paginate(10);
         $jenisSimpanan = JenisSimpanan::where('status', 1)->get();
 
-        // Hitung total simpanan per jenis
-        $totalSimpananWajib = TransaksiSimpanan::where('anggota_id', $anggota->id)
-            ->whereHas('jenisSimpanan', function($q) {
-                $q->where('nama_simpanan', 'like', '%wajib%');
-            })
-            ->where('jenis_transaksi', 'setor')
-            ->sum('jumlah');
+        // Hitung total simpanan per jenis berdasarkan saldo terakhir
+        $totalSimpananPokok = 0;
+        $totalSimpananWajib = 0;
+        $totalSimpananWajibBulanan = 0;
+        $totalSimpananSukarela = 0;
+        $totalSimpananModal = 0;
 
-        $totalSimpananSukarela = TransaksiSimpanan::where('anggota_id', $anggota->id)
-            ->whereHas('jenisSimpanan', function($q) {
-                $q->where('nama_simpanan', 'like', '%sukarela%');
-            })
-            ->where('jenis_transaksi', 'setor')
-            ->sum('jumlah');
+        foreach ($jenisSimpanan as $jenis) {
+            // Ambil transaksi terakhir untuk jenis simpanan ini
+            $transaksiTerakhir = TransaksiSimpanan::where('anggota_id', $anggota->id)
+                ->where('jenis_simpanan_id', $jenis->id)
+                ->where('status', 'verified')
+                ->latest()
+                ->first();
 
-        // Total simpanan wajib bulanan (jika ada)
-        $totalSimpananWajibBulanan = TransaksiSimpanan::where('anggota_id', $anggota->id)
-            ->whereHas('jenisSimpanan', function($q) {
-                $q->where('nama_simpanan', 'like', '%wajib bulanan%');
-            })
-            ->where('jenis_transaksi', 'setor')
-            ->sum('jumlah');
+            $saldo = $transaksiTerakhir ? $transaksiTerakhir->saldo_setelahnya : 0;
+
+            $namaSimpanan = strtolower($jenis->nama_simpanan);
+            if (strpos($namaSimpanan, 'pokok') !== false) {
+                $totalSimpananPokok += $saldo;
+            } elseif (strpos($namaSimpanan, 'wajib') !== false) {
+                if (strpos($namaSimpanan, 'bulanan') !== false) {
+                    $totalSimpananWajibBulanan += $saldo;
+                } else {
+                    $totalSimpananWajib += $saldo;
+                }
+            } elseif (strpos($namaSimpanan, 'sukarela') !== false) {
+                $totalSimpananSukarela += $saldo;
+            } elseif (strpos($namaSimpanan, 'modal') !== false) {
+                $totalSimpananModal += $saldo;
+            }
+        }
 
         return view('anggota.simpanan.index', compact(
             'transaksi',
             'jenisSimpanan',
+            'totalSimpananPokok',
             'totalSimpananWajib',
             'totalSimpananSukarela',
-            'totalSimpananWajibBulanan'
+            'totalSimpananModal'
         ));
     }
 

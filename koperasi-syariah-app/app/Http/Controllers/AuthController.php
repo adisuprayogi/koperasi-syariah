@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -41,6 +43,15 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Rate limiting: 5 attempts per minute per IP/login
+        $key = Str::lower($request->input('login')) . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+            return back()->withErrors([
+                'login' => "Terlalu banyak percobaan login. Silakan coba lagi dalam {$seconds} detik.",
+            ])->onlyInput('login');
+        }
+
         // Check if login is email or username/nomor anggota
         $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
@@ -51,6 +62,7 @@ class AuthController extends Controller
         ];
 
         if (Auth::attempt($authCredentials, $request->filled('remember'))) {
+            RateLimiter::clear($key);
             $request->session()->regenerate();
 
             // Redirect based on user role
@@ -79,6 +91,9 @@ class AuthController extends Controller
                     return redirect()->route('home');
             }
         }
+
+        // Increment rate limiter on failed login
+        RateLimiter::hit($key);
 
         return back()->withErrors([
             'login' => 'Email/Username atau password salah.',

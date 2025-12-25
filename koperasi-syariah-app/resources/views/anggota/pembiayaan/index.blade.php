@@ -294,7 +294,7 @@
 
         @if(isset($pembiayaan) && $pembiayaan->hasPages())
             <div class="px-6 py-4 border-t border-gray-200">
-                {{ $pembiayaan->links() }}
+                {{ $pembiayaan->links('pagination.custom') }}
             </div>
         @endif
     </div>

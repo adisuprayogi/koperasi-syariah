@@ -243,6 +243,35 @@
                         @yield('content')
                     </div>
                 </main>
+
+                <!-- Footer -->
+                <footer class="bg-white border-t border-gray-200">
+                    <div class="px-2 sm:px-4 lg:px-6 py-3">
+                        <div class="flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
+                            <div class="flex items-center space-x-4 mb-2 sm:mb-0">
+                                <span>&copy; {{ date('Y') }} {{ $koperasi->nama_koperasi ?? 'Koperasi Syariah' }}</span>
+                                <span class="hidden sm:inline">•</span>
+                                <span>{{ $koperasi->alamat ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="flex items-center">
+                                    <i class="fas fa-code mr-1"></i>
+                                    <span class="font-medium">kopsyah v1.0.0</span>
+                                </span>
+                                <span>•</span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    <span>Release: {{ \Carbon\Carbon::parse('2024-12-25')->format('F Y') }}</span>
+                                </span>
+                                <span class="hidden sm:inline">•</span>
+                                <span class="hidden sm:inline flex items-center">
+                                    <i class="fas fa-shield-alt mr-1 text-green-500"></i>
+                                    <span>Secure</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
             </div>
 
             <!-- Mobile Sidebar -->

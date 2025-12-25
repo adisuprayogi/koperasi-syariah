@@ -325,7 +325,9 @@
             </table>
         </div>
 
-        {{ $anggota->links() }}
+        <div class="mt-4">
+            {{ $anggota->links('pagination.custom') }}
+        </div>
     </div>
 
     <!-- Info Panel -->

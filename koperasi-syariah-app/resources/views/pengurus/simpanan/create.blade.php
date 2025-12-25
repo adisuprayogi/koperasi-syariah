@@ -185,7 +185,8 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                         <i class="fas fa-file-upload mr-1"></i>Bukti Pembayaran
                     </label>
-                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:bg-gray-50 transition-colors"
+                         id="dropZone">
                         <div class="space-y-1 text-center">
                             <div class="flex justify-center">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-gray-400"></i>
@@ -203,6 +204,7 @@
                                 PNG, JPG, JPEG, PDF (Maks. 500KB)
                             </p>
                             <p id="fileName" class="text-sm text-indigo-600 font-medium hidden"></p>
+                            <p id="fileError" class="text-sm text-red-600 font-medium hidden"></p>
                         </div>
                     </div>
                     @error('bukti_transaksi')
@@ -272,7 +274,7 @@
     </form>
 </div>
 
-@section('scripts')
+@push('scripts')
 <script>
 let currentSaldo = 0;
 
@@ -394,13 +396,96 @@ document.getElementById('jumlah').addEventListener('blur', function() {
 // Show file name when file is selected
 document.getElementById('bukti_transaksi').addEventListener('change', function() {
     const fileName = document.getElementById('fileName');
+    const fileError = document.getElementById('fileError');
+    const dropZone = document.getElementById('dropZone');
+
+    // Reset states
+    fileName.classList.add('hidden');
+    fileError.classList.add('hidden');
+    dropZone.classList.remove('border-red-500', 'bg-red-50');
+
     if (this.files && this.files[0]) {
-        fileName.textContent = 'File terpilih: ' + this.files[0].name;
+        const file = this.files[0];
+
+        // Validate file size (500KB = 500 * 1024 bytes)
+        const maxSize = 500 * 1024;
+        if (file.size > maxSize) {
+            fileError.textContent = 'Ukuran file terlalu besar! Maksimal 500KB.';
+            fileError.classList.remove('hidden');
+            dropZone.classList.add('border-red-500', 'bg-red-50');
+            this.value = ''; // Clear the file input
+            return;
+        }
+
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            fileError.textContent = 'Format file tidak didukung! Gunakan PNG, JPG, JPEG, atau PDF.';
+            fileError.classList.remove('hidden');
+            dropZone.classList.add('border-red-500', 'bg-red-50');
+            this.value = ''; // Clear the file input
+            return;
+        }
+
+        // Show file name
+        fileName.textContent = 'File terpilih: ' + file.name + ' (' + formatFileSize(file.size) + ')';
         fileName.classList.remove('hidden');
-    } else {
-        fileName.classList.add('hidden');
+        dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
     }
 });
+
+// Drag and drop functionality
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('bukti_transaksi');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+    dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+}
+
+function unhighlight(e) {
+    dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+    dropZone.classList.remove('border-red-500', 'bg-red-50');
+}
+
+dropZone.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files && files.length > 0) {
+        fileInput.files = files;
+        // Trigger change event
+        const event = new Event('change', { bubbles: true });
+        fileInput.dispatchEvent(event);
+    }
+}
+
+// Helper function to format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
 </script>
-@endsection
+@endpush
 @endsection

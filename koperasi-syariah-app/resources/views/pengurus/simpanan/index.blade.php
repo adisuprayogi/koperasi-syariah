@@ -256,7 +256,7 @@
         <!-- Pagination -->
         @if($transaksi->hasPages())
             <div class="px-3 py-3 border-t border-gray-200">
-                {{ $transaksi->links() }}
+                {{ $transaksi->links('pagination.custom') }}
             </div>
         @endif
     </div>

@@ -225,13 +225,8 @@
         </div>
 
         <!-- Pagination -->
-        <div class="px-3 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div class="text-sm text-gray-700">
-                Menampilkan <span class="font-medium">{{ $pembiayaans->firstItem() }}</span>
-                hingga <span class="font-medium">{{ $pembiayaans->lastItem() }}</span>
-                dari <span class="font-medium">{{ $pembiayaans->total() }}</span> data
-            </div>
-            {{ $pembiayaans->links() }}
+        <div class="px-3 py-3 border-t border-gray-200">
+            {{ $pembiayaans->links('pagination.custom') }}
         </div>
         @else
         <div class="text-center py-12">

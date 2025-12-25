@@ -49,6 +49,16 @@
                     </div>
 
                     <div class="flex justify-between py-3 border-b border-gray-100">
+                        <span class="text-sm font-medium text-gray-500">Periode Simpanan</span>
+                        <span class="text-sm text-gray-900">
+                            @php
+                                $namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                            @endphp
+                            {{ $namaBulan[$transaksi->bulan] }} {{ $transaksi->tahun }}
+                        </span>
+                    </div>
+
+                    <div class="flex justify-between py-3 border-b border-gray-100">
                         <span class="text-sm font-medium text-gray-500">Jenis Simpanan</span>
                         <span class="text-sm text-gray-900">{{ $transaksi->jenisSimpanan->nama_simpanan }}</span>
                     </div>
@@ -153,10 +163,37 @@
                         <div class="py-3">
                             <span class="text-sm font-medium text-gray-500">Bukti Transaksi</span>
                             <div class="mt-2">
-                                <a href="#" class="text-indigo-600 hover:text-indigo-500 text-sm">
-                                    <i class="fas fa-file-download mr-1"></i>
-                                    Download Bukti
-                                </a>
+                                @php
+                                    $buktiPath = $transaksi->bukti_transaksi;
+                                    $isImage = in_array(strtolower(pathinfo($buktiPath, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif']);
+                                    $publicUrl = Storage::disk('public')->exists($buktiPath) ? Storage::url($buktiPath) : asset('storage/' . $buktiPath);
+                                @endphp
+
+                                @if($isImage)
+                                    <div class="border rounded-lg overflow-hidden">
+                                        <a href="{{ $publicUrl }}" target="_blank" class="block">
+                                            <img src="{{ $publicUrl }}" alt="Bukti Transaksi" class="w-full h-auto max-h-64 object-contain bg-gray-50">
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <div class="mt-2 flex items-center space-x-3">
+                                    <a href="{{ $publicUrl }}" target="_blank"
+                                       class="inline-flex items-center px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                        <i class="fas fa-external-link-alt mr-2"></i>
+                                        Lihat Bukti
+                                    </a>
+                                    <a href="{{ $publicUrl }}" download
+                                       class="inline-flex items-center px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                        <i class="fas fa-download mr-2"></i>
+                                        Download
+                                    </a>
+                                </div>
+
+                                <p class="text-xs text-gray-500 mt-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ $isImage ? 'Klik gambar untuk memperbesar' : 'Klik untuk melihat/download file' }}
+                                </p>
                             </div>
                         </div>
                     @endif
