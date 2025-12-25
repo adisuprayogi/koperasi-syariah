@@ -171,15 +171,24 @@
                 </h3>
             </div>
             <div class="px-6 py-4 space-y-4">
-                <div>
-                    <label for="jenis_anggota" class="block text-sm font-medium text-gray-700">Jenis Anggota</label>
-                    <select id="jenis_anggota" name="jenis_anggota" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        <option value="">Pilih Jenis Anggota</option>
-                        <option value="biasa" {{ old('jenis_anggota') == 'biasa' ? 'selected' : '' }}>Anggota Biasa</option>
-                        <option value="luar_biasa" {{ old('jenis_anggota') == 'luar_biasa' ? 'selected' : '' }}>Anggota Luar Biasa</option>
-                        <option value="kehormatan" {{ old('jenis_anggota') == 'kehormatan' ? 'selected' : '' }}>Anggota Kehormatan</option>
-                    </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="jenis_anggota" class="block text-sm font-medium text-gray-700">Jenis Anggota</label>
+                        <select id="jenis_anggota" name="jenis_anggota" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="">Pilih Jenis Anggota</option>
+                            <option value="biasa" {{ old('jenis_anggota') == 'biasa' ? 'selected' : '' }}>Anggota Biasa</option>
+                            <option value="luar_biasa" {{ old('jenis_anggota') == 'luar_biasa' ? 'selected' : '' }}>Anggota Luar Biasa</option>
+                            <option value="kehormatan" {{ old('jenis_anggota') == 'kehormatan' ? 'selected' : '' }}>Anggota Kehormatan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="tanggal_gabung" class="block text-sm font-medium text-gray-700">Tanggal Gabung <span class="text-red-500">*</span></label>
+                        <input type="date" id="tanggal_gabung" name="tanggal_gabung" required
+                               value="{{ old('tanggal_gabung') ?? date('Y-m-d') }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Tanggal mulai anggota bergabung (digunakan untuk perhitungan simpanan wajib)</p>
+                    </div>
                 </div>
             </div>
 

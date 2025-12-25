@@ -241,14 +241,7 @@
                 @endforeach
             </div>
 
-            <!-- Compact Pagination -->
-            @if($transaksi->hasPages())
-                <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                    <div class="flex justify-center">
-                        {{ $transaksi->links() }}
-                    </div>
-                </div>
-            @endif
+            {{ $transaksi->links() }}
 
         @else
             <!-- Compact Empty State -->

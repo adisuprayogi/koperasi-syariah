@@ -41,7 +41,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Tanggal Pengajuan</label>
-                            <p class="text-lg text-gray-900">{{ $pembiayaan->tanggal_pengajuan->format('d F Y') }}</p>
+                            <p class="text-lg text-gray-900">{{ $pembiayaan->tanggal_pengajuan ? $pembiayaan->tanggal_pengajuan->format('d F Y') : '-' }}</p>
                         </div>
                     </div>
 
@@ -70,7 +70,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Angsuran per Bulan</label>
-                            <p class="text-lg font-semibold text-green-600">Rp {{ number_format(($pembiayaan->plafond + $pembiayaan->margin) / $pembiayaan->tenor, 0, ',', '.') }}</p>
+                            <p class="text-lg font-semibold text-green-600">Rp {{ number_format(($pembiayaan->plafond + $pembiayaan->margin) / (int)$pembiayaan->tenor, 0, ',', '.') }}</p>
                         </div>
 
                         <div>
@@ -201,7 +201,7 @@
                                         {{ $angsuran->angsuran_ke }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $angsuran->tanggal_jatuh_tempo->format('d/m/Y') }}
+                                        {{ $angsuran->tanggal_jatuh_tempo ? $angsuran->tanggal_jatuh_tempo->format('d/m/Y') : '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                                         Rp {{ number_format($angsuran->jumlah, 0, ',', '.') }}

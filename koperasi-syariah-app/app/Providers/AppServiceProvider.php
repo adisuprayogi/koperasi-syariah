@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
+use Illuminate\Pagination\Paginator;
 use App\Models\Koperasi;
 
 class AppServiceProvider extends ServiceProvider
@@ -34,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Use Tailwind CSS for pagination
+        Paginator::defaultView('pagination::tailwind');
+
         // Share koperasi data to all views
         View::composer('*', function ($view) {
             $koperasi = Koperasi::first();

@@ -64,6 +64,48 @@
         </div>
     </div>
 
+    <!-- Angsuran Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow p-4 sm:p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm sm:text-lg font-semibold opacity-90">Sisa Angsuran</h3>
+                    <p class="text-2xl sm:text-3xl font-bold mt-2">{{ number_format($totalSisaAngsuran, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm opacity-75 mt-1">{{ $countAngsuranBelumLunas }} angsuran belum lunas</p>
+                </div>
+                <div class="p-3 bg-white bg-opacity-20 rounded-full">
+                    <i class="fas fa-file-invoice-dollar text-white text-2xl sm:text-3xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow p-4 sm:p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm sm:text-lg font-semibold opacity-90">Sudah Dibayar</h3>
+                    <p class="text-2xl sm:text-3xl font-bold mt-2">{{ number_format($totalSudahBayar, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm opacity-75 mt-1">Total angsuran terbayar</p>
+                </div>
+                <div class="p-3 bg-white bg-opacity-20 rounded-full">
+                    <i class="fas fa-check-circle text-white text-2xl sm:text-3xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg shadow p-4 sm:p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm sm:text-lg font-semibold opacity-90">Tunggakan Simpanan Wajib</h3>
+                    <p class="text-2xl sm:text-3xl font-bold mt-2">{{ number_format($totalTunggakanWajib, 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm opacity-75 mt-1">{{ $jumlahAnggotaNunggakWajib }} anggota menunggak</p>
+                </div>
+                <div class="p-3 bg-white bg-opacity-20 rounded-full">
+                    <i class="fas fa-exclamation-triangle text-white text-2xl sm:text-3xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Today's Summary & Pending Tasks -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <!-- Today's Summary -->

@@ -23,7 +23,7 @@
             <div class="flex items-center">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600">Total Pembiayaan</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $pembiayaans->total() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $totalPembiayaan ?? 0 }}</p>
                 </div>
                 <div class="ml-4">
                     <i class="fas fa-clipboard-list text-3xl text-blue-500"></i>
@@ -34,7 +34,7 @@
             <div class="flex items-center">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600">Aktif</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $pembiayaans->where('status', 'cair')->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $totalAktif ?? 0 }}</p>
                 </div>
                 <div class="ml-4">
                     <i class="fas fa-play text-3xl text-green-500"></i>
@@ -45,7 +45,7 @@
             <div class="flex items-center">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600">Lunas</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $pembiayaans->where('status', 'lunas')->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $totalLunas ?? 0 }}</p>
                 </div>
                 <div class="ml-4">
                     <i class="fas fa-check text-3xl text-indigo-500"></i>
@@ -56,7 +56,7 @@
             <div class="flex items-center">
                 <div class="flex-1">
                     <p class="text-sm font-medium text-gray-600">Total Nilai</p>
-                    <p class="text-xl font-bold text-gray-900">Rp {{ number_format($pembiayaans->sum('jumlah_pengajuan'), 0, ',', '.') }}</p>
+                    <p class="text-xl font-bold text-gray-900">Rp {{ number_format($totalNilai ?? 0, 0, ',', '.') }}</p>
                 </div>
                 <div class="ml-4">
                     <i class="fas fa-dollar-sign text-3xl text-yellow-500"></i>

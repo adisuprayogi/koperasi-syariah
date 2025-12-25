@@ -28,7 +28,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Total Anggota</h3>
-                    <p class="text-2xl font-bold text-gray-900">{{ $anggota->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $totalAnggota ?? $anggota->total() }}</p>
                 </div>
             </div>
         </div>
@@ -40,7 +40,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Aktif</h3>
-                    <p class="text-2xl font-bold text-green-600">{{ $anggota->where('status_keanggotaan', 'aktif')->count() }}</p>
+                    <p class="text-2xl font-bold text-green-600">{{ $totalAktif }}</p>
                 </div>
             </div>
         </div>
@@ -52,7 +52,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Anggota Biasa</h3>
-                    <p class="text-2xl font-bold text-blue-600">{{ $anggota->where('jenis_anggota', 'biasa')->count() }}</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ $totalBiasa }}</p>
                 </div>
             </div>
         </div>
@@ -64,7 +64,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Bulan Ini</h3>
-                    <p class="text-2xl font-bold text-purple-600">{{ $anggota->where('tanggal_gabung', '>=', now()->startOfMonth())->count() }}</p>
+                    <p class="text-2xl font-bold text-purple-600">{{ $totalBulanIni }}</p>
                 </div>
             </div>
         </div>
@@ -324,6 +324,8 @@
                 </tbody>
             </table>
         </div>
+
+        {{ $anggota->links() }}
     </div>
 
     <!-- Info Panel -->

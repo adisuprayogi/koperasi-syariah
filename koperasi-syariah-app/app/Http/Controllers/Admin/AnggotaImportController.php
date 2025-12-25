@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Anggota;
+use App\Services\ExcelDateParser;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -19,7 +20,7 @@ class AnggotaImportController extends Controller
      */
     public function index()
     {
-        $anggota = Anggota::with('user')->latest()->paginate(20);
+        $anggota = Anggota::with('user')->latest()->paginate(10);
         return view('admin.anggota.index', compact('anggota'));
     }
 
@@ -110,14 +111,19 @@ class AnggotaImportController extends Controller
                         $errors_in_row[] = 'Jenis kelamin harus L atau P';
                     }
 
+                    // Parse tanggal dengan ExcelDateParser
+                    $tanggalLahirParsed = ExcelDateParser::parseDate($tanggalLahir);
+                    $tanggalGabungParsed = ExcelDateParser::parseDate($tanggalGabung);
+                    $tanggalKeluarParsed = ExcelDateParser::parseDate($tanggalKeluar);
+
                     // Validasi tanggal lahir
-                    if (!empty($tanggalLahir) && !strtotime($tanggalLahir)) {
-                        $errors_in_row[] = 'Format tanggal lahir tidak valid (gunakan YYYY-MM-DD)';
+                    if (!empty($tanggalLahir) && !$tanggalLahirParsed) {
+                        $errors_in_row[] = 'Format tanggal lahir tidak valid (gunakan YYYY-MM-DD atau format Excel)';
                     }
 
                     // Validasi tanggal gabung
-                    if (!strtotime($tanggalGabung)) {
-                        $errors_in_row[] = 'Format tanggal gabung tidak valid (gunakan YYYY-MM-DD)';
+                    if (!$tanggalGabungParsed) {
+                        $errors_in_row[] = 'Format tanggal gabung tidak valid (gunakan YYYY-MM-DD atau format Excel)';
                     }
 
                     // Validasi status keanggotaan
@@ -129,8 +135,8 @@ class AnggotaImportController extends Controller
                     if ($statusKeanggotaan === 'keluar') {
                         if (empty($tanggalKeluar)) {
                             $errors_in_row[] = 'Tanggal keluar wajib diisi jika status keluar';
-                        } elseif (!strtotime($tanggalKeluar)) {
-                            $errors_in_row[] = 'Format tanggal keluar tidak valid (gunakan YYYY-MM-DD)';
+                        } elseif (!$tanggalKeluarParsed) {
+                            $errors_in_row[] = 'Format tanggal keluar tidak valid (gunakan YYYY-MM-DD atau format Excel)';
                         }
 
                         // Validasi alasan keluar (harus ada jika status keluar)
@@ -228,7 +234,7 @@ class AnggotaImportController extends Controller
                         'nik' => $nik,
                         'jenis_kelamin' => $jenisKelamin,
                         'tempat_lahir' => $row[2] ?? '',
-                        'tanggal_lahir' => !empty($tanggalLahir) ? date('Y-m-d', strtotime($tanggalLahir)) : null,
+                        'tanggal_lahir' => $tanggalLahirParsed,
                         'alamat_lengkap' => $row[4] ?? '',
                         'no_hp' => $row[5] ?? '',
                         'email' => $email,
@@ -237,8 +243,8 @@ class AnggotaImportController extends Controller
                         'no_npwp' => $noNpwp,
                         'status_keanggotaan' => $statusKeanggotaan,
                         'jenis_anggota' => 'biasa',
-                        'tanggal_gabung' => date('Y-m-d', strtotime($tanggalGabung)),
-                        'tanggal_keluar' => ($statusKeanggotaan === 'keluar' && !empty($tanggalKeluar)) ? date('Y-m-d', strtotime($tanggalKeluar)) : null,
+                        'tanggal_gabung' => $tanggalGabungParsed,
+                        'tanggal_keluar' => ($statusKeanggotaan === 'keluar') ? $tanggalKeluarParsed : null,
                         'alasan_keluar' => ($statusKeanggotaan === 'keluar' && !empty($alasanKeluar)) ? $alasanKeluar : null
                     ];
 

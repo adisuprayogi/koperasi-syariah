@@ -94,6 +94,7 @@
                         <option value="mudharabah" {{ old('tipe_pembiayaan', $jenisPembiayaan->tipe_pembiayaan) == 'mudharabah' ? 'selected' : '' }}>Mudharabah (Bagi Hasil)</option>
                         <option value="musyarakah" {{ old('tipe_pembiayaan', $jenisPembiayaan->tipe_pembiayaan) == 'musyarakah' ? 'selected' : '' }}>Musyarakah (Kerja Sama)</option>
                         <option value="qardh" {{ old('tipe_pembiayaan', $jenisPembiayaan->tipe_pembiayaan) == 'qardh' ? 'selected' : '' }}>Qardh (Pinjaman Baik)</option>
+                        <option value="ijarah" {{ old('tipe_pembiayaan', $jenisPembiayaan->tipe_pembiayaan) == 'ijarah' ? 'selected' : '' }}>Ijarah (Sewa Barang/Jasa)</option>
                     </select>
                 </div>
                 <div>
@@ -118,19 +119,19 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="margin" class="block text-sm font-medium text-gray-700">Margin (%)</label>
-                    <input type="number" id="margin" name="margin" required step="0.01" min="0" max="100"
+                    <input type="number" id="margin" name="margin" required step="any" min="0" max="100"
                            value="{{ old('margin', $jenisPembiayaan->margin) }}"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                           placeholder="15.00">
-                    <p class="text-xs text-gray-500 mt-1">Keuntungan penjual (untuk Murabahah)</p>
+                           placeholder="Contoh: 1.5 atau 15">
+                    <p class="text-xs text-gray-500 mt-1">Gunakan titik (.) untuk desimal, contoh: 1.5 atau 15.25</p>
                 </div>
                 <div>
                     <label for="bagi_hasil" class="block text-sm font-medium text-gray-700">Bagi Hasil (%)</label>
-                    <input type="number" id="bagi_hasil" name="bagi_hasil" required step="0.01" min="0" max="100"
+                    <input type="number" id="bagi_hasil" name="bagi_hasil" required step="any" min="0" max="100"
                            value="{{ old('bagi_hasil', $jenisPembiayaan->bagi_hasil) }}"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                           placeholder="60.00">
-                    <p class="text-xs text-gray-500 mt-1">Nisbah bagi hasil (untuk Mudharabah/Musyarakah)</p>
+                           placeholder="Contoh: 60.5 atau 70">
+                    <p class="text-xs text-gray-500 mt-1">Gunakan titik (.) untuk desimal, contoh: 60.5 atau 70.25</p>
                 </div>
             </div>
 

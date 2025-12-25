@@ -8,13 +8,60 @@ use App\Models\Pengurus;
 use App\Models\Koperasi;
 use App\Models\JenisSimpanan;
 use App\Models\JenisPembiayaan;
+use App\Models\TransaksiSimpanan;
+use App\Models\Anggota;
+use App\Models\PengajuanPembiayaan;
+use App\Models\Angsuran;
+use App\Services\ExcelDateParser;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Concerns\ToArray;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    /**
+     * Helper function to parse Excel date with fallback
+     */
+    private function parseDate($dateValue)
+    {
+        if (empty($dateValue)) {
+            return null;
+        }
+
+        try {
+            // Try using ExcelDateParser if available
+            if (class_exists('App\Services\ExcelDateParser')) {
+                return ExcelDateParser::parseDate($dateValue);
+            }
+
+            // Fallback to manual parsing
+            if (is_string($dateValue) && strpos($dateValue, '-') !== false) {
+                return date('Y-m-d', strtotime($dateValue));
+            }
+
+            // If it's numeric (Excel date format)
+            if (is_numeric($dateValue)) {
+                try {
+                    // Use Carbon's built-in Excel date conversion
+                    return Carbon::createFromFormat('Y-m-d', '1900-01-01')
+                                  ->addDays($dateValue - 2)
+                                  ->format('Y-m-d');
+                } catch (\Exception $e) {
+                    return null;
+                }
+            }
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        return null;
+    }
+
     /**
      * Dashboard Admin
      */
@@ -71,7 +118,7 @@ class AdminController extends Controller
     public function pengurusIndex()
     {
         // Get only active pengurus (not soft-deleted)
-        $pengurus = Pengurus::with('user')->latest()->get();
+        $pengurus = Pengurus::with('user')->latest()->paginate(10);
         return view('admin.pengurus.index', compact('pengurus'));
     }
 
@@ -367,7 +414,7 @@ class AdminController extends Controller
      */
     public function jenisSimpananIndex()
     {
-        $jenisSimpanan = JenisSimpanan::latest()->get();
+        $jenisSimpanan = JenisSimpanan::latest()->paginate(10);
         return view('admin.jenis-simpanan.index', compact('jenisSimpanan'));
     }
 
@@ -490,7 +537,7 @@ class AdminController extends Controller
      */
     public function jenisPembiayaanIndex()
     {
-        $jenisPembiayaan = JenisPembiayaan::latest()->get();
+        $jenisPembiayaan = JenisPembiayaan::latest()->paginate(10);
         return view('admin.jenis-pembiayaan.index', compact('jenisPembiayaan'));
     }
 
@@ -510,7 +557,7 @@ class AdminController extends Controller
         $validator = Validator::make($request->all(), [
             'kode_jenis' => 'required|string|max:10|unique:jenis_pembiayaans,kode_jenis',
             'nama_pembiayaan' => 'required|string|max:255',
-            'tipe_pembiayaan' => 'required|in:murabahah,mudharabah,musyarakah,qardh',
+            'tipe_pembiayaan' => 'required|in:murabahah,mudharabah,musyarakah,qardh,ijarah',
             'margin' => 'required|numeric|min:0|max:100',
             'bagi_hasil' => 'required|numeric|min:0|max:100',
             'periode_hitung' => 'required|in:bulanan,tahunan,otomatis,jtempo',
@@ -561,7 +608,7 @@ class AdminController extends Controller
         $validator = Validator::make($request->all(), [
             'kode_jenis' => 'required|string|max:10|unique:jenis_pembiayaans,kode_jenis,' . $id,
             'nama_pembiayaan' => 'required|string|max:255',
-            'tipe_pembiayaan' => 'required|in:murabahah,mudharabah,musyarakah,qardh',
+            'tipe_pembiayaan' => 'required|in:murabahah,mudharabah,musyarakah,qardh,ijarah',
             'margin' => 'required|numeric|min:0|max:100',
             'bagi_hasil' => 'required|numeric|min:0|max:100',
             'periode_hitung' => 'required|in:bulanan,tahunan,otomatis,jtempo',
@@ -609,6 +656,586 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return back()
                 ->with('error', 'Gagal menghapus jenis pembiayaan: ' . $e->getMessage());
+        }
+    }
+
+    // ===== IMPORT FUNCTIONALITY =====
+
+    /**
+     * Show Simpanan Import Form
+     */
+    public function simpananImport()
+    {
+        return view('admin.simpanan.import');
+    }
+
+    /**
+     * Download Simpanan Template
+     */
+    public function simpananDownloadTemplate()
+    {
+        // Create proper CSV template
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="template_import_simpanan.csv"',
+        ];
+
+        // CSV content with BOM for Excel compatibility
+        $csvContent = "\xEF\xBB\xBF"; // UTF-8 BOM for Excel
+        $csvContent .= "No Anggota,Jenis Simpanan,Jenis Transaksi,Jumlah,Tanggal Transaksi,Bulan,Tahun,Keterangan\n";
+        $csvContent .= "2512.00001,Simpanan Pokok,setor,500000,2024-12-01,12,2024,Simpanan pokok anggota baru\n";
+        $csvContent .= "2512.00002,Simpanan Wajib,setor,100000,2024-12-01,12,2024,Simpanan wajib bulan Desember\n";
+        $csvContent .= "2512.00001,Simpanan Wajib,setor,100000,2025-01-05,12,2024,Pembayaran terlambat bulan Desember\n";
+        $csvContent .= "2512.00001,Simpanan Sukarela,tarik,200000,2024-12-15,12,2024,Penarikan simpanan sukarela";
+
+        return response($csvContent, 200, $headers);
+    }
+
+    /**
+     * Process Simpanan Import
+     */
+    public function simpananImportProcess(Request $request)
+    {
+        // \Log::info('Simpanan import request received');
+
+        $request->validate([
+            'excel_file' => 'required|mimes:xlsx,xls,csv|max:10240'
+        ]);
+
+        try {
+            \Log::info('Starting simpanan import process');
+            // Debug: log file info
+            \Log::info('Processing simpanan import, file: ' . $request->file('excel_file')->getClientOriginalName());
+
+            $import = new class implements ToArray {
+                public $data = [];
+                public function array(array $array) {
+                    $this->data = $array;
+                }
+            };
+
+            // Simple import for now - handle with default reader first
+            \Log::info('Starting Excel import');
+            try {
+                \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('excel_file'));
+                \Log::info('Excel import completed');
+            } catch (\Exception $e) {
+                \Log::error('Excel import failed: ' . $e->getMessage());
+                throw $e;
+            }
+            $data = $import->data;
+
+            // Debug: log data count
+            \Log::info('Import data count: ' . count($data));
+
+            // Skip header
+            $dataRows = array_slice($data, 1);
+            $errors = [];
+            $successCount = 0;
+
+            \Log::info('Data rows after skipping header: ' . count($dataRows));
+
+            DB::beginTransaction();
+            try {
+                foreach ($dataRows as $index => $row) {
+                    $rowIndex = $index + 2;
+
+                    // Debug: log row data
+                    \Log::info("Processing row $rowIndex: " . json_encode($row));
+
+                    $noAnggota = trim($row[0] ?? '');
+                    $jenisSimpanan = trim($row[1] ?? '');
+                    $jenisTransaksi = strtolower(trim($row[2] ?? ''));
+                    $jumlah = trim($row[3] ?? '');
+                    $tanggalTransaksi = trim($row[4] ?? '');
+                    $bulan = trim($row[5] ?? '');
+                    $tahun = trim($row[6] ?? '');
+
+                    \Log::info("Parsed data - NoAnggota: $noAnggota, Jenis: $jenisSimpanan, Transaksi: $jenisTransaksi, Jumlah: $jumlah, Tanggal: $tanggalTransaksi, Bulan: $bulan, Tahun: $tahun");
+
+                    if (empty($noAnggota) || empty($jenisSimpanan) || empty($jenisTransaksi) || empty($jumlah) || empty($tanggalTransaksi) || empty($bulan) || empty($tahun)) {
+                        $errors[] = "Baris $rowIndex: Field wajib kosong";
+                        \Log::warning("Empty field in row $rowIndex");
+                        continue;
+                    }
+
+                    // Validate data
+                    $anggota = Anggota::where('no_anggota', $noAnggota)->first();
+                    \Log::info("Looking for anggota with no_anggota: $noAnggota, found: " . ($anggota ? $anggota->id : 'null'));
+                    if (!$anggota) {
+                        $errors[] = "Baris $rowIndex: No Anggota tidak ditemukan";
+                        \Log::warning("Anggota not found for $noAnggota");
+                        continue;
+                    }
+
+                    $jenisSimpananModel = JenisSimpanan::where('nama_simpanan', $jenisSimpanan)->first();
+                    \Log::info("Looking for jenis simpanan: $jenisSimpanan, found: " . ($jenisSimpananModel ? $jenisSimpananModel->id : 'null'));
+                    if (!$jenisSimpananModel) {
+                        $errors[] = "Baris $rowIndex: Jenis Simpanan tidak ditemukan";
+                        \Log::warning("Jenis simpanan not found for $jenisSimpanan");
+                        continue;
+                    }
+
+                    if (!in_array($jenisTransaksi, ['setor', 'tarik'])) {
+                        $errors[] = "Baris $rowIndex: Jenis Transaksi harus 'setor' atau 'tarik'";
+                        continue;
+                    }
+
+                    if (!is_numeric($jumlah) || $jumlah <= 0) {
+                        $errors[] = "Baris $rowIndex: Jumlah harus angka positif";
+                        continue;
+                    }
+
+                    $tanggalParsed = $this->parseDate($tanggalTransaksi);
+                    if (!$tanggalParsed) {
+                        $errors[] = "Baris $rowIndex: Format tanggal tidak valid";
+                        continue;
+                    }
+
+                    // Validate bulan
+                    if (!is_numeric($bulan) || $bulan < 1 || $bulan > 12) {
+                        $errors[] = "Baris $rowIndex: Bulan harus angka antara 1-12";
+                        continue;
+                    }
+
+                    // Validate tahun
+                    if (!is_numeric($tahun) || $tahun < 2020 || $tahun > (date('Y') + 1)) {
+                        $errors[] = "Baris $rowIndex: Tahun tidak valid (harus 2020-" . (date('Y') + 1) . ")";
+                        continue;
+                    }
+
+                    // Calculate saldo
+                    $saldo = TransaksiSimpanan::calculateSaldo(
+                        $anggota->id,
+                        $jenisSimpananModel->id,
+                        $jenisTransaksi,
+                        (float)$jumlah
+                    );
+
+                    // Create transaksi
+                    try {
+                        \Log::info("Creating transaksi for anggota_id: {$anggota->id}, jenis_simpanan_id: {$jenisSimpananModel->id}");
+
+                        $transaksiData = [
+                            'kode_transaksi' => TransaksiSimpanan::generateKodeTransaksi($jenisTransaksi),
+                            'anggota_id' => $anggota->id,
+                            'jenis_simpanan_id' => $jenisSimpananModel->id,
+                            'pengurus_id' => Pengurus::where('user_id', auth()->id())->first()?->id,
+                            'jenis_transaksi' => $jenisTransaksi,
+                            'jumlah' => (float)$jumlah,
+                            'tanggal_transaksi' => $tanggalParsed,
+                            'bulan' => (int)$bulan,
+                            'tahun' => (int)$tahun,
+                            'keterangan' => $row[7] ?? 'Import dari CSV',
+                            'saldo_sebelumnya' => $saldo['saldo_sebelumnya'],
+                            'saldo_setelahnya' => $saldo['saldo_setelahnya'],
+                            'status' => 'verified',
+                            'verified_at' => now(),
+                            'verified_by' => auth()->id(),
+                        ];
+
+                        \Log::info("Transaksi data: " . json_encode($transaksiData));
+
+                        $transaksi = TransaksiSimpanan::create($transaksiData);
+                        \Log::info("Transaksi created with ID: " . $transaksi->id);
+
+                        $successCount++;
+                    } catch (\Exception $e) {
+                        \Log::error("Error creating transaksi: " . $e->getMessage());
+                        \Log::error("Stack trace: " . $e->getTraceAsString());
+                        $errors[] = "Baris $rowIndex: Error creating transaksi - " . $e->getMessage();
+                        continue;
+                    }
+                }
+
+                \Log::info("Committing transaction with $successCount records");
+                DB::commit();
+                \Log::info("Transaction committed successfully");
+
+                $message = "Berhasil import $successCount data simpanan";
+                if (!empty($errors)) {
+                    $message .= ". Error: " . implode('; ', array_slice($errors, 0, 3));
+                    if (count($errors) > 3) {
+                        $message .= " ... dan " . (count($errors) - 3) . " error lainnya";
+                    }
+                }
+
+                \Log::info("Import completed successfully with $successCount records");
+                return back()->with('success', $message);
+
+            } catch (\Exception $e) {
+                DB::rollback();
+                \Log::error("Transaction failed: " . $e->getMessage());
+                \Log::error("Stack trace: " . $e->getTraceAsString());
+                return back()->with('error', 'Gagal memproses import: ' . $e->getMessage());
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show Pembiayaan Import Form
+     */
+    public function pembiayaanImport()
+    {
+        return view('admin.pembiayaan.import');
+    }
+
+    /**
+     * Download Pembiayaan Template
+     */
+    public function pembiayaanDownloadTemplate()
+    {
+        // Create proper CSV template
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="template_import_pembiayaan.csv"',
+        ];
+
+        // CSV content with BOM for Excel compatibility
+        $csvContent = "\xEF\xBB\xBF"; // UTF-8 BOM for Excel
+        $csvContent .= "No Pembiayaan,No Anggota,Jenis Pembiayaan,Jumlah Pengajuan,Tenor,Tujuan Pembiayaan,Tanggal Pengajuan,Tanggal Pencairan,Deskripsi,No Rekening,Atas Nama Rekening\n";
+        $csvContent .= "PM001,2512.00001,Pembiayaan Murabahah Motor,15000000,24,Konsumtif,2024-12-01,2024-12-05,Pembiayaan pembelian motor Honda Beat,1234567890,Ahmad Yani\n";
+        $csvContent .= "MM002,2512.00002,Modal Kerja Mudharabah,50000000,36,Modal Kerja,2024-12-01,,Modal kerja untuk tambah stok barang,0987654321,Siti Nurhaliza";
+
+        return response($csvContent, 200, $headers);
+    }
+
+    /**
+     * Process Pembiayaan Import
+     */
+    public function pembiayaanImportProcess(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|mimes:xlsx,xls,csv|max:10240'
+        ]);
+
+        try {
+            $import = new class implements ToArray {
+                public $data = [];
+                public function array(array $array) {
+                    $this->data = $array;
+                }
+            };
+
+            Excel::import($import, $request->file('excel_file'));
+            $data = $import->data;
+
+            // Skip header
+            $dataRows = array_slice($data, 1);
+            $errors = [];
+            $successCount = 0;
+
+            DB::beginTransaction();
+            try {
+                foreach ($dataRows as $index => $row) {
+                    $rowIndex = $index + 2;
+
+                    $noPembiayaan = trim($row[0] ?? '');
+                    $noAnggota = trim($row[1] ?? '');
+                    $jenisPembiayaan = trim($row[2] ?? '');
+                    $jumlah = trim($row[3] ?? '');
+                    $tenor = trim($row[4] ?? '');
+                    $tujuan = trim($row[5] ?? '');
+                    $tanggal = trim($row[6] ?? '');
+                    $tanggalPencairan = trim($row[7] ?? '');
+
+                    if (empty($noPembiayaan) || empty($noAnggota) || empty($jenisPembiayaan) || empty($jumlah) || empty($tenor) || empty($tujuan) || empty($tanggal)) {
+                        $errors[] = "Baris $rowIndex: Field wajib kosong (No Pembiayaan, No Anggota, Jenis, Jumlah, Tenor, Tujuan, Tanggal)";
+                        continue;
+                    }
+
+                    // Validations
+                    // Check if no pembiayaan already exists
+                    if (PengajuanPembiayaan::where('kode_pengajuan', $noPembiayaan)->exists()) {
+                        $errors[] = "Baris $rowIndex: No Pembiayaan '$noPembiayaan' sudah ada di database";
+                        continue;
+                    }
+
+                    $anggota = Anggota::where('no_anggota', $noAnggota)->first();
+                    if (!$anggota) {
+                        $errors[] = "Baris $rowIndex: No Anggota tidak ditemukan";
+                        continue;
+                    }
+
+                    $jenisModel = JenisPembiayaan::where('nama_pembiayaan', $jenisPembiayaan)->first();
+                    if (!$jenisModel) {
+                        $errors[] = "Baris $rowIndex: Jenis Pembiayaan tidak ditemukan";
+                        continue;
+                    }
+
+
+                    if (!is_numeric($jumlah) || $jumlah <= 0) {
+                        $errors[] = "Baris $rowIndex: Jumlah harus angka positif";
+                        continue;
+                    }
+
+                    if (!is_numeric($tenor) || $tenor <= 0 || $tenor > 60) {
+                        $errors[] = "Baris $rowIndex: Tenor harus 1-60 bulan";
+                        continue;
+                    }
+
+                    // Map tujuan
+                    $tujuanMap = [
+                        'modal kerja' => 'modal_kerja',
+                        'investasi' => 'investasi',
+                        'konsumtif' => 'konsumtif',
+                        'pendidikan' => 'pendidikan',
+                        'renovasi' => 'renovasi',
+                        'lainnya' => 'lainnya'
+                    ];
+                    $tujuanKey = $tujuanMap[strtolower($tujuan)] ?? null;
+                    if (!$tujuanKey) {
+                        $errors[] = "Baris $rowIndex: Tujuan tidak valid";
+                        continue;
+                    }
+
+                    $tanggalParsed = $this->parseDate($tanggal);
+                    if (!$tanggalParsed) {
+                        $errors[] = "Baris $rowIndex: Format tanggal tidak valid";
+                        continue;
+                    }
+
+                    // Create pembiayaan
+                    $marginPercent = $jenisModel->margin ?? 0;
+                    // Rumus BARU: Margin per bulan dikalikan tenor
+                    // Semakin lama tenor, semakin besar total margin
+                    $marginPerBulan = (float)$jumlah * ($marginPercent / 100);
+                    $jumlahMargin = $marginPerBulan * (int)$tenor;
+                    $totalPembiayaan = (float)$jumlah + $jumlahMargin;
+                    $angsuranPokok = (float)$jumlah / (int)$tenor;
+                    $angsuranMargin = $marginPerBulan;
+
+                    // Parse tanggal pencairan jika ada
+                    $tanggalPencairanParsed = null;
+                    if (!empty($tanggalPencairan)) {
+                        $tanggalPencairanParsed = $this->parseDate($tanggalPencairan);
+                    }
+
+                    try {
+                        $pembiayaan = PengajuanPembiayaan::create([
+                            'kode_pengajuan' => $noPembiayaan, // Gunakan nomor dari CSV
+                            'anggota_id' => $anggota->id,
+                            'jenis_pembiayaan_id' => $jenisModel->id,
+                            'jumlah_pengajuan' => (float)$jumlah,
+                            'tenor' => (int)$tenor,
+                            'margin_percent' => $marginPercent,
+                            'jumlah_margin' => $jumlahMargin,
+                            'angsuran_pokok' => $angsuranPokok,
+                            'angsuran_margin' => $angsuranMargin,
+                            'total_angsuran' => $angsuranPokok + $angsuranMargin,
+                            'tujuan_pembiayaan' => $tujuanKey,
+                            'deskripsi' => $row[8] ?? 'Import dari CSV',
+                            'status' => 'approved',
+                            'no_rekening' => $row[9] ?? '',
+                            'atas_nama' => $row[10] ?? $anggota->nama_lengkap,
+                            'tanggal_jatuh_tempo' => Carbon::parse($tanggalParsed)->addMonths((int)$tenor),
+                            'created_at' => $tanggalParsed,
+                            'approved_at' => $tanggalParsed,
+                            'tanggal_cair' => $tanggalPencairanParsed ?: $tanggalParsed, // Gunakan tanggal pencairan atau tanggal pengajuan
+                        ]);
+
+                        // Create angsuran using the existing method with error handling
+                        try {
+                            Angsuran::generateJadwalAngsuran($pembiayaan);
+                        } catch (\Illuminate\Database\QueryException $e) {
+                            // Handle duplicate constraint violation
+                            if (strpos($e->getMessage(), 'Duplicate entry') !== false && strpos($e->getMessage(), 'kode_angsuran') !== false) {
+                                // Continue without failing - log the issue but continue import
+                                \Log::warning("Duplicate angsuran codes detected for pembiayaan: {$pembiayaan->kode_pengajuan}. Skipping angsuran generation.");
+                                $errors[] = "Baris $rowIndex: Anggota dengan nomor $noAnggota sudah memiliki pembiayaan aktif. Pembiayaan dibuat tapi jadwal angsuran dilewati.";
+                            } else {
+                                throw $e; // Re-throw if it's not a duplicate constraint error
+                            }
+                        }
+
+                        $successCount++;
+                    } catch (\Illuminate\Database\QueryException $e) {
+                        // Handle unique constraint violations for pembiayaan
+                        if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                            $errors[] = "Baris $rowIndex: Anggota dengan nomor $noAnggota sudah memiliki pembiayaan dengan jenis yang sama atau sedang aktif";
+                            continue;
+                        } else {
+                            throw $e; // Re-throw if it's not a duplicate constraint error
+                        }
+                    }
+                }
+
+                DB::commit();
+
+                $message = "Berhasil import $successCount data pembiayaan";
+                if (!empty($errors)) {
+                    $message .= ". Error: " . implode('; ', array_slice($errors, 0, 3));
+                    if (count($errors) > 3) {
+                        $message .= " ... dan " . (count($errors) - 3) . " error lainnya";
+                    }
+                }
+
+                return back()->with('success', $message);
+
+            } catch (\Exception $e) {
+                DB::rollback();
+                throw $e;
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show Pembayaran Angsuran Import Form
+     */
+    public function pembayaranAngsuranImport()
+    {
+        return view('admin.pembayaran-angsuran.import');
+    }
+
+    /**
+     * Download Pembayaran Angsuran Template
+     */
+    public function pembayaranAngsuranDownloadTemplate()
+    {
+        // Create proper CSV template
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="template_import_pembayaran_angsuran.csv"',
+        ];
+
+        // CSV content with BOM for Excel compatibility
+        $csvContent = "\xEF\xBB\xBF"; // UTF-8 BOM for Excel
+        $csvContent .= "No Anggota,Kode Pembiayaan,Angsuran Ke,Tanggal Bayar,Jumlah Bayar,Keterangan\n";
+        $csvContent .= "2512.00001,2512PM0001.001,1,2024-12-15,1325000,Pembayaran angsuran pertama\n";
+        $csvContent .= "2512.00001,2512PM0001.002,2,2024-12-15,1325000,Pembayaran angsuran kedua\n";
+        $csvContent .= "2512.00002,2512MM0001.001,1,2024-12-15,2500000,Pembayaran angsuran modal kerja";
+
+        return response($csvContent, 200, $headers);
+    }
+
+    /**
+     * Process Pembayaran Angsuran Import
+     */
+    public function pembayaranAngsuranImportProcess(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|mimes:xlsx,xls,csv|max:10240'
+        ]);
+
+        try {
+            $import = new class implements ToArray {
+                public $data = [];
+                public function array(array $array) {
+                    $this->data = $array;
+                }
+            };
+
+            Excel::import($import, $request->file('excel_file'));
+            $data = $import->data;
+
+            // Skip header
+            $dataRows = array_slice($data, 1);
+            $errors = [];
+            $successCount = 0;
+
+            DB::beginTransaction();
+            try {
+                foreach ($dataRows as $index => $row) {
+                    $rowIndex = $index + 2;
+
+                    $noAnggota = trim($row[0] ?? '');
+                    $kodePembiayaan = trim($row[1] ?? '');
+                    $angsuranKe = trim($row[2] ?? '');
+                    $tanggalBayar = trim($row[3] ?? '');
+                    $jumlahBayar = trim($row[4] ?? '');
+
+                    if (empty($noAnggota) || empty($kodePembiayaan) || empty($angsuranKe) || empty($tanggalBayar) || empty($jumlahBayar)) {
+                        $errors[] = "Baris $rowIndex: Field wajib kosong";
+                        continue;
+                    }
+
+                    // Validations
+                    $anggota = Anggota::where('no_anggota', $noAnggota)->first();
+                    if (!$anggota) {
+                        $errors[] = "Baris $rowIndex: No Anggota tidak ditemukan";
+                        continue;
+                    }
+
+                    // Find pembiayaan
+                    $pembiayaan = PengajuanPembiayaan::where('kode_pengajuan', $kodePembiayaan)->first();
+                    if (!$pembiayaan) {
+                        $errors[] = "Baris $rowIndex: Kode Pembiayaan tidak ditemukan";
+                        continue;
+                    }
+
+                    // Validate angsuran exists
+                    $angsuran = Angsuran::where('pengajuan_pembiayaan_id', $pembiayaan->id)
+                                    ->where('angsuran_ke', $angsuranKe)
+                                    ->first();
+                    if (!$angsuran) {
+                        $errors[] = "Baris $rowIndex: Angsuran ke-$angsuranKe tidak ditemukan";
+                        continue;
+                    }
+
+                    // Check if already paid
+                    if ($angsuran->status === 'terbayar') {
+                        $errors[] = "Baris $rowIndex: Angsuran ke-$angsuranKe sudah lunas";
+                        continue;
+                    }
+
+                    if (!is_numeric($jumlahBayar) || $jumlahBayar <= 0) {
+                        $errors[] = "Baris $rowIndex: Jumlah bayar harus angka positif";
+                        continue;
+                    }
+
+                    $tanggalParsed = $this->parseDate($tanggalBayar);
+                    if (!$tanggalParsed) {
+                        $errors[] = "Baris $rowIndex: Format tanggal tidak valid";
+                        continue;
+                    }
+
+                    // Check if pembayaran exceeds total
+                    $sisaTagihan = $angsuran->jumlah_angsuran - ($angsuran->jumlah_bayar ?? 0);
+                    if ((float)$jumlahBayar > $sisaTagihan) {
+                        $errors[] = "Baris $rowIndex: Jumlah bayar melebihi tagihan. Sisa tagihan: Rp " . number_format($sisaTagihan, 0, ',', '.');
+                        continue;
+                    }
+
+                    // Update angsuran
+                    $jumlahBayarSebelumnya = $angsuran->jumlah_bayar ?? 0;
+                    $totalBayar = $jumlahBayarSebelumnya + (float)$jumlahBayar;
+
+                    $angsuran->update([
+                        'jumlah_bayar' => $totalBayar,
+                        'tanggal_bayar' => $tanggalParsed,
+                        'status' => $totalBayar >= $angsuran->jumlah_angsuran ? 'terbayar' : 'pending',
+                        'keterangan' => ($angsuran->keterangan ?? '') . "\n" . ($row[5] ?? 'Import dari CSV'),
+                        'updated_at' => now()
+                    ]);
+
+                    $successCount++;
+                }
+
+                DB::commit();
+
+                $message = "Berhasil import $successCount pembayaran angsuran";
+                if (!empty($errors)) {
+                    $message .= ". Error: " . implode('; ', array_slice($errors, 0, 3));
+                    if (count($errors) > 3) {
+                        $message .= " ... dan " . (count($errors) - 3) . " error lainnya";
+                    }
+                }
+
+                return back()->with('success', $message);
+
+            } catch (\Exception $e) {
+                DB::rollback();
+                throw $e;
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

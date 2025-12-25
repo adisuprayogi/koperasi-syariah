@@ -82,6 +82,22 @@ class PengurusController extends Controller
         $totalMargin = PengajuanPembiayaan::whereIn('status', ['cair', 'lunas'])
                                            ->sum('jumlah_margin');
 
+        // Total Sisa Angsuran
+        $angsuranBelumLunas = Angsuran::where('status', 'pending')
+                                       ->whereHas('pengajuanPembiayaan', function($q) {
+                                           $q->whereIn('status', ['cair', 'approved']);
+                                       });
+
+        $totalSisaAngsuran = $angsuranBelumLunas->sum('jumlah_angsuran');
+        $countAngsuranBelumLunas = $angsuranBelumLunas->count();
+
+        // Total yang sudah dibayar (angsuran yang lunas)
+        $totalSudahBayar = Angsuran::where('status', 'terbayar')
+                                    ->whereHas('pengajuanPembiayaan', function($q) {
+                                        $q->whereIn('status', ['cair', 'approved', 'lunas']);
+                                    })
+                                    ->sum('jumlah_angsuran');
+
         // Pending Tasks berdasarkan posisi
         $pendingTasks = collect();
         if ($this->canVerifyApprove()) {
@@ -121,6 +137,21 @@ class PengurusController extends Controller
             ]);
         }
 
+        // Tunggakan Simpanan Wajib
+        $tunggakanSimpananWajib = TransaksiSimpanan::hitungTunggakanSimpananWajib();
+        $totalTunggakanWajib = $tunggakanSimpananWajib['total_tunggakan'];
+        $jumlahAnggotaNunggakWajib = $tunggakanSimpananWajib['jumlah_anggota_nunggak'];
+
+        // Add tunggakan task if any
+        if ($jumlahAnggotaNunggakWajib > 0) {
+            $pendingTasks->push((object) [
+                'task' => 'Tunggakan Simpanan Wajib',
+                'count' => $jumlahAnggotaNunggakWajib,
+                'url' => route('pengurus.simpanan.index'),
+                'priority' => $jumlahAnggotaNunggakWajib > 10 ? 'high' : 'normal'
+            ]);
+        }
+
         // Recent Activities
         $recentTransaksi = TransaksiSimpanan::with('anggota')
                                           ->latest('tanggal_transaksi')
@@ -157,10 +188,16 @@ class PengurusController extends Controller
             'totalPembiayaanCair',
             'activePembiayaan',
             'totalMargin',
+            'totalSisaAngsuran',
+            'countAngsuranBelumLunas',
+            'totalSudahBayar',
             'pendingTasks',
             'recentTransaksi',
             'recentPengajuan',
-            'monthlySummary'
+            'monthlySummary',
+            'totalTunggakanWajib',
+            'jumlahAnggotaNunggakWajib',
+            'tunggakanSimpananWajib'
         ));
     }
 
@@ -202,9 +239,40 @@ class PengurusController extends Controller
             $query->whereDate('tanggal_gabung', '<=', $request->tanggal_selesai);
         }
 
-        $anggota = $query->get();
+        $anggota = $query->paginate(10);
 
-        return view('pengurus.anggota.index', compact('anggota'));
+        // Get statistics from base query without pagination
+        $statsQuery = Anggota::query();
+        if ($request->filled('status_keanggotaan')) {
+            $statsQuery->where('status_keanggotaan', $request->status_keanggotaan);
+        }
+        if ($request->filled('jenis_anggota')) {
+            $statsQuery->where('jenis_anggota', $request->jenis_anggota);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $statsQuery->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('no_anggota', 'like', "%{$search}%")
+                  ->orWhere('nik', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('no_hp', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('tanggal_mulai')) {
+            $statsQuery->whereDate('tanggal_gabung', '>=', $request->tanggal_mulai);
+        }
+        if ($request->filled('tanggal_selesai')) {
+            $statsQuery->whereDate('tanggal_gabung', '<=', $request->tanggal_selesai);
+        }
+
+        // Get total counts for statistics
+        $totalAnggota = $statsQuery->count();
+        $totalAktif = (clone $statsQuery)->where('status_keanggotaan', 'aktif')->count();
+        $totalBiasa = (clone $statsQuery)->where('jenis_anggota', 'biasa')->count();
+        $totalBulanIni = (clone $statsQuery)->where('tanggal_gabung', '>=', now()->startOfMonth())->count();
+
+        return view('pengurus.anggota.index', compact('anggota', 'totalAnggota', 'totalAktif', 'totalBiasa', 'totalBulanIni'));
     }
 
     /**
@@ -233,6 +301,7 @@ class PengurusController extends Controller
             'penghasilan' => 'nullable|numeric|min:0',
             'no_npwp' => 'nullable|string|max:20',
             'jenis_anggota' => 'required|in:biasa,luar_biasa,kehormatan',
+            'tanggal_gabung' => 'required|date|before_or_equal:today',
             'password' => 'required|string|min:8|confirmed',
             'create_user_account' => 'nullable|boolean',
         ]);
@@ -272,7 +341,7 @@ class PengurusController extends Controller
                 'penghasilan' => $request->penghasilan,
                 'no_npwp' => $request->no_npwp,
                 'status_keanggotaan' => 'aktif',
-                'tanggal_gabung' => now(),
+                'tanggal_gabung' => $request->tanggal_gabung,
                 'jenis_anggota' => $request->jenis_anggota,
                 'user_id' => $user_id,
             ]);
@@ -344,6 +413,7 @@ class PengurusController extends Controller
             'no_npwp' => 'nullable|string|max:20',
             'status_keanggotaan' => 'required|in:aktif,tidak_aktif,keluar',
             'jenis_anggota' => 'required|in:biasa,luar_biasa,kehormatan',
+            'tanggal_gabung' => 'required|date|before_or_equal:today',
         ]);
 
         try {
@@ -381,6 +451,7 @@ class PengurusController extends Controller
                 'no_npwp' => $request->no_npwp,
                 'status_keanggotaan' => $request->status_keanggotaan,
                 'jenis_anggota' => $request->jenis_anggota,
+                'tanggal_gabung' => $request->tanggal_gabung,
             ]);
 
             DB::commit();
@@ -509,16 +580,16 @@ class PengurusController extends Controller
      */
     public function simpananIndex(Request $request)
     {
+        // Set default date range to current month if not provided
+        $tanggalDari = $request->get('tanggal_dari', now()->startOfMonth()->format('Y-m-d'));
+        $tanggalSampai = $request->get('tanggal_sampai', now()->endOfMonth()->format('Y-m-d'));
+
         $query = TransaksiSimpanan::with(['anggota', 'jenisSimpanan', 'pengurus'])
                                 ->latest();
 
-        // Filter by date range
-        if ($request->has('tanggal_dari') && $request->tanggal_dari) {
-            $query->whereDate('tanggal_transaksi', '>=', $request->tanggal_dari);
-        }
-        if ($request->has('tanggal_sampai') && $request->tanggal_sampai) {
-            $query->whereDate('tanggal_transaksi', '<=', $request->tanggal_sampai);
-        }
+        // Filter by date range (always applied, with default values)
+        $query->whereDate('tanggal_transaksi', '>=', $tanggalDari)
+              ->whereDate('tanggal_transaksi', '<=', $tanggalSampai);
 
         // Filter by jenis transaksi
         if ($request->has('jenis_transaksi') && $request->jenis_transaksi) {
@@ -535,14 +606,43 @@ class PengurusController extends Controller
             $query->where('status', $request->status);
         }
 
-        $transaksi = $query->paginate(20);
+        $transaksi = $query->paginate(10);
         $anggota = Anggota::orderBy('nama_lengkap')->get();
         $jenisSimpanan = JenisSimpanan::where('status', 1)->get();
+
+        // Get statistics from base query without pagination
+        $statsQuery = TransaksiSimpanan::query();
+
+        // Apply same filters to statistics (including default date range)
+        $statsQuery->whereDate('tanggal_transaksi', '>=', $tanggalDari)
+                   ->whereDate('tanggal_transaksi', '<=', $tanggalSampai);
+
+        if ($request->has('jenis_transaksi') && $request->jenis_transaksi) {
+            $statsQuery->where('jenis_transaksi', $request->jenis_transaksi);
+        }
+        if ($request->has('jenis_simpanan_id') && $request->jenis_simpanan_id) {
+            $statsQuery->where('jenis_simpanan_id', $request->jenis_simpanan_id);
+        }
+        if ($request->has('status') && $request->status) {
+            $statsQuery->where('status', $request->status);
+        }
+
+        // Calculate totals
+        $totalSetoran = (clone $statsQuery)->where('jenis_transaksi', 'setor')->sum('jumlah');
+        $totalPenarikan = (clone $statsQuery)->where('jenis_transaksi', 'tarik')->sum('jumlah');
+        $totalTransaksi = $statsQuery->count();
+        $totalHariIni = (clone $statsQuery)->whereDate('tanggal_transaksi', today())->count();
 
         return view('pengurus.simpanan.index', compact(
             'transaksi',
             'anggota',
-            'jenisSimpanan'
+            'jenisSimpanan',
+            'totalSetoran',
+            'totalPenarikan',
+            'totalTransaksi',
+            'totalHariIni',
+            'tanggalDari',
+            'tanggalSampai'
         ));
     }
 
@@ -571,7 +671,14 @@ class PengurusController extends Controller
             'jenis_transaksi' => 'required|in:setor,tarik',
             'jumlah' => 'required|numeric|min:1000',
             'tanggal_transaksi' => 'required|date|before_or_equal:today',
+            'bulan' => 'required|integer|min:1|max:12',
+            'tahun' => 'required|integer|min:2020|max:' . (date('Y') + 1),
             'keterangan' => 'nullable|string|max:500',
+            'bukti_transaksi' => 'nullable|file|mimes:jpeg,png,jpg,pdf,application/pdf|max:500',
+        ],
+        [
+            'bukti_transaksi.max' => 'Ukuran file bukti pembayaran maksimal 500KB. Silakan kompress file terlebih dahulu.',
+            'bukti_transaksi.mimes' => 'Format file harus PNG, JPG, JPEG, atau PDF',
         ]);
 
         if ($validator->fails()) {
@@ -582,6 +689,20 @@ class PengurusController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Cek duplikasi: apakah sudah ada transaksi untuk bulan/tahun/jenis simpanan yang sama
+            $existingTransaksi = TransaksiSimpanan::where('anggota_id', $request->anggota_id)
+                ->where('jenis_simpanan_id', $request->jenis_simpanan_id)
+                ->where('bulan', $request->bulan)
+                ->where('tahun', $request->tahun)
+                ->where('status', 'verified')
+                ->first();
+
+            if ($existingTransaksi) {
+                return back()
+                    ->with('error', "Sudah ada transaksi untuk bulan {$request->bulan}/tahun {$request->tahun} pada jenis simpanan ini. Silakan cek kembali data transaksi yang sudah ada.")
+                    ->withInput();
+            }
 
             // Get jenis simpanan to check withdrawal rules
             $jenisSimpanan = JenisSimpanan::findOrFail($request->jenis_simpanan_id);
@@ -616,6 +737,24 @@ class PengurusController extends Controller
                 ? Pengurus::first()?->id
                 : Pengurus::where('user_id', Auth::id())->first()?->id;
 
+            // Handle bukti pembayaran upload
+            $buktiTransaksiPath = null;
+            if ($request->hasFile('bukti_transaksi')) {
+                $file = $request->file('bukti_transaksi');
+                $filename = time() . '_' . $request->anggota_id . '_' . $kodeTransaksi . '.' . $file->getClientOriginalExtension();
+                $path = 'simpanan/bukti/' . $filename;
+
+                // Store file
+                $file->storeAs('simpanan/bukti', $filename, 'public');
+
+                // Sync to public/storage for direct access (if needed)
+                if (class_exists('\App\Helpers\StorageSyncHelper')) {
+                    \App\Helpers\StorageSyncHelper::syncToPublic($path);
+                }
+
+                $buktiTransaksiPath = $path;
+            }
+
             // Create transaksi
             $transaksi = TransaksiSimpanan::create([
                 'kode_transaksi' => $kodeTransaksi,
@@ -625,7 +764,10 @@ class PengurusController extends Controller
                 'jenis_transaksi' => $request->jenis_transaksi,
                 'jumlah' => $request->jumlah,
                 'tanggal_transaksi' => $request->tanggal_transaksi,
+                'bulan' => $request->bulan,
+                'tahun' => $request->tahun,
                 'keterangan' => $request->keterangan,
+                'bukti_transaksi' => $buktiTransaksiPath,
                 'saldo_sebelumnya' => $saldo['saldo_sebelumnya'],
                 'saldo_setelahnya' => $saldo['saldo_setelahnya'],
                 'status' => 'verified',
@@ -723,7 +865,7 @@ class PengurusController extends Controller
     {
         $pengajuans = PengajuanPembiayaan::with(['anggota', 'jenisPembiayaan'])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(10);
 
         // Statistics for sidebar
         $stats = [
@@ -768,12 +910,14 @@ class PengurusController extends Controller
 
         // Hitung ulang margin berdasarkan jenis pembiayaan
         $marginPercent = $pengajuan->jenisPembiayaan->margin;
-        $jumlahMargin = $pengajuan->jumlah_pengajuan * ($marginPercent / 100);
+        // Rumus BARU: Margin per bulan dikalikan tenor
+        $marginPerBulan = $pengajuan->jumlah_pengajuan * ($marginPercent / 100);
+        $jumlahMargin = $marginPerBulan * (int)$pengajuan->tenor;
         $totalPembiayaan = $pengajuan->jumlah_pengajuan + $jumlahMargin;
 
         // Hitung angsuran pokok dan margin per bulan
-        $angsuranPokok = $pengajuan->jumlah_pengajuan / $pengajuan->tenor;
-        $angsuranMargin = $jumlahMargin / $pengajuan->tenor;
+        $angsuranPokok = $pengajuan->jumlah_pengajuan / (int)$pengajuan->tenor;
+        $angsuranMargin = $marginPerBulan;
         $totalAngsuran = $angsuranPokok + $angsuranMargin;
 
         // Update status langsung ke approved dengan perhitungan margin yang benar
@@ -922,14 +1066,15 @@ class PengurusController extends Controller
      */
     public function pembiayaanIndex(Request $request)
     {
-        $pembiayaans = PengajuanPembiayaan::with(['anggota', 'angsurans', 'jenisPembiayaan'])
+        // Build base query with filters
+        $query = PengajuanPembiayaan::with(['anggota', 'angsurans', 'jenisPembiayaan'])
             ->whereIn('status', ['cair', 'lunas'])
             ->when($request->search, function ($query, $search) {
                 $query->where(function($q) use ($search) {
                     $q->where('kode_pengajuan', 'like', "%{$search}%")
                       ->orWhereHas('anggota', function($sq) use ($search) {
                           $sq->where('nama_lengkap', 'like', "%{$search}%")
-                             ->orWhere('nomor_anggota', 'like', "%{$search}%");
+                             ->orWhere('no_anggota', 'like', "%{$search}%");
                       });
                 });
             })
@@ -938,13 +1083,46 @@ class PengurusController extends Controller
             })
             ->when($request->jenis_pembiayaan_id, function ($query, $jenisId) {
                 $query->where('jenis_pembiayaan_id', $jenisId);
+            });
+
+        // Get paginated results
+        $pembiayaans = $query->orderBy('updated_at', 'desc')->paginate(10);
+
+        // Get statistics from same query without pagination
+        $statsQuery = PengajuanPembiayaan::with(['anggota', 'angsurans', 'jenisPembiayaan'])
+            ->whereIn('status', ['cair', 'lunas'])
+            ->when($request->search, function ($query, $search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('kode_pengajuan', 'like', "%{$search}%")
+                      ->orWhereHas('anggota', function($sq) use ($search) {
+                          $sq->where('nama_lengkap', 'like', "%{$search}%")
+                             ->orWhere('no_anggota', 'like', "%{$search}%");
+                      });
+                });
             })
-            ->orderBy('updated_at', 'desc')
-            ->paginate(20);
+            ->when($request->status, function ($query, $status) {
+                $query->where('status', $status);
+            })
+            ->when($request->jenis_pembiayaan_id, function ($query, $jenisId) {
+                $query->where('jenis_pembiayaan_id', $jenisId);
+            });
+
+        // Calculate statistics
+        $totalPembiayaan = $statsQuery->count();
+        $totalAktif = (clone $statsQuery)->where('status', 'cair')->count();
+        $totalLunas = (clone $statsQuery)->where('status', 'lunas')->count();
+        $totalNilai = $statsQuery->sum('jumlah_pengajuan');
 
         $jenisPembiayaans = JenisPembiayaan::orderBy('nama_pembiayaan')->get();
 
-        return view('pengurus.pembiayaan.index', compact('pembiayaans', 'jenisPembiayaans'));
+        return view('pengurus.pembiayaan.index', compact(
+            'pembiayaans',
+            'jenisPembiayaans',
+            'totalPembiayaan',
+            'totalAktif',
+            'totalLunas',
+            'totalNilai'
+        ));
     }
 
     /**

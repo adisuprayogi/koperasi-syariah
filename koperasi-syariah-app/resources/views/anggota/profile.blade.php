@@ -81,6 +81,17 @@
                         </div>
 
                         <div>
+                            <label for="nik" class="block text-sm font-medium text-gray-700">NIK (Nomor Induk Kependudukan)</label>
+                            <input type="text" id="nik" name="nik"
+                                   value="{{ auth()->user()->anggota->nik ?? '' }}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                   pattern="[0-9]{16}"
+                                   title="NIK harus 16 digit angka"
+                                   required>
+                            <p class="mt-1 text-xs text-gray-500">Masukkan 16 digit NIK sesuai KTP</p>
+                        </div>
+
+                        <div>
                             <label for="tempat_lahir" class="block text-sm font-medium text-gray-700">Tempat Lahir</label>
                             <input type="text" id="tempat_lahir" name="tempat_lahir"
                                    value="{{ auth()->user()->anggota->tempat_lahir ?? '' }}"

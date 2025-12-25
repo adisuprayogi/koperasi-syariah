@@ -205,6 +205,8 @@
                 </tbody>
             </table>
         </div>
+
+        {{ $pengurus->links() }}
     </div>
 
     <!-- Info Panel -->

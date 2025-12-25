@@ -12,6 +12,8 @@ use App\Http\Controllers\Anggota\PengajuanPembiayaanController;
 use App\Http\Controllers\FileDownloadController;
 use App\Http\Controllers\Admin\KartuAnggotaController;
 use App\Http\Controllers\Admin\AnggotaImportController;
+use App\Http\Controllers\Admin\SimpananImportController;
+use App\Http\Controllers\Admin\PembiayaanImportController;
 use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\ManualPreviewController;
 use App\Models\Koperasi;
@@ -101,6 +103,24 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/jenis-pembiayaan/{id}/edit', [AdminController::class, 'jenisPembiayaanEdit'])->name('jenis-pembiayaan.edit');
     Route::put('/jenis-pembiayaan/{id}', [AdminController::class, 'jenisPembiayaanUpdate'])->name('jenis-pembiayaan.update');
     Route::delete('/jenis-pembiayaan/{id}', [AdminController::class, 'jenisPembiayaanDestroy'])->name('jenis-pembiayaan.destroy');
+
+    // Import Data Routes
+    Route::prefix('import')->name('import.')->group(function() {
+        // Simpanan Import
+        Route::get('/simpanan', [AdminController::class, 'simpananImport'])->name('simpanan');
+        Route::post('/simpanan', [AdminController::class, 'simpananImportProcess'])->name('simpanan.process');
+        Route::get('/simpanan/template', [AdminController::class, 'simpananDownloadTemplate'])->name('simpanan.template');
+
+        // Pembiayaan Import
+        Route::get('/pembiayaan', [AdminController::class, 'pembiayaanImport'])->name('pembiayaan');
+        Route::post('/pembiayaan', [AdminController::class, 'pembiayaanImportProcess'])->name('pembiayaan.process');
+        Route::get('/pembiayaan/template', [AdminController::class, 'pembiayaanDownloadTemplate'])->name('pembiayaan.template');
+
+        // Pembayaran Angsuran Import
+        Route::get('/pembayaran-angsuran', [AdminController::class, 'pembayaranAngsuranImport'])->name('pembayaran-angsuran');
+        Route::post('/pembayaran-angsuran', [AdminController::class, 'pembayaranAngsuranImportProcess'])->name('pembayaran-angsuran.process');
+        Route::get('/pembayaran-angsuran/template', [AdminController::class, 'pembayaranAngsuranDownloadTemplate'])->name('pembayaran-angsuran.template');
+    });
 
     // Kartu Anggota Management
     Route::prefix('kartu-anggota')->name('kartu-anggota.')->group(function() {

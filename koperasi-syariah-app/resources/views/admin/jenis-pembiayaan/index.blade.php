@@ -80,6 +80,18 @@
                 </div>
             </div>
         </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-red-100 rounded-full">
+                    <i class="fas fa-home text-red-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-gray-500">Ijarah</h3>
+                    <p class="text-2xl font-bold text-red-600">{{ $jenisPembiayaan->where('tipe_pembiayaan', 'ijarah')->count() }}</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Jenis Pembiayaan Table -->
@@ -144,8 +156,10 @@
                                         bg-blue-100 text-blue-800
                                     @elseif($jp->tipe_pembiayaan == 'musyarakah')
                                         bg-yellow-100 text-yellow-800
-                                    @else
+                                    @elseif($jp->tipe_pembiayaan == 'qardh')
                                         bg-green-100 text-green-800
+                                    @else
+                                        bg-red-100 text-red-800
                                     @endif">
                                     {{ $jp->tipe_label }}
                                 </span>
@@ -156,6 +170,8 @@
                                         Margin: {{ $jp->margin_formatted }}
                                     @elseif(in_array($jp->tipe_pembiayaan, ['mudharabah', 'musyarakah']))
                                         Bagi Hasil: {{ $jp->bagi_hasil_formatted }}
+                                    @elseif($jp->tipe_pembiayaan == 'ijarah')
+                                        Biaya Sewa: {{ $jp->margin_formatted }}
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif

@@ -84,18 +84,32 @@ class PengajuanPembiayaan extends Model
         // Example: 2512PM.0001 for December 2025, Pembiayaan Murabahah
 
         // Get kode jenis if provided
-        $kodeJenis = '';
+        $kodeJenis = 'PM'; // Default value
         if ($jenisPembiayaanId) {
-            $jenis = JenisPembiayaan::find($jenisPembiayaanId);
-            if ($jenis) {
-                // Extract first 2 characters from kodejenis (PM from PM001)
-                $kodeJenis = substr($jenis->kode_jenis, 0, 2);
-            }
-        }
+            try {
+                $jenis = JenisPembiayaan::find($jenisPembiayaanId);
+                if ($jenis && isset($jenis->kode_jenis)) {
+                    // Handle different data types for kode_jenis
+                    $kodeJenisValue = $jenis->kode_jenis;
 
-        // Default to PM if no jenis found
-        if (empty($kodeJenis)) {
-            $kodeJenis = 'PM';
+                    // Convert to string if it's an array
+                    if (is_array($kodeJenisValue)) {
+                        $kodeJenisValue = implode('', $kodeJenisValue);
+                    }
+
+                    // Convert to string if it's not already
+                    $kodeJenisString = (string) $kodeJenisValue;
+
+                    // Extract first 2 characters (PM from PM001)
+                    if (strlen($kodeJenisString) >= 2) {
+                        $kodeJenis = substr($kodeJenisString, 0, 2);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log error but continue with default value
+                \Log::error('Error generating kode pengajuan: ' . $e->getMessage());
+                $kodeJenis = 'PM'; // Fallback to default
+            }
         }
 
         // Create date format: YYMM (Year+Month)
@@ -121,7 +135,25 @@ class PengajuanPembiayaan extends Model
 
         // Format: YYMMKODEJENIS.4digit
         // Example: 2512PM.0001 for Pembiayaan Murabahah in December 2025
-        return $dateMonth . $kodeJenis . '.' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        $kodePengajuan = $dateMonth . $kodeJenis . '.' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+        // Extra safety check: ensure uniqueness
+        $maxAttempts = 10;
+        $attempts = 0;
+
+        while (self::where('kode_pengajuan', $kodePengajuan)->exists() && $attempts < $maxAttempts) {
+            $newNumber++;
+            $kodePengajuan = $dateMonth . $kodeJenis . '.' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+            $attempts++;
+        }
+
+        if ($attempts >= $maxAttempts) {
+            // Fallback: use timestamp for uniqueness
+            $timestamp = now()->format('His');
+            $kodePengajuan = $dateMonth . $kodeJenis . '.' . $timestamp;
+        }
+
+        return $kodePengajuan;
     }
 
     // Accessors
