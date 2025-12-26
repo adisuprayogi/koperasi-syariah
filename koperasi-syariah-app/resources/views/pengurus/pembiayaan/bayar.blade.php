@@ -178,6 +178,7 @@
                                    name="bukti_pembayaran" required
                                    accept=".jpg,.jpeg,.png,.pdf"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <p id="file_name" class="mt-1 text-sm text-indigo-600 font-medium hidden"></p>
                             <p class="mt-1 text-sm text-gray-500">Format: JPG, PNG, PDF (Max 2MB)</p>
                         </div>
                     </div>
@@ -280,6 +281,17 @@ document.getElementById('jumlah_bayar').addEventListener('input', function() {
     // Display formatted currency (no denda calculation in syariah)
     const formatted = 'Rp ' + jumlah.toLocaleString('id-ID');
     console.log('Jumlah Pembayaran:', formatted);
+});
+
+// Show file name when bukti pembayaran is selected
+document.getElementById('bukti_pembayaran').addEventListener('change', function() {
+    const fileName = document.getElementById('file_name');
+    if (this.files && this.files[0]) {
+        fileName.textContent = 'File terpilih: ' + this.files[0].name;
+        fileName.classList.remove('hidden');
+    } else {
+        fileName.classList.add('hidden');
+    }
 });
 </script>
 @endsection
