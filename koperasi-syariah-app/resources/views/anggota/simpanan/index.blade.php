@@ -6,58 +6,92 @@
 <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Data Simpanan Saya</h1>
-        <p class="text-gray-600 mt-2">Lihat riwayat transaksi simpanan Anda</p>
+        <h1 class="text-3xl font-bold text-gray-900">Riwayat Simpanan</h1>
+        <p class="text-gray-600 mt-2">Lihat riwayat transaksi simpanan Anda. Untuk menambah simpanan, silakan hubungi pengurus koperasi.</p>
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <!-- Simpanan Wajib -->
-        <div class="bg-white rounded-lg shadow p-6">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <!-- Simpanan Pokok -->
+        <div class="bg-white rounded-lg shadow p-4">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-piggy-bank text-green-600 text-xl"></i>
+                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-star text-yellow-600"></i>
                     </div>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">Simpanan Wajib</h3>
-                    <p class="text-2xl font-bold text-green-600">
-                        Rp {{ number_format($totalSimpananWajib, 0, ',', '.') }}
+                <div class="ml-3">
+                    <h3 class="text-xs font-medium text-gray-500">Pokok</h3>
+                    <p class="text-lg font-bold text-yellow-600">
+                        {{ number_format($totalSimpananPokok, 0, ',', '.') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simpanan Wajib -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-piggy-bank text-green-600"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-xs font-medium text-gray-500">Wajib</h3>
+                    <p class="text-lg font-bold text-green-600">
+                        {{ number_format($totalSimpananWajib, 0, ',', '.') }}
                     </p>
                 </div>
             </div>
         </div>
 
         <!-- Simpanan Sukarela -->
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-4">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-hand-holding-usd text-blue-600 text-xl"></i>
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-hand-holding-usd text-blue-600"></i>
                     </div>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">Simpanan Sukarela</h3>
-                    <p class="text-2xl font-bold text-blue-600">
-                        Rp {{ number_format($totalSimpananSukarela, 0, ',', '.') }}
+                <div class="ml-3">
+                    <h3 class="text-xs font-medium text-gray-500">Sukarela</h3>
+                    <p class="text-lg font-bold text-blue-600">
+                        {{ number_format($totalSimpananSukarela, 0, ',', '.') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simpanan Modal -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-briefcase text-orange-600"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-xs font-medium text-gray-500">Modal</h3>
+                    <p class="text-lg font-bold text-orange-600">
+                        {{ number_format($totalSimpananModal, 0, ',', '.') }}
                     </p>
                 </div>
             </div>
         </div>
 
         <!-- Total Simpanan -->
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-lg shadow-lg p-4 border-2 border-indigo-700">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-wallet text-purple-600 text-xl"></i>
+                    <div class="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center">
+                        <i class="fas fa-wallet text-indigo-800"></i>
                     </div>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">Total Simpanan</h3>
-                    <p class="text-2xl font-bold text-purple-600">
-                        Rp {{ number_format($totalSimpananWajib + $totalSimpananSukarela, 0, ',', '.') }}
+                <div class="ml-3">
+                    <h3 class="text-xs font-semibold text-indigo-100">Total Simpanan</h3>
+                    <p class="text-lg font-bold text-yellow-300">
+                        {{ number_format($totalSimpananPokok + $totalSimpananWajib + $totalSimpananSukarela + $totalSimpananModal, 0, ',', '.') }}
                     </p>
                 </div>
             </div>
@@ -132,6 +166,12 @@
                         <!-- Compact Card Header -->
                         <div class="relative px-4 py-3">
                             <div class="flex items-center justify-between">
+                                <!-- Link Detail di pojok kanan atas -->
+                                <a href="{{ route('anggota.simpanan.show', $item->id) }}"
+                                   class="absolute top-2 right-2 p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                   title="Lihat Detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                                 <div class="flex items-center space-x-3">
                                     <!-- Compact Icon -->
                                     <div class="w-10 h-10 @if($item->jenis_transaksi == 'setor') bg-gradient-to-br from-emerald-400 to-green-500 @else bg-gradient-to-br from-rose-400 to-red-500 @endif rounded-xl flex items-center justify-center shadow-md">
@@ -232,8 +272,15 @@
                                         </span>
                                     @endif
                                 </div>
-                                <div class="text-xs text-gray-500 font-mono">
-                                    #{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}
+                                <div class="flex items-center space-x-2">
+                                    <div class="text-xs text-gray-500 font-mono">
+                                        #{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}
+                                    </div>
+                                    <a href="{{ route('anggota.simpanan.show', $item->id) }}"
+                                       class="inline-flex items-center px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-lg transition-colors">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        Detail
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -241,14 +288,9 @@
                 @endforeach
             </div>
 
-            <!-- Compact Pagination -->
-            @if($transaksi->hasPages())
-                <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                    <div class="flex justify-center">
-                        {{ $transaksi->links() }}
-                    </div>
-                </div>
-            @endif
+            <div class="mt-6">
+                {{ $transaksi->links('pagination.custom') }}
+            </div>
 
         @else
             <!-- Compact Empty State -->
@@ -264,12 +306,6 @@
                             <i class="fas fa-home mr-2"></i>
                             Dashboard
                         </a>
-                        @if(isset($jenisSimpanan) && $jenisSimpanan->count() > 0)
-                            <a href="{{ route('anggota.simpanan.create') }}" class="inline-flex items-center justify-center px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-lg transition-all duration-200 shadow hover:shadow-lg">
-                                <i class="fas fa-plus-circle mr-2"></i>
-                                Setor Simpanan
-                            </a>
-                        @endif
                     </div>
                 </div>
             </div>

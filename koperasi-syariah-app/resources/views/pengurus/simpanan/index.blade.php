@@ -8,7 +8,12 @@
     <div class="mb-8 flex justify-between items-center">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Transaksi Simpanan</h1>
-            <p class="text-gray-600 mt-2">Kelola transaksi simpanan anggota</p>
+            <p class="text-gray-600 mt-2">
+                Kelola transaksi simpanan anggota
+                <span class="text-sm text-indigo-600 font-medium">
+                    ({{ \Carbon\Carbon::parse($tanggalDari)->format('d M Y') }} - {{ \Carbon\Carbon::parse($tanggalSampai)->format('d M Y') }})
+                </span>
+            </p>
         </div>
         <div>
             <a href="{{ route('pengurus.simpanan.create') }}"
@@ -25,12 +30,12 @@
         <form action="{{ route('pengurus.simpanan.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
-                <input type="date" name="tanggal_dari" value="{{ request('tanggal_dari') }}"
+                <input type="date" name="tanggal_dari" value="{{ $tanggalDari }}"
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
-                <input type="date" name="tanggal_sampai" value="{{ request('tanggal_sampai') }}"
+                <input type="date" name="tanggal_sampai" value="{{ $tanggalSampai }}"
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             </div>
             <div>
@@ -72,7 +77,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Total Transaksi</h3>
-                    <p class="text-2xl font-bold text-gray-900">{{ $transaksi->total() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $totalTransaksi ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -84,7 +89,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Total Setoran</h3>
-                    <p class="text-lg font-bold text-green-600">Rp {{ number_format($transaksi->where('jenis_transaksi', 'setor')->sum('jumlah'), 0, ',', '.') }}</p>
+                    <p class="text-lg font-bold text-green-600">Rp {{ number_format($totalSetoran ?? 0, 0, ',', '.') }}</p>
                 </div>
             </div>
         </div>
@@ -96,7 +101,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Total Penarikan</h3>
-                    <p class="text-lg font-bold text-red-600">Rp {{ number_format($transaksi->where('jenis_transaksi', 'tarik')->sum('jumlah'), 0, ',', '.') }}</p>
+                    <p class="text-lg font-bold text-red-600">Rp {{ number_format($totalPenarikan ?? 0, 0, ',', '.') }}</p>
                 </div>
             </div>
         </div>
@@ -108,7 +113,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Hari Ini</h3>
-                    <p class="text-2xl font-bold text-purple-600">{{ $transaksi->filter(fn($t) => $t->tanggal_transaksi->isToday())->count() }}</p>
+                    <p class="text-2xl font-bold text-purple-600">{{ $totalHariIni ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -251,7 +256,7 @@
         <!-- Pagination -->
         @if($transaksi->hasPages())
             <div class="px-3 py-3 border-t border-gray-200">
-                {{ $transaksi->links() }}
+                {{ $transaksi->links('pagination.custom') }}
             </div>
         @endif
     </div>

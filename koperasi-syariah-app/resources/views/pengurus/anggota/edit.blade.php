@@ -196,10 +196,11 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Tanggal Gabung</label>
-                    <div class="mt-1 text-sm text-gray-900">
-                        {{ $anggota->tanggal_gabung->format('d F Y') }}
-                    </div>
+                    <label for="tanggal_gabung" class="block text-sm font-medium text-gray-700">Tanggal Gabung</label>
+                    <input type="date" id="tanggal_gabung" name="tanggal_gabung" required
+                           value="{{ old('tanggal_gabung', $anggota->tanggal_gabung ? $anggota->tanggal_gabung->format('Y-m-d') : date('Y-m-d')) }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-500">Tanggal mulai anggota bergabung (digunakan untuk perhitungan simpanan wajib)</p>
                 </div>
             </div>
 

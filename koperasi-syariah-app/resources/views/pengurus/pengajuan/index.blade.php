@@ -232,7 +232,7 @@
         <!-- Pagination -->
         @if($pengajuans->hasPages())
             <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
-                {{ $pengajuans->links() }}
+                {{ $pengajuans->links('pagination.custom') }}
             </div>
         @endif
     </div>

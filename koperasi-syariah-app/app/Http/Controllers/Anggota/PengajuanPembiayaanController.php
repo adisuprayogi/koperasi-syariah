@@ -112,10 +112,12 @@ class PengajuanPembiayaanController extends Controller
 
             // Calculate margin and angsuran
             $marginPercent = $jenisPembiayaan->margin; // Use margin from jenis pembiayaan
-            $jumlahMargin = $request->jumlah_pengajuan * ($marginPercent / 100);
+            // Rumus BARU: Margin per bulan dikalikan tenor
+            $marginPerBulan = $request->jumlah_pengajuan * ($marginPercent / 100);
+            $jumlahMargin = $marginPerBulan * (int)$request->tenor;
             $totalPembiayaan = $request->jumlah_pengajuan + $jumlahMargin;
-            $angsuranPokok = $request->jumlah_pengajuan / $request->tenor;
-            $angsuranMargin = $jumlahMargin / $request->tenor;
+            $angsuranPokok = $request->jumlah_pengajuan / (int)$request->tenor;
+            $angsuranMargin = $marginPerBulan;
             $totalAngsuran = $angsuranPokok + $angsuranMargin;
 
             // Generate kode pengajuan dengan parameter jenis pembiayaan
@@ -130,7 +132,7 @@ class PengajuanPembiayaanController extends Controller
             $data['angsuran_margin'] = $angsuranMargin;
             $data['total_angsuran'] = $totalAngsuran;
             $data['status'] = 'diajukan';
-            $data['tanggal_jatuh_tempo'] = now()->addMonths($request->tenor);
+            $data['tanggal_jatuh_tempo'] = now()->addMonths((int)$request->tenor);
 
             // Handle single file uploads
             $files = ['ktp_file', 'kk_file', 'slip_gaji_file', 'proposal_file', 'jaminan_file'];
@@ -277,11 +279,13 @@ class PengajuanPembiayaanController extends Controller
             $jenisPembiayaan = JenisPembiayaan::findOrFail($request->jenis_pembiayaan_id);
 
             // Calculate margin and angsuran
-            $marginPercent = $jenisPembiayaan->nisbah_mushoni ?? 10;
-            $jumlahMargin = $request->jumlah_pengajuan * ($marginPercent / 100);
+            $marginPercent = $jenisPembiayaan->margin ?? $jenisPembiayaan->nisbah_mushoni ?? 10;
+            // Rumus BARU: Margin per bulan dikalikan tenor
+            $marginPerBulan = $request->jumlah_pengajuan * ($marginPercent / 100);
+            $jumlahMargin = $marginPerBulan * (int)$request->tenor;
             $totalPembiayaan = $request->jumlah_pengajuan + $jumlahMargin;
-            $angsuranPokok = $request->jumlah_pengajuan / $request->tenor;
-            $angsuranMargin = $jumlahMargin / $request->tenor;
+            $angsuranPokok = $request->jumlah_pengajuan / (int)$request->tenor;
+            $angsuranMargin = $marginPerBulan;
             $totalAngsuran = $angsuranPokok + $angsuranMargin;
 
             $data = $request->all();
@@ -291,7 +295,7 @@ class PengajuanPembiayaanController extends Controller
             $data['angsuran_margin'] = $angsuranMargin;
             $data['total_angsuran'] = $totalAngsuran;
             $data['status'] = 'diajukan'; // Reset status to diajukan
-            $data['tanggal_jatuh_tempo'] = now()->addMonths($request->tenor);
+            $data['tanggal_jatuh_tempo'] = now()->addMonths((int)$request->tenor);
 
             // Handle file uploads
             $files = ['ktp_file', 'kk_file', 'slip_gaji_file', 'proposal_file', 'jaminan_file'];

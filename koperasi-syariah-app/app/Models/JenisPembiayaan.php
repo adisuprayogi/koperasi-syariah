@@ -69,7 +69,8 @@ class JenisPembiayaan extends Model
             'murabahah' => 'Murabahah (Jual Beli)',
             'mudharabah' => 'Mudharabah (Bagi Hasil)',
             'musyarakah' => 'Musyarakah (Kerja Sama)',
-            'qardh' => 'Qardh (Pinjaman Baik)'
+            'qardh' => 'Qardh (Pinjaman Baik)',
+            'ijarah' => 'Ijarah (Sewa Barang/Jasa)'
         ];
 
         return $types[$this->tipe_pembiayaan] ?? $this->tipe_pembiayaan;

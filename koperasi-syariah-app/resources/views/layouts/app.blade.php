@@ -78,6 +78,10 @@
                                             <i class="fas fa-users mr-3 {{ request()->routeIs('pengurus.anggota*') ? 'text-primary-300' : 'text-primary-400' }}"></i>
                                             Manajemen Anggota
                                         </a>
+                                        <a href="{{ route('pengurus.anggota.import') }}" class="{{ request()->routeIs('pengurus.anggota.import*') ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }} group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200">
+                                            <i class="fas fa-file-excel mr-3 {{ request()->routeIs('pengurus.anggota.import*') ? 'text-primary-300' : 'text-primary-400' }}"></i>
+                                            Import Data Anggota
+                                        </a>
                                         <a href="{{ route('pengurus.simpanan.index') }}" class="{{ request()->routeIs('pengurus.simpanan*') ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }} group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200">
                                             <i class="fas fa-piggy-bank mr-3 {{ request()->routeIs('pengurus.simpanan*') ? 'text-primary-300' : 'text-primary-400' }}"></i>
                                             Transaksi Simpanan
@@ -239,6 +243,35 @@
                         @yield('content')
                     </div>
                 </main>
+
+                <!-- Footer -->
+                <footer class="bg-white border-t border-gray-200">
+                    <div class="px-2 sm:px-4 lg:px-6 py-3">
+                        <div class="flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
+                            <div class="flex items-center space-x-4 mb-2 sm:mb-0">
+                                <span>&copy; {{ date('Y') }} {{ $koperasi->nama_koperasi ?? 'Koperasi Syariah' }}</span>
+                                <span class="hidden sm:inline">•</span>
+                                <span>{{ $koperasi->alamat ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="flex items-center">
+                                    <i class="fas fa-code mr-1"></i>
+                                    <span class="font-medium">kopsyah v1.0.0</span>
+                                </span>
+                                <span>•</span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    <span>Release: {{ \Carbon\Carbon::parse('2024-12-25')->format('F Y') }}</span>
+                                </span>
+                                <span class="hidden sm:inline">•</span>
+                                <span class="hidden sm:inline flex items-center">
+                                    <i class="fas fa-shield-alt mr-1 text-green-500"></i>
+                                    <span>Secure</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
             </div>
 
             <!-- Mobile Sidebar -->
@@ -301,6 +334,10 @@
                                 <a href="{{ route('pengurus.anggota.index') }}" class="{{ request()->routeIs('pengurus.anggota*') ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }} flex items-center px-3 py-2.5 rounded-lg transition-colors duration-200">
                                     <i class="fas fa-users mr-3 text-sm {{ request()->routeIs('pengurus.anggota*') ? 'text-primary-300' : 'text-primary-400' }}"></i>
                                     <span class="text-sm">Manajemen Anggota</span>
+                                </a>
+                                <a href="{{ route('pengurus.anggota.import') }}" class="{{ request()->routeIs('pengurus.anggota.import*') ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }} flex items-center px-3 py-2.5 rounded-lg transition-colors duration-200">
+                                    <i class="fas fa-file-excel mr-3 text-sm {{ request()->routeIs('pengurus.anggota.import*') ? 'text-primary-300' : 'text-primary-400' }}"></i>
+                                    <span class="text-sm">Import Data Anggota</span>
                                 </a>
                                 <a href="{{ route('pengurus.simpanan.index') }}" class="{{ request()->routeIs('pengurus.simpanan*') ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }} flex items-center px-3 py-2.5 rounded-lg transition-colors duration-200">
                                     <i class="fas fa-piggy-bank mr-3 text-sm {{ request()->routeIs('pengurus.simpanan*') ? 'text-primary-300' : 'text-primary-400' }}"></i>

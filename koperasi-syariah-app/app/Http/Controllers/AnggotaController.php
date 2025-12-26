@@ -8,6 +8,7 @@ use App\Models\JenisSimpanan;
 use App\Models\JenisPembiayaan;
 use App\Models\PengajuanPembiayaan;
 use App\Models\Angsuran;
+use Illuminate\Support\Facades\DB;
 
 class AnggotaController extends Controller
 {
@@ -16,7 +17,123 @@ class AnggotaController extends Controller
      */
     public function dashboard()
     {
-        return view('anggota.dashboard');
+        $user = auth()->user();
+        $anggota = $user->anggota;
+
+        if (!$anggota) {
+            return redirect()->route('anggota.profile')->with('error', 'Data anggota tidak ditemukan');
+        }
+
+        // Saldo per jenis simpanan
+        $saldoPerJenis = JenisSimpanan::where('status', 1)
+            ->with(['transaksi' => function($query) use ($anggota) {
+                $query->where('anggota_id', $anggota->id)
+                      ->where('status', 'verified')
+                      ->latest();
+            }])
+            ->get()
+            ->map(function($jenis) {
+                $saldoTerakhir = $jenis->transaksi->first();
+                return (object)[
+                    'jenis' => $jenis,
+                    'saldo' => $saldoTerakhir ? $saldoTerakhir->saldo_setelahnya : 0
+                ];
+            });
+
+        $totalSimpanan = $saldoPerJenis->sum('saldo');
+
+        // Statistik Pembiayaan
+        $pembiayaans = PengajuanPembiayaan::where('anggota_id', $anggota->id)
+                                          ->whereIn('status', ['approved', 'cair', 'lunas'])
+                                          ->get();
+
+        $totalPembiayaan = $pembiayaans->sum('jumlah_pengajuan');
+        $activePembiayaan = $pembiayaans->where('status', 'cair')->count();
+        $totalMargin = $pembiayaans->sum('jumlah_margin');
+
+        // Hitung sisa pinjaman
+        $sisaPinjaman = 0;
+        foreach ($pembiayaans as $pembiayaan) {
+            if (in_array($pembiayaan->status, ['cair', 'approved'])) {
+                $sisaPinjaman += $pembiayaan->sisaTotal();
+            }
+        }
+
+        // Status Pengajuan
+        $statusPengajuan = [
+            'draft' => PengajuanPembiayaan::where('anggota_id', $anggota->id)
+                                          ->where('status', 'draft')
+                                          ->count(),
+            'diajukan' => PengajuanPembiayaan::where('anggota_id', $anggota->id)
+                                             ->where('status', 'diajukan')
+                                             ->count(),
+            'approved' => PengajuanPembiayaan::where('anggota_id', $anggota->id)
+                                            ->where('status', 'approved')
+                                            ->count(),
+            'cair' => PengajuanPembiayaan::where('anggota_id', $anggota->id)
+                                         ->where('status', 'cair')
+                                         ->count(),
+            'rejected' => PengajuanPembiayaan::where('anggota_id', $anggota->id)
+                                             ->where('status', 'rejected')
+                                             ->count(),
+        ];
+
+        // Angsuran berikutnya
+        $angsuranBerikutnya = Angsuran::whereHas('pengajuanPembiayaan', function($q) use ($anggota) {
+                                        $q->where('anggota_id', $anggota->id)
+                                          ->whereIn('status', ['cair', 'approved']);
+                                    })
+                                    ->where('status', 'pending')
+                                    ->orderBy('tanggal_jatuh_tempo')
+                                    ->first();
+
+        // Recent activities
+        $recentTransaksi = TransaksiSimpanan::where('anggota_id', $anggota->id)
+                                            ->latest('tanggal_transaksi')
+                                            ->limit(5)
+                                            ->get();
+
+        $recentPengajuan = PengajuanPembiayaan::where('anggota_id', $anggota->id)
+                                              ->latest()
+                                              ->limit(5)
+                                              ->get();
+
+        // Monthly summary
+        $monthlySummary = TransaksiSimpanan::select(
+                DB::raw('YEAR(tanggal_transaksi) as year'),
+                DB::raw('MONTH(tanggal_transaksi) as month'),
+                DB::raw('SUM(CASE WHEN jenis_transaksi = "setor" THEN jumlah ELSE 0 END) as total_setor'),
+                DB::raw('SUM(CASE WHEN jenis_transaksi = "tarik" THEN jumlah ELSE 0 END) as total_tarik')
+            )
+            ->where('anggota_id', $anggota->id)
+            ->where('tanggal_transaksi', '>=', now()->subMonths(6))
+            ->groupBy(DB::raw('YEAR(tanggal_transaksi)'), DB::raw('MONTH(tanggal_transaksi)'))
+            ->orderBy('year', 'asc')
+            ->orderBy('month', 'asc')
+            ->get();
+
+        // Tunggakan Simpanan Wajib untuk anggota ini
+        $tunggakanSimpananWajib = TransaksiSimpanan::hitungTunggakanPerAnggota($anggota->id);
+        $bulanNunggak = $tunggakanSimpananWajib['bulan_nunggak'];
+        $totalTunggakanWajib = $tunggakanSimpananWajib['total_tunggakan'];
+        $detailBulanNunggak = $tunggakanSimpananWajib['detail_bulan_nunggak'];
+
+        return view('anggota.dashboard', compact(
+            'saldoPerJenis',
+            'totalSimpanan',
+            'totalPembiayaan',
+            'sisaPinjaman',
+            'activePembiayaan',
+            'totalMargin',
+            'statusPengajuan',
+            'angsuranBerikutnya',
+            'recentTransaksi',
+            'recentPengajuan',
+            'monthlySummary',
+            'bulanNunggak',
+            'totalTunggakanWajib',
+            'detailBulanNunggak'
+        ));
     }
 
     /**
@@ -34,6 +151,7 @@ class AnggotaController extends Controller
     {
         $request->validate([
             'nama_lengkap' => 'required|string|max:255',
+            'nik' => 'required|string|size:16',
             'tempat_lahir' => 'required|string|max:255',
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'required|in:L,P',
@@ -51,6 +169,7 @@ class AnggotaController extends Controller
             // Update anggota data
             $anggota->update([
                 'nama_lengkap' => $request->nama_lengkap,
+                'nik' => $request->nik,
                 'tempat_lahir' => $request->tempat_lahir,
                 'tanggal_lahir' => $request->tanggal_lahir,
                 'jenis_kelamin' => $request->jenis_kelamin,
@@ -110,38 +229,49 @@ class AnggotaController extends Controller
             $query->where('jenis_simpanan_id', $request->jenis_simpanan_id);
         }
 
-        $transaksi = $query->paginate(20);
+        $transaksi = $query->paginate(10);
         $jenisSimpanan = JenisSimpanan::where('status', 1)->get();
 
-        // Hitung total simpanan per jenis
-        $totalSimpananWajib = TransaksiSimpanan::where('anggota_id', $anggota->id)
-            ->whereHas('jenisSimpanan', function($q) {
-                $q->where('nama_simpanan', 'like', '%wajib%');
-            })
-            ->where('jenis_transaksi', 'setor')
-            ->sum('jumlah');
+        // Hitung total simpanan per jenis berdasarkan saldo terakhir
+        $totalSimpananPokok = 0;
+        $totalSimpananWajib = 0;
+        $totalSimpananWajibBulanan = 0;
+        $totalSimpananSukarela = 0;
+        $totalSimpananModal = 0;
 
-        $totalSimpananSukarela = TransaksiSimpanan::where('anggota_id', $anggota->id)
-            ->whereHas('jenisSimpanan', function($q) {
-                $q->where('nama_simpanan', 'like', '%sukarela%');
-            })
-            ->where('jenis_transaksi', 'setor')
-            ->sum('jumlah');
+        foreach ($jenisSimpanan as $jenis) {
+            // Ambil transaksi terakhir untuk jenis simpanan ini
+            $transaksiTerakhir = TransaksiSimpanan::where('anggota_id', $anggota->id)
+                ->where('jenis_simpanan_id', $jenis->id)
+                ->where('status', 'verified')
+                ->latest()
+                ->first();
 
-        // Total simpanan wajib bulanan (jika ada)
-        $totalSimpananWajibBulanan = TransaksiSimpanan::where('anggota_id', $anggota->id)
-            ->whereHas('jenisSimpanan', function($q) {
-                $q->where('nama_simpanan', 'like', '%wajib bulanan%');
-            })
-            ->where('jenis_transaksi', 'setor')
-            ->sum('jumlah');
+            $saldo = $transaksiTerakhir ? $transaksiTerakhir->saldo_setelahnya : 0;
+
+            $namaSimpanan = strtolower($jenis->nama_simpanan);
+            if (strpos($namaSimpanan, 'pokok') !== false) {
+                $totalSimpananPokok += $saldo;
+            } elseif (strpos($namaSimpanan, 'wajib') !== false) {
+                if (strpos($namaSimpanan, 'bulanan') !== false) {
+                    $totalSimpananWajibBulanan += $saldo;
+                } else {
+                    $totalSimpananWajib += $saldo;
+                }
+            } elseif (strpos($namaSimpanan, 'sukarela') !== false) {
+                $totalSimpananSukarela += $saldo;
+            } elseif (strpos($namaSimpanan, 'modal') !== false) {
+                $totalSimpananModal += $saldo;
+            }
+        }
 
         return view('anggota.simpanan.index', compact(
             'transaksi',
             'jenisSimpanan',
+            'totalSimpananPokok',
             'totalSimpananWajib',
             'totalSimpananSukarela',
-            'totalSimpananWajibBulanan'
+            'totalSimpananModal'
         ));
     }
 
@@ -265,7 +395,7 @@ class AnggotaController extends Controller
             $query->where('jenis_pembiayaan_id', $request->jenis_pembiayaan_id);
         }
 
-        $pembiayaan = $query->paginate(20);
+        $pembiayaan = $query->paginate(10);
         $jenisPembiayaan = JenisPembiayaan::where('status', 1)->get();
 
         // Hitung statistik
@@ -329,9 +459,9 @@ class AnggotaController extends Controller
             return redirect()->route('anggota.pembiayaan.index')->with('error', 'Pembiayaan tidak ditemukan');
         }
 
-        // Get angsuran jika status approved/cair
+        // Get angsuran jika status cair/lunas
         $angsurans = null;
-        if (in_array($pembiayaan->status, ['approved', 'cair'])) {
+        if (in_array($pembiayaan->status, ['cair', 'lunas'])) {
             $angsurans = Angsuran::where('pengajuan_pembiayaan_id', $pembiayaan->id)
                                 ->orderBy('angsuran_ke')
                                 ->get();
@@ -362,4 +492,5 @@ class AnggotaController extends Controller
             return redirect()->back()->with('error', 'Gagal download kartu anggota');
         }
     }
-}
+
+    }

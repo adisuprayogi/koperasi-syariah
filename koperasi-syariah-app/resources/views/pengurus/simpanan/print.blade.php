@@ -221,6 +221,15 @@
                 <span>{{ $transaksi->tanggal_transaksi->format('d F Y H:i') }} WIB</span>
             </div>
             <div class="info-row">
+                <span class="info-label">Periode Simpanan:</span>
+                <span>
+                    @php
+                        $namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    @endphp
+                    <strong>{{ $namaBulan[$transaksi->bulan] }} {{ $transaksi->tahun }}</strong>
+                </span>
+            </div>
+            <div class="info-row">
                 <span class="info-label">Jenis Transaksi:</span>
                 <span>
                     <span class="status-badge {{ $transaksi->jenis_transaksi == 'setor' ? 'amount-positive' : 'amount-negative' }}">
@@ -317,6 +326,24 @@
                         <span>{{ $transaksi->catatan_verifikasi }}</span>
                     </div>
                 @endif
+            </div>
+        @endif
+
+        <!-- Bukti Transaksi -->
+        @if($transaksi->bukti_transaksi)
+            <div class="info-section">
+                <h3>BUKTI TRANSAKSI</h3>
+                <p style="font-size: 10pt; color: #666; margin-bottom: 10px;">
+                    File bukti transaksi diupload ke sistem. Untuk melihat bukti transaksi, silakan akses melalui aplikasi.
+                </p>
+                <p style="font-size: 10pt; color: #666;">
+                    <span class="info-label">Nama File:</span>
+                    @php
+                        $buktiPath = $transaksi->bukti_transaksi;
+                        $fileName = basename($buktiPath);
+                    @endphp
+                    {{ $fileName }}
+                </p>
             </div>
         @endif
 

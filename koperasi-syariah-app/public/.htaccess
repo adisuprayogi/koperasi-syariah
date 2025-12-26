@@ -5,13 +5,59 @@
 
     RewriteEngine On
 
+    # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Disable index view
+Options -Indexes
+
+# Hide sensitive files
+<Files .env>
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files server-keygen.php>
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files run-migrations.php>
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files create-symlink.php>
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files clear-cache.php>
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files check-permissions.php>
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files diagnostic.php>
+    Order allow,deny
+    Deny from all
+</Files>
 
 # Increase PHP limits
 php_value memory_limit 256M

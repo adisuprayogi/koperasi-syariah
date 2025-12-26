@@ -164,6 +164,22 @@
                 <i class="fas fa-piggy-bank text-purple-600 mr-3"></i>
                 <span class="font-medium text-gray-900">Jenis Simpanan</span>
             </a>
+            <a href="{{ route('admin.import.simpanan') }}" class="flex items-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+                <i class="fas fa-file-excel text-indigo-600 mr-3"></i>
+                <span class="font-medium text-gray-900">Import Simpanan</span>
+            </a>
+            <a href="{{ route('admin.import.pembiayaan') }}" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                <i class="fas fa-file-import text-orange-600 mr-3"></i>
+                <span class="font-medium text-gray-900">Import Pembiayaan</span>
+            </a>
+            <a href="{{ route('admin.import.pembayaran-angsuran') }}" class="flex items-center p-4 bg-pink-50 rounded-lg hover:bg-pink-100 transition-colors">
+                <i class="fas fa-money-check-alt text-pink-600 mr-3"></i>
+                <span class="font-medium text-gray-900">Import Pembayaran</span>
+            </a>
+            <a href="{{ route('pengurus.anggota.import') }}" class="flex items-center p-4 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors">
+                <i class="fas fa-users-cog text-teal-600 mr-3"></i>
+                <span class="font-medium text-gray-900">Import Anggota</span>
+            </a>
         </div>
     </div>
 
@@ -180,7 +196,15 @@
             <li>Profil koperasi</li>
             <li>Master data jenis simpanan</li>
             <li>Master data jenis pembiayaan</li>
+            <li>Import data anggota dari Excel</li>
+            <li>Import transaksi simpanan dari Excel</li>
+            <li>Import data pembiayaan dari Excel</li>
+            <li>Import pembayaran angsuran dari Excel</li>
         </ul>
+        <p class="text-yellow-600 text-xs mt-3">
+            <i class="fas fa-lightbulb mr-1"></i>
+            Fitur import memudahkan migrasi data dari sistem lama atau input data masal dengan cepat.
+        </p>
     </div>
 </div>
 @endsection

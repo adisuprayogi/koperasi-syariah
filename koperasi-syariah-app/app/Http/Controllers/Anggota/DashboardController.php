@@ -126,6 +126,12 @@ class DashboardController extends Controller
             ->orderBy('month', 'asc')
             ->get();
 
+        // Tunggakan Simpanan Wajib untuk anggota ini
+        $tunggakanSimpananWajib = TransaksiSimpanan::hitungTunggakanPerAnggota($anggota->id);
+        $bulanNunggak = $tunggakanSimpananWajib['bulan_nunggak'];
+        $totalTunggakanWajib = $tunggakanSimpananWajib['total_tunggakan'];
+        $detailBulanNunggak = $tunggakanSimpananWajib['detail_bulan_nunggak'];
+
         return view('anggota.dashboard', compact(
             'anggota',
             'saldoPerJenis',
@@ -143,7 +149,10 @@ class DashboardController extends Controller
             'angsuranTerbayar',
             'angsuranPending',
             'angsuranTerlambat',
-            'monthlySummary'
+            'monthlySummary',
+            'bulanNunggak',
+            'totalTunggakanWajib',
+            'detailBulanNunggak'
         ));
     }
 }

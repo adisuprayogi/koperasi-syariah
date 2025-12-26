@@ -210,6 +210,13 @@ class Angsuran extends Model
      */
     public static function generateJadwalAngsuran($pengajuan)
     {
+        // Check if angsuran already exists for this pengajuan
+        $existingCount = self::where('pengajuan_pembiayaan_id', $pengajuan->id)->count();
+        if ($existingCount > 0) {
+            // Return true if angsuran already exists, skip generation
+            return true;
+        }
+
         $angsurans = [];
         $tanggalJatuhPertama = $pengajuan->tanggal_jatuh_tempo_pertama ?: now()->addMonth();
 
@@ -236,20 +243,20 @@ class Angsuran extends Model
 
         $startNumber = $maxNumber + 1;
 
-        for ($i = 1; $i <= $pengajuan->tenor; $i++) {
+        for ($i = 1; $i <= (int)$pengajuan->tenor; $i++) {
             $tanggalJatuhTempo = Carbon::parse($tanggalJatuhPertama)->addMonths($i - 1);
 
             // Generate unique kode untuk setiap angsuran
             $currentNumber = $startNumber + $i - 1;
             $kodeAngsuran = 'AGS' . $date . '.' . str_pad($currentNumber, 4, '0', STR_PAD_LEFT);
 
-            // Double-check if this kode already exists (extra safety)
-            if (self::where('kode_angsuran', $kodeAngsuran)->exists()) {
-                // If exists, find the next available number
-                do {
-                    $currentNumber++;
-                    $kodeAngsuran = 'AGS' . $date . '.' . str_pad($currentNumber, 4, '0', STR_PAD_LEFT);
-                } while (self::where('kode_angsuran', $kodeAngsuran)->exists());
+            // Triple-check if this kode already exists (extra safety for concurrent imports)
+            $maxAttempts = 100;
+            $attempts = 0;
+            while (self::where('kode_angsuran', $kodeAngsuran)->exists() && $attempts < $maxAttempts) {
+                $currentNumber++;
+                $kodeAngsuran = 'AGS' . $date . '.' . str_pad($currentNumber, 4, '0', STR_PAD_LEFT);
+                $attempts++;
             }
 
             $angsuran = [
@@ -269,6 +276,33 @@ class Angsuran extends Model
             $angsurans[] = $angsuran;
         }
 
-        return self::insert($angsurans);
+        // Insert one by one to handle potential duplicates better
+        $successCount = 0;
+        $skipCount = 0;
+
+        foreach ($angsurans as $angsuranData) {
+            try {
+                // Double-check again before insert
+                if (!self::where('kode_angsuran', $angsuranData['kode_angsuran'])->exists()) {
+                    self::insert($angsuranData);
+                    $successCount++;
+                } else {
+                    $skipCount++;
+                    \Log::warning("Angsuran dengan kode {$angsuranData['kode_angsuran']} sudah ada, dilewati.");
+                }
+            } catch (\Illuminate\Database\QueryException $e) {
+                // If duplicate, log and continue
+                if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                    $skipCount++;
+                    \Log::warning("Duplicate angsuran {$angsuranData['kode_angsuran']}, dilewati.");
+                } else {
+                    // Re-throw other exceptions
+                    throw $e;
+                }
+            }
+        }
+
+        // Return true if at least one angsuran was created, or all were skipped (already exists)
+        return $successCount > 0 || $skipCount === count($angsurans);
     }
 }

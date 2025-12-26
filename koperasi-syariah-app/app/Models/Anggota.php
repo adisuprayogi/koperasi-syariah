@@ -33,6 +33,8 @@ class Anggota extends Model
         'no_npwp',
         'status_keanggotaan',
         'tanggal_gabung',
+        'tanggal_keluar',
+        'alasan_keluar',
         'jenis_anggota',
         'user_id'
     ];
@@ -40,6 +42,7 @@ class Anggota extends Model
     protected $casts = [
         'tanggal_lahir' => 'date',
         'tanggal_gabung' => 'date',
+        'tanggal_keluar' => 'date',
         'status_keanggotaan' => 'string',
         'jenis_anggota' => 'string',
     ];
@@ -146,6 +149,44 @@ class Anggota extends Model
     {
         // Sama dengan database format, tidak ada formatting khusus
         return $this->no_anggota;
+    }
+
+    /**
+     * Check if anggota is active
+     */
+    public function isActive()
+    {
+        return $this->status_keanggotaan === 'aktif';
+    }
+
+    /**
+     * Check if anggota has left
+     */
+    public function hasLeft()
+    {
+        return $this->status_keanggotaan === 'keluar';
+    }
+
+    /**
+     * Update anggota status to keluar
+     */
+    public function setKeluar($alasan = null)
+    {
+        $this->status_keanggotaan = 'keluar';
+        $this->tanggal_keluar = now();
+        $this->alasan_keluar = $alasan;
+        $this->save();
+    }
+
+    /**
+     * Reactivate anggota
+     */
+    public function reactivate()
+    {
+        $this->status_keanggotaan = 'aktif';
+        $this->tanggal_keluar = null;
+        $this->alasan_keluar = null;
+        $this->save();
     }
 
     /**

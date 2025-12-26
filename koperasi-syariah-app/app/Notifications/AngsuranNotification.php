@@ -113,12 +113,19 @@ class AngsuranNotification extends Notification implements ShouldQueue
         $message = 'Alhamdulillah! Pembayaran angsuran Anda telah berhasil diproses. ' .
                   'Berikut detail pembayaran:' . "\n\n" .
                   '• **Kode Transaksi:** ' . $this->transaksi->kode_transaksi . "\n" .
-                  '• **Jumlah Bayar:** ' . $formattedAmount . "\n" .
-                  '• **Tanggal Pembayaran:** ' . $this->transaksi->tanggal_transaksi->format('d F Y H:i') . "\n";
+                  '• **Jumlah Bayar:** ' . $formattedAmount . "\n";
+
+        // Add tanggal pembayaran if available
+        if ($this->transaksi->tanggal_transaksi) {
+            $message .= '• **Tanggal Pembayaran:** ' . $this->transaksi->tanggal_transaksi->format('d F Y H:i') . "\n";
+        }
 
         if ($this->angsuran) {
+            $tanggalJatuhTempo = $this->angsuran->tanggal_jatuh_tempo
+                ? $this->angsuran->tanggal_jatuh_tempo->format('d F Y')
+                : 'N/A';
             $message .= '• **Angsuran Ke:** ' . $this->angsuran->angsuran_ke . ' dari ' . $this->pembiayaan->tenor . ' bulan' . "\n" .
-                      '• **Jatuh Tempo Berikutnya:** ' . $this->angsuran->tanggal_jatuh_tempo->format('d F Y') . "\n";
+                      '• **Jatuh Tempo Berikutnya:** ' . $tanggalJatuhTempo . "\n";
         }
 
         if ($this->pembiayaan) {

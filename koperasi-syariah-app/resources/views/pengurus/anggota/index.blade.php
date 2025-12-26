@@ -28,7 +28,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Total Anggota</h3>
-                    <p class="text-2xl font-bold text-gray-900">{{ $anggota->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $totalAnggota ?? $anggota->total() }}</p>
                 </div>
             </div>
         </div>
@@ -40,7 +40,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Aktif</h3>
-                    <p class="text-2xl font-bold text-green-600">{{ $anggota->where('status_keanggotaan', 'aktif')->count() }}</p>
+                    <p class="text-2xl font-bold text-green-600">{{ $totalAktif }}</p>
                 </div>
             </div>
         </div>
@@ -52,7 +52,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Anggota Biasa</h3>
-                    <p class="text-2xl font-bold text-blue-600">{{ $anggota->where('jenis_anggota', 'biasa')->count() }}</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ $totalBiasa }}</p>
                 </div>
             </div>
         </div>
@@ -64,7 +64,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-sm font-medium text-gray-500">Bulan Ini</h3>
-                    <p class="text-2xl font-bold text-purple-600">{{ $anggota->where('tanggal_gabung', '>=', now()->startOfMonth())->count() }}</p>
+                    <p class="text-2xl font-bold text-purple-600">{{ $totalBulanIni }}</p>
                 </div>
             </div>
         </div>
@@ -174,6 +174,9 @@
                         <th class="hidden xl:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Akun
                         </th>
+                        <th class="hidden xl:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
                         <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Aksi
                         </th>
@@ -250,8 +253,40 @@
                                     </div>
                                 @endif
                             </td>
+                            <td class="hidden xl:table-cell px-3 py-3 whitespace-nowrap">
+                                <div>
+                                    <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full
+                                        @if($a->status_keanggotaan == 'aktif')
+                                            bg-green-100 text-green-800
+                                        @elseif($a->status_keanggotaan == 'keluar')
+                                            bg-red-100 text-red-800
+                                        @else
+                                            bg-yellow-100 text-yellow-800
+                                        @endif">
+                                        {{ ucfirst($a->status_keanggotaan) }}
+                                    </span>
+                                    @if($a->tanggal_keluar)
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            <i class="fas fa-calendar-times mr-1"></i>{{ $a->tanggal_keluar->format('d M Y') }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </td>
                             <td class="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                                 <div class="flex justify-end sm:justify-center space-x-2">
+                                    @if($a->status_keanggotaan == 'aktif')
+                                        <a href="{{ route('pengurus.anggota.keluar', $a->id) }}"
+                                           class="text-orange-600 hover:text-orange-900 mr-2"
+                                           title="Tandai Keluar">
+                                            <i class="fas fa-user-times"></i>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('pengurus.anggota.reaktif', $a->id) }}"
+                                           class="text-green-600 hover:text-green-900 mr-2"
+                                           title="Aktifkan Kembali">
+                                            <i class="fas fa-user-check"></i>
+                                        </a>
+                                    @endif
                                     <a href="{{ route('pengurus.anggota.edit', $a->id) }}"
                                        class="text-indigo-600 hover:text-indigo-900"
                                        title="Edit">
@@ -289,6 +324,10 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="mt-4">
+            {{ $anggota->links('pagination.custom') }}
+        </div>
     </div>
 
     <!-- Info Panel -->
@@ -307,6 +346,21 @@
                 </ul>
             </div>
             <div class="text-sm text-blue-700">
+                <h4 class="font-semibold mb-2">Status Keanggotaan:</h4>
+                <ul class="list-disc list-inside space-y-1">
+                    <li><strong>Aktif:</strong> Anggota yang masih aktif berpartisipasi</li>
+                    <li><strong>Tidak Aktif:</strong> Anggota yang tidak aktif untuk sementara</li>
+                    <li><strong>Keluar:</strong> Anggota yang keluar dari koperasi</li>
+                </ul>
+
+                <h4 class="font-semibold mb-2 mt-4">Management Status:</h4>
+                <ul class="list-disc list-inside space-y-1">
+                    <li><strong>Tandai Keluar:</strong> Ubah status anggota menjadi keluar dengan alasan yang jelas</li>
+                    <li><strong>Aktifkan Kembali:</strong> Ubah status anggota keluar kembali menjadi aktif</li>
+                    <li><strong>Tanggal Keluar:</strong> Akan otomatis tercatat saat anggota ditandai keluar</li>
+                    <li><strong>Alasan Keluar:</strong> Dicatat untuk keperluan administrasi dan arsip</li>
+                </ul>
+
                 <h4 class="font-semibold mb-2">Jenis Anggota:</h4>
                 <ul class="list-disc list-inside space-y-1">
                     <li><strong>Anggota Biasa:</strong> Anggota reguler dengan hak biasa</li>

@@ -2,6 +2,13 @@
 
 @section('title', 'Dashboard Anggota')
 
+@php
+// Default values untuk menghindari undefined variable
+$bulanNunggak = $bulanNunggak ?? 0;
+$totalTunggakanWajib = $totalTunggakanWajib ?? 0;
+$detailBulanNunggak = $detailBulanNunggak ?? [];
+@endphp
+
 @section('content')
 <div class="max-w-7xl mx-auto">
     <div class="mb-4 sm:mb-8">
@@ -21,6 +28,48 @@
             </div>
         </div>
     </div>
+
+    {{-- Alert Tunggakan Simpanan Wajib - Di bawah card selamat datang --}}
+    @if($bulanNunggak > 0)
+    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg shadow-lg p-4 sm:p-6 mb-6 sm:mb-8 text-white">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <h3 class="text-lg sm:text-xl font-bold mb-2 flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Tunggakan Simpanan Wajib
+                </h3>
+                <p class="text-orange-100 mb-3 sm:mb-4 text-sm sm:text-base">Anda memiliki tunggakan simpanan wajib yang perlu segera diselesaikan.</p>
+                <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                    <div class="bg-white bg-opacity-20 rounded-lg p-2 sm:p-3">
+                        <p class="text-xs sm:text-sm opacity-75">Jumlah Bulan Tunggakan</p>
+                        <p class="text-xl sm:text-2xl font-bold">{{ $bulanNunggak }} Bulan</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-2 sm:p-3">
+                        <p class="text-xs sm:text-sm opacity-75">Total Tunggakan</p>
+                        <p class="text-xl sm:text-2xl font-bold">Rp {{ number_format($totalTunggakanWajib, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+                @if(is_iterable($detailBulanNunggak) && count($detailBulanNunggak) > 0)
+                <details class="mt-3 sm:mt-4">
+                    <summary class="cursor-pointer text-sm font-medium underline">Lihat Detail Bulan yang Tunggak</summary>
+                    <div class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        @foreach($detailBulanNunggak as $detail)
+                        <div class="bg-white bg-opacity-20 rounded px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                            {{ $detail['nama_bulan'] }} {{ $detail['tahun'] }}
+                            <br>
+                            <span class="font-bold">Rp {{ number_format($detail['nominal'], 0, ',', '.') }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </details>
+                @endif
+            </div>
+            <div class="text-3xl sm:text-5xl opacity-20 ml-3 sm:ml-0">
+                <i class="fas fa-calendar-times"></i>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Savings Summary -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">

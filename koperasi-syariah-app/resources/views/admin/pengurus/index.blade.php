@@ -205,6 +205,10 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="mt-4">
+            {{ $pengurus->links('pagination.custom') }}
+        </div>
     </div>
 
     <!-- Info Panel -->

@@ -10,7 +10,7 @@
         <p class="text-gray-600 mt-2">Catat transaksi setoran atau penarikan simpanan</p>
     </div>
 
-    <form action="{{ route('pengurus.simpanan.store') }}" method="POST" id="transaksiForm">
+    <form action="{{ route('pengurus.simpanan.store') }}" method="POST" enctype="multipart/form-data" id="transaksiForm">
         @csrf
 
         <!-- Main Form Card -->
@@ -112,7 +112,7 @@
                 </div>
 
                 <!-- Tanggal Transaksi -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Tanggal Transaksi <span class="text-red-500">*</span>
@@ -125,6 +125,46 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Bulan Simpanan <span class="text-red-500">*</span>
+                        </label>
+                        <select name="bulan" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">-- Pilih Bulan --</option>
+                            <option value="1" {{ date('n') == 1 ? 'selected' : '' }}>Januari</option>
+                            <option value="2" {{ date('n') == 2 ? 'selected' : '' }}>Februari</option>
+                            <option value="3" {{ date('n') == 3 ? 'selected' : '' }}>Maret</option>
+                            <option value="4" {{ date('n') == 4 ? 'selected' : '' }}>April</option>
+                            <option value="5" {{ date('n') == 5 ? 'selected' : '' }}>Mei</option>
+                            <option value="6" {{ date('n') == 6 ? 'selected' : '' }}>Juni</option>
+                            <option value="7" {{ date('n') == 7 ? 'selected' : '' }}>Juli</option>
+                            <option value="8" {{ date('n') == 8 ? 'selected' : '' }}>Agustus</option>
+                            <option value="9" {{ date('n') == 9 ? 'selected' : '' }}>September</option>
+                            <option value="10" {{ date('n') == 10 ? 'selected' : '' }}>Oktober</option>
+                            <option value="11" {{ date('n') == 11 ? 'selected' : '' }}>November</option>
+                            <option value="12" {{ date('n') == 12 ? 'selected' : '' }}>Desember</option>
+                        </select>
+                        @error('bulan')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">Bulan simpanan yang dibayar</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Tahun Simpanan <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" name="tahun" required
+                               min="2020" max="{{ date('Y') + 1 }}"
+                               value="{{ date('Y') }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        @error('tahun')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">Tahun simpanan yang dibayar</p>
+                    </div>
                 </div>
 
                 <!-- Keterangan -->
@@ -136,6 +176,38 @@
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                               placeholder="Tambahkan keterangan (opsional)"></textarea>
                     @error('keterangan')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Bukti Pembayaran -->
+                <div class="border-t border-gray-200 pt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <i class="fas fa-file-upload mr-1"></i>Bukti Pembayaran
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:bg-gray-50 transition-colors"
+                         id="dropZone">
+                        <div class="space-y-1 text-center">
+                            <div class="flex justify-center">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400"></i>
+                            </div>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="bukti_transaksi" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                    <span>Pilih file</span>
+                                    <input id="bukti_transaksi" name="bukti_transaksi" type="file"
+                                           accept="image/*,.pdf"
+                                           class="sr-only">
+                                </label>
+                                <p class="pl-1">atau drag and drop</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                PNG, JPG, JPEG, PDF (Maks. 500KB)
+                            </p>
+                            <p id="fileName" class="text-sm text-indigo-600 font-medium hidden"></p>
+                            <p id="fileError" class="text-sm text-red-600 font-medium hidden"></p>
+                        </div>
+                    </div>
+                    @error('bukti_transaksi')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -202,7 +274,7 @@
     </form>
 </div>
 
-@section('scripts')
+@push('scripts')
 <script>
 let currentSaldo = 0;
 
@@ -320,6 +392,100 @@ document.getElementById('jumlah').addEventListener('blur', function() {
         this.value = Math.round(value / 1000) * 1000; // Round to nearest 1000
     }
 });
+
+// Show file name when file is selected
+document.getElementById('bukti_transaksi').addEventListener('change', function() {
+    const fileName = document.getElementById('fileName');
+    const fileError = document.getElementById('fileError');
+    const dropZone = document.getElementById('dropZone');
+
+    // Reset states
+    fileName.classList.add('hidden');
+    fileError.classList.add('hidden');
+    dropZone.classList.remove('border-red-500', 'bg-red-50');
+
+    if (this.files && this.files[0]) {
+        const file = this.files[0];
+
+        // Validate file size (500KB = 500 * 1024 bytes)
+        const maxSize = 500 * 1024;
+        if (file.size > maxSize) {
+            fileError.textContent = 'Ukuran file terlalu besar! Maksimal 500KB.';
+            fileError.classList.remove('hidden');
+            dropZone.classList.add('border-red-500', 'bg-red-50');
+            this.value = ''; // Clear the file input
+            return;
+        }
+
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            fileError.textContent = 'Format file tidak didukung! Gunakan PNG, JPG, JPEG, atau PDF.';
+            fileError.classList.remove('hidden');
+            dropZone.classList.add('border-red-500', 'bg-red-50');
+            this.value = ''; // Clear the file input
+            return;
+        }
+
+        // Show file name
+        fileName.textContent = 'File terpilih: ' + file.name + ' (' + formatFileSize(file.size) + ')';
+        fileName.classList.remove('hidden');
+        dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+    }
+});
+
+// Drag and drop functionality
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('bukti_transaksi');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+    dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+}
+
+function unhighlight(e) {
+    dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+    dropZone.classList.remove('border-red-500', 'bg-red-50');
+}
+
+dropZone.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files && files.length > 0) {
+        fileInput.files = files;
+        // Trigger change event
+        const event = new Event('change', { bubbles: true });
+        fileInput.dispatchEvent(event);
+    }
+}
+
+// Helper function to format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
 </script>
-@endsection
+@endpush
 @endsection

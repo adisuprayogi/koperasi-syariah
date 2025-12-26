@@ -82,7 +82,7 @@
                             <div class="ml-4 flex-1">
                                 <p class="text-sm font-medium text-gray-900">2. Verifikasi Dokumen</p>
                                 @if($pengajuan->verified_at)
-                                    <p class="text-xs text-gray-500">{{ $pengajuan->verified_at->format('d M Y H:i') }} - {{ $pengajuan->verifiedBy->nama_lengkap }}</p>
+                                    <p class="text-xs text-gray-500">{{ $pengajuan->verified_at->format('d M Y H:i') }} - {{ $pengajuan->verifiedBy->nama_lengkap ?? '-' }}</p>
                                 @else
                                     <p class="text-xs text-gray-500">Menunggu verifikasi</p>
                                 @endif
@@ -105,7 +105,7 @@
                             <div class="ml-4 flex-1">
                                 <p class="text-sm font-medium text-gray-900">3. Persetujuan</p>
                                 @if($pengajuan->approved_at)
-                                    <p class="text-xs text-gray-500">{{ $pengajuan->approved_at->format('d M Y H:i') }} - {{ $pengajuan->approvedBy->nama_lengkap }}</p>
+                                    <p class="text-xs text-gray-500">{{ $pengajuan->approved_at->format('d M Y H:i') }} - {{ $pengajuan->approvedBy->nama_lengkap ?? '-' }}</p>
                                 @elseif($pengajuan->status == 'rejected')
                                     <p class="text-xs text-red-500">Ditolak - {{ $pengajuan->alasan_penolakan }}</p>
                                 @else

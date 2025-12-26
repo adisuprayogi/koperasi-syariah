@@ -8,6 +8,7 @@ use App\Models\Anggota;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class KartuAnggotaController extends Controller
 {
@@ -253,7 +254,7 @@ class KartuAnggotaController extends Controller
             $dompdf = new Dompdf();
 
             // Set options
-            $options = new Dompdf\Options();
+            $options = new Options();
             $options->set('defaultFont', 'Arial');
             $options->set('isRemoteEnabled', true);
             $options->set('isHtml5ParserEnabled', true);

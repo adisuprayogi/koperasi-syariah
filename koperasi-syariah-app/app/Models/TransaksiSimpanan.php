@@ -20,6 +20,8 @@ class TransaksiSimpanan extends Model
         'jenis_transaksi',
         'jumlah',
         'tanggal_transaksi',
+        'bulan',
+        'tahun',
         'keterangan',
         'saldo_sebelumnya',
         'saldo_setelahnya',
@@ -208,6 +210,249 @@ class TransaksiSimpanan extends Model
         return [
             'saldo_sebelumnya' => $saldoSebelumnya,
             'saldo_setelahnya' => $saldoSetelahnya
+        ];
+    }
+
+    /**
+     * Hitung tunggakan simpanan wajib untuk semua anggota
+     * Simpanan wajib ditagihkan setiap tanggal 1, jatuh tempo di akhir bulan
+     */
+    public static function hitungTunggakanSimpananWajib($anggotaId = null)
+    {
+        // Ambil jenis simpanan wajib
+        $jenisSimpananWajib = JenisSimpanan::where('tipe_simpanan', 'wajib')->where('status', 1)->get();
+
+        if ($jenisSimpananWajib->isEmpty()) {
+            return [
+                'total_tunggakan' => 0,
+                'jumlah_anggota_nunggak' => 0,
+                'detail_tunggakan' => collect()
+            ];
+        }
+
+        $jenisSimpananWajibIds = $jenisSimpananWajib->pluck('id')->toArray();
+        $nominalWajib = $jenisSimpananWajib->sum('minimal_setor'); // Asumsi semua jenis wajib punya nominal sama
+
+        // Ambil anggota aktif
+        $anggotaQuery = \App\Models\Anggota::where('status_keanggotaan', 'aktif');
+        if ($anggotaId) {
+            $anggotaQuery->where('id', $anggotaId);
+        }
+        $anggotas = $anggotaQuery->get();
+
+        $detailTunggakan = collect();
+        $totalTunggakan = 0;
+        $jumlahAnggotaNunggak = 0;
+
+        $now = now();
+        $currentYear = $now->year;
+        $currentMonth = $now->month;
+
+        foreach ($anggotas as $anggota) {
+            // Lewati anggota yang belum punya tanggal_gabung
+            if (!$anggota->tanggal_gabung) {
+                continue;
+            }
+
+            $tanggalGabung = $anggota->tanggal_gabung;
+            $joinYear = $tanggalGabung->year;
+            $joinMonth = $tanggalGabung->month;
+
+            // Hitung jumlah bulan yang seharusnya dibayar dari tanggal gabung sampai bulan sekarang
+            $bulanYangHarusDibayar = 0;
+
+            // Iterasi dari tanggal gabung sampai bulan sekarang
+            $year = $joinYear;
+            $month = $joinMonth;
+
+            while ($year < $currentYear || ($year == $currentYear && $month <= $currentMonth)) {
+                // Hitung sampai bulan sekarang (bulan berjalan juga dihitung karena jatuh tempo di akhir bulan)
+                $bulanYangHarusDibayar++;
+                $month++;
+                if ($month > 12) {
+                    $month = 1;
+                    $year++;
+                }
+            }
+
+            // Ambil transaksi simpanan wajib yang sudah dibayar oleh anggota ini
+            // Setiap transaksi dihitung sebagai 1 bulan bayar
+            $transaksiDibayar = self::where('anggota_id', $anggota->id)
+                ->whereIn('jenis_simpanan_id', $jenisSimpananWajibIds)
+                ->where('jenis_transaksi', 'setor')
+                ->where('status', 'verified')
+                ->get();
+
+            // Hitung jumlah bulan yang sudah dibayar (setiap transaksi = 1 bulan)
+            $bulanSudahDibayar = $transaksiDibayar->count();
+
+            // Hitung jumlah bulan yang nunggak
+            $bulanNunggak = max(0, $bulanYangHarusDibayar - $bulanSudahDibayar);
+
+            if ($bulanNunggak > 0) {
+                $totalTunggakanAnggota = $bulanNunggak * $nominalWajib;
+                $totalTunggakan += $totalTunggakanAnggota;
+                $jumlahAnggotaNunggak++;
+
+                $detailTunggakan->push((object)[
+                    'anggota_id' => $anggota->id,
+                    'nama_anggota' => $anggota->nama_lengkap,
+                    'no_anggota' => $anggota->no_anggota,
+                    'bulan_nunggak' => $bulanNunggak,
+                    'total_tunggakan' => $totalTunggakanAnggota,
+                    'tanggal_gabung' => $anggota->tanggal_gabung->format('d M Y'),
+                ]);
+            }
+        }
+
+        return [
+            'total_tunggakan' => $totalTunggakan,
+            'jumlah_anggota_nunggak' => $jumlahAnggotaNunggak,
+            'detail_tunggakan' => $detailTunggakan,
+            'nominal_wajib' => $nominalWajib
+        ];
+    }
+
+    /**
+     * Hitung tunggakan simpanan wajib untuk satu anggota
+     */
+    public static function hitungTunggakanPerAnggota($anggotaId)
+    {
+        // Ambil jenis simpanan wajib
+        $jenisSimpananWajib = JenisSimpanan::where('tipe_simpanan', 'wajib')->where('status', 1)->get();
+
+        if ($jenisSimpananWajib->isEmpty()) {
+            return [
+                'bulan_nunggak' => 0,
+                'total_tunggakan' => 0,
+                'detail_bulan_nunggak' => []
+            ];
+        }
+
+        $jenisSimpananWajibIds = $jenisSimpananWajib->pluck('id')->toArray();
+        $nominalWajib = $jenisSimpananWajib->sum('minimal_setor');
+
+        $anggota = \App\Models\Anggota::find($anggotaId);
+
+        if (!$anggota || !$anggota->tanggal_gabung) {
+            return [
+                'bulan_nunggak' => 0,
+                'total_tunggakan' => 0,
+                'detail_bulan_nunggak' => []
+            ];
+        }
+
+        $now = now();
+        $currentYear = $now->year;
+        $currentMonth = $now->month;
+
+        $tanggalGabung = $anggota->tanggal_gabung;
+        $joinYear = $tanggalGabung->year;
+        $joinMonth = $tanggalGabung->month;
+
+        // Hitung jumlah bulan yang seharusnya dibayar
+        $bulanYangHarusDibayar = 0;
+        $year = $joinYear;
+        $month = $joinMonth;
+
+        while ($year < $currentYear || ($year == $currentYear && $month <= $currentMonth)) {
+            $bulanYangHarusDibayar++;
+            $month++;
+            if ($month > 12) {
+                $month = 1;
+                $year++;
+            }
+        }
+
+        // Ambil transaksi simpanan wajib yang sudah dibayar
+        // Setiap transaksi dihitung sebagai 1 bulan bayar
+        $transaksiDibayar = self::where('anggota_id', $anggotaId)
+            ->whereIn('jenis_simpanan_id', $jenisSimpananWajibIds)
+            ->where('jenis_transaksi', 'setor')
+            ->where('status', 'verified')
+            ->get();
+
+        // Hitung jumlah transaksi (setiap transaksi = 1 bulan bayar)
+        $bulanSudahDibayar = $transaksiDibayar->count();
+        $bulanNunggak = max(0, $bulanYangHarusDibayar - $bulanSudahDibayar);
+
+        // Generate detail bulan yang nunggak
+        // Hitung dari bulan terakhir yang dibayar
+        $detailBulanNunggak = [];
+
+        // Jika belum ada transaksi sama sekali, semua bulan dari tanggal_gabung dianggap nunggak
+        if ($transaksiDibayar->isEmpty()) {
+            $year = $joinYear;
+            $month = $joinMonth;
+
+            while ($year < $currentYear || ($year == $currentYear && $month <= $currentMonth)) {
+                $namaBulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                                  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $detailBulanNunggak[] = [
+                    'bulan' => $month,
+                    'tahun' => $year,
+                    'nama_bulan' => $namaBulanIndo[$month] ?? date('F', mktime(0, 0, 0, $month, 1, $year)),
+                    'nominal' => $nominalWajib
+                ];
+
+                $month++;
+                if ($month > 12) {
+                    $month = 1;
+                    $year++;
+                }
+            }
+        } else {
+            // Ada transaksi, hitung bulan yang sudah terbayar secara berurutan
+            // Setiap transaksi mewakili 1 bulan mulai dari tanggal_gabung
+            $bulanTerbayar = [];
+            $year = $joinYear;
+            $month = $joinMonth;
+
+            foreach ($transaksiDibayar as $transaksi) {
+                $bulanKey = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
+                $bulanTerbayar[] = $bulanKey;
+
+                // Increment ke bulan berikutnya untuk transaksi berikutnya
+                $month++;
+                if ($month > 12) {
+                    $month = 1;
+                    $year++;
+                }
+            }
+
+            // Hitung detail bulan yang nunggak
+            // Mulai dari bulan setelah bulan terakhir yang terbayar
+            $count = 0;
+            while ($count < $bulanNunggak) {
+                // Pastikan tidak melebihi bulan sekarang
+                if ($year > $currentYear || ($year == $currentYear && $month > $currentMonth)) {
+                    break;
+                }
+
+                $namaBulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                                  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $detailBulanNunggak[] = [
+                    'bulan' => $month,
+                    'tahun' => $year,
+                    'nama_bulan' => $namaBulanIndo[$month] ?? date('F', mktime(0, 0, 0, $month, 1, $year)),
+                    'nominal' => $nominalWajib
+                ];
+
+                // Increment ke bulan berikutnya
+                $month++;
+                if ($month > 12) {
+                    $month = 1;
+                    $year++;
+                }
+
+                $count++;
+            }
+        }
+
+        return [
+            'bulan_nunggak' => $bulanNunggak,
+            'total_tunggakan' => $bulanNunggak * $nominalWajib,
+            'detail_bulan_nunggak' => $detailBulanNunggak
         ];
     }
 }
