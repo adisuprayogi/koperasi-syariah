@@ -136,165 +136,150 @@
         </form>
     </div>
 
-    <!-- Compact Card View Transactions -->
-    <div class="space-y-4">
-        <!-- Section Header -->
-        <div class="bg-gradient-to-r from-primary-600 to-emerald-600 rounded-xl p-5 text-white shadow-lg">
+    <!-- Table View Transactions -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+        <!-- Table Header -->
+        <div class="bg-white px-6 py-4 border-b border-gray-200">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h2 class="text-xl font-bold mb-1 flex items-center">
-                        <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-2 backdrop-blur-sm">
-                            <i class="fas fa-history text-sm"></i>
-                        </div>
+                    <h2 class="text-xl font-bold mb-1 flex items-center text-gray-900">
+                        <i class="fas fa-history mr-2 text-primary-600"></i>
                         Riwayat Transaksi
                     </h2>
-                    <p class="text-primary-100 text-xs">Semua aktivitas simpanan Anda</p>
+                    <p class="text-gray-500 text-xs">Semua aktivitas simpanan Anda</p>
                 </div>
                 @if(isset($transaksi) && $transaksi->count() > 0)
-                    <div class="mt-3 sm:mt-0 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-                        <p class="text-2xl font-bold text-center">{{ $transaksi->count() }}</p>
-                        <p class="text-xs text-primary-100 text-center">Transaksi</p>
+                    <div class="mt-3 sm:mt-0 bg-primary-50 rounded-lg px-4 py-2">
+                        <p class="text-2xl font-bold text-center text-primary-600">{{ $transaksi->count() }}</p>
+                        <p class="text-xs text-gray-600 text-center">Transaksi</p>
                     </div>
                 @endif
             </div>
         </div>
 
         @if(isset($transaksi) && $transaksi->count() > 0)
-            <div class="space-y-3">
-                @foreach($transaksi as $item)
-                    <div class="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden border border-gray-100 hover:border-primary-200">
-                        <!-- Compact Card Header -->
-                        <div class="relative px-4 py-3">
-                            <div class="flex items-center justify-between">
-                                <!-- Link Detail di pojok kanan atas -->
-                                <a href="{{ route('anggota.simpanan.show', $item->id) }}"
-                                   class="absolute top-2 right-2 p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                                   title="Lihat Detail">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <div class="flex items-center space-x-3">
-                                    <!-- Compact Icon -->
-                                    <div class="w-10 h-10 @if($item->jenis_transaksi == 'setor') bg-gradient-to-br from-emerald-400 to-green-500 @else bg-gradient-to-br from-rose-400 to-red-500 @endif rounded-xl flex items-center justify-center shadow-md">
-                                        <i class="fas @if($item->jenis_transaksi == 'setor') fa-arrow-down @else fa-arrow-up @endif text-white text-sm"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-base font-bold text-gray-900">{{ $item->jenisSimpanan->nama_simpanan ?? 'Transaksi' }}</p>
-                                        <div class="flex items-center text-xs text-gray-500">
-                                            <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
-                                            {{ $item->tanggal_transaksi->format('d M Y') }}
-                                            <span class="mx-1 text-gray-300">•</span>
-                                            <i class="fas fa-clock text-gray-400 mr-1"></i>
-                                            {{ $item->tanggal_transaksi->format('H:i') }}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    @if($item->jenis_transaksi == 'setor')
-                                        <p class="text-lg font-bold text-green-600">+{{ number_format($item->jumlah, 0, ',', '.') }}</p>
-                                        <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                            <i class="fas fa-plus-circle mr-1"></i>SETORAN
-                                        </span>
-                                    @else
-                                        <p class="text-lg font-bold text-red-600">-{{ number_format($item->jumlah, 0, ',', '.') }}</p>
-                                        <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                            <i class="fas fa-minus-circle mr-1"></i>TARIK
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
+            <!-- Responsive Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kode</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jenis</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Periode</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jumlah</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Saldo</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Petugas</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @foreach($transaksi as $item)
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <!-- Tanggal -->
+                                <td class="px-4 py-3">
+                                    <div class="text-sm font-medium text-gray-900">{{ $item->tanggal_transaksi->format('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-500">{{ $item->tanggal_transaksi->format('H:i') }}</div>
+                                </td>
 
-                        <!-- Compact Card Details -->
-                        <div class="px-4 pb-4 bg-gray-50/50">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <!-- Kode Transaksi -->
-                                <div class="bg-white rounded-lg p-2 border border-gray-200 flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-barcode text-indigo-500 mr-2 text-xs"></i>
-                                        <div>
-                                            <p class="text-xs font-semibold text-gray-500">Kode</p>
-                                            <p class="text-xs font-mono font-bold text-gray-900">{{ $item->kode_transaksi }}</p>
+                                <!-- Kode -->
+                                <td class="px-4 py-3">
+                                    <div class="text-xs font-mono font-semibold text-indigo-600">{{ $item->kode_transaksi }}</div>
+                                </td>
+
+                                <!-- Jenis -->
+                                <td class="px-4 py-3">
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-900">{{ $item->jenisSimpanan->nama_simpanan ?? '-' }}</p>
+                                        <div class="flex items-center mt-1">
+                                            @if($item->jenis_transaksi == 'setor')
+                                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                    <i class="fas fa-plus-circle mr-1"></i>SETOR
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                                    <i class="fas fa-minus-circle mr-1"></i>TARIK
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
-                                    <button onclick="navigator.clipboard.writeText('{{ $item->kode_transaksi }}'); this.classList.add('text-green-600'); setTimeout(() => this.classList.remove('text-green-600'), 1000)" class="text-gray-400 hover:text-indigo-600 transition-colors text-xs p-1">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>
+                                </td>
+
+                                <!-- Periode -->
+                                <td class="px-4 py-3">
+                                    @php
+                                        $namaBulan = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                                    @endphp
+                                    <div class="text-sm text-gray-900">{{ $namaBulan[$item->bulan] ?? '-' }} {{ $item->tahun }}</div>
+                                </td>
+
+                                <!-- Jumlah -->
+                                <td class="px-4 py-3">
+                                    @if($item->jenis_transaksi == 'setor')
+                                        <p class="text-sm font-bold text-green-600">+Rp {{ number_format($item->jumlah, 0, ',', '.') }}</p>
+                                    @else
+                                        <p class="text-sm font-bold text-red-600">-Rp {{ number_format($item->jumlah, 0, ',', '.') }}</p>
+                                    @endif
+                                </td>
+
+                                <!-- Saldo -->
+                                <td class="px-4 py-3">
+                                    <div class="text-sm font-bold text-gray-900">Rp {{ number_format($item->saldo_setelahnya, 0, ',', '.') }}</div>
+                                    <div class="text-xs text-gray-500">Before: {{ number_format($item->saldo_sebelumnya, 0, ',', '.') }}</div>
+                                </td>
+
+                                <!-- Status -->
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center">
+                                        @if($item->status == 'verified')
+                                            <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>Terverifikasi
+                                            </span>
+                                        @elseif($item->status == 'pending')
+                                            <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                <i class="fas fa-clock mr-1"></i>Pending
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                                <i class="fas fa-times-circle mr-1"></i>Ditolak
+                                            </span>
+                                        @endif
+                                        @if($item->bukti_transaksi)
+                                            <a href="{{ asset('storage/' . $item->bukti_transaksi) }}" target="_blank" class="ml-2 text-indigo-500 hover:text-indigo-700" title="Lihat bukti">
+                                                <i class="fas fa-file-image"></i>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </td>
 
                                 <!-- Petugas -->
-                                <div class="bg-white rounded-lg p-2 border border-gray-200 flex items-center">
-                                    <i class="fas fa-user-tie text-blue-500 mr-2 text-xs"></i>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-xs font-semibold text-gray-500">Petugas</p>
-                                        <p class="text-xs font-bold text-gray-900 truncate">{{ $item->pengurus->nama_lengkap ?? '-' }}</p>
-                                    </div>
-                                </div>
+                                <td class="px-4 py-3">
+                                    <div class="text-sm text-gray-900">{{ $item->pengurus->nama_lengkap ?? '-' }}</div>
+                                </td>
 
-                                <!-- Tipe -->
-                                <div class="bg-white rounded-lg p-2 border border-gray-200 flex items-center">
-                                    <i class="fas fa-tag text-purple-500 mr-2 text-xs"></i>
-                                    <div>
-                                        <p class="text-xs font-semibold text-gray-500">Tipe</p>
-                                        <p class="text-xs font-bold text-gray-900">{{ $item->jenisSimpanan->tipe_simpanan_label ?? '-' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Keterangan -->
-                            @if($item->keterangan)
-                                <div class="mt-4 bg-amber-50 rounded-lg p-3 border border-amber-100">
-                                    <div class="flex items-start">
-                                        <i class="fas fa-sticky-note text-amber-500 mr-2 text-xs mt-0.5"></i>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-gray-500">Keterangan</p>
-                                            <p class="text-xs text-gray-700 mt-1 leading-relaxed">{{ $item->keterangan }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-
-                        <!-- Compact Card Footer -->
-                        <div class="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-50 border-t border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="flex items-center text-xs text-gray-600">
-                                        <i class="fas fa-calendar-check mr-1"></i>
-                                        {{ $item->tanggal_transaksi->format('d/m/Y') }}
-                                    </div>
-                                    @if($item->jenis_transaksi == 'setor')
-                                        <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
-                                            <i class="fas fa-arrow-trend-up mr-1"></i>+Saldo
-                                        </span>
-                                    @else
-                                        <span class="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded">
-                                            <i class="fas fa-arrow-trend-down mr-1"></i>-Saldo
-                                        </span>
-                                    @endif
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <div class="text-xs text-gray-500 font-mono">
-                                        #{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}
-                                    </div>
+                                <!-- Aksi -->
+                                <td class="px-4 py-3 text-center">
                                     <a href="{{ route('anggota.simpanan.show', $item->id) }}"
-                                       class="inline-flex items-center px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-lg transition-colors">
-                                        <i class="fas fa-eye mr-1"></i>
-                                        Detail
+                                       class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary-100 hover:bg-primary-200 text-primary-600 hover:text-primary-700 transition-colors"
+                                       title="Lihat Detail">
+                                        <i class="fas fa-eye text-sm"></i>
                                     </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
 
-            <div class="mt-6">
+            <!-- Pagination -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
                 {{ $transaksi->links('pagination.custom') }}
             </div>
 
         @else
-            <!-- Compact Empty State -->
-            <div class="bg-white rounded-xl shadow-lg border-2 border-dashed border-gray-300 py-12 text-center">
+            <!-- Empty State -->
+            <div class="py-12 text-center">
                 <div class="max-w-md mx-auto">
                     <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-inbox text-gray-400 text-2xl"></i>

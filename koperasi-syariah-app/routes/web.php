@@ -65,6 +65,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/ubah-password', [AuthController::class, 'showChangePasswordForm'])->name('password.change');
 Route::post('/ubah-password', [AuthController::class, 'changePassword'])->name('password.update');
 
+// TEMPORARY: Migration Routes - HAPUS SETELAH SELESAI
+Route::get('/run-migrate', [MigrateController::class, 'run']);
+Route::get('/migrate-status', [MigrateController::class, 'status']);
+
 // Admin Routes (Admin only)
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');

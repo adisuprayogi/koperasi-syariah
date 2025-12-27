@@ -19,15 +19,30 @@ class PengajuanPembiayaanController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $anggota = Anggota::where('user_id', $user->id)->firstOrFail();
 
-        $pengajuans = PengajuanPembiayaan::with(['jenisPembiayaan'])
-            ->where('anggota_id', $anggota->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = PengajuanPembiayaan::with(['jenisPembiayaan'])
+            ->where('anggota_id', $anggota->id);
+
+        // Filter by status
+        if ($request->has('status')) {
+            switch ($request->status) {
+                case 'pending':
+                    $query->whereIn('status', ['diajukan', 'verifikasi']);
+                    break;
+                case 'approved':
+                    $query->whereIn('status', ['approved', 'cair']);
+                    break;
+                case 'rejected':
+                    $query->where('status', 'rejected');
+                    break;
+            }
+        }
+
+        $pengajuans = $query->orderBy('created_at', 'desc')->get();
 
         return view('anggota.pengajuan.index', compact('pengajuans', 'anggota'));
     }

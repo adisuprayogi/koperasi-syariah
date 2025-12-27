@@ -10,97 +10,105 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow p-4">
             <div class="flex items-center">
-                <div class="p-2 sm:p-3 bg-green-100 rounded-full">
-                    <i class="fas fa-user-friends text-green-600 text-sm sm:text-xl"></i>
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-friends text-green-600"></i>
+                    </div>
                 </div>
-                <div class="ml-3 sm:ml-4">
-                    <h3 class="text-sm sm:text-lg font-semibold text-gray-900">Total Saldo</h3>
-                    <p class="text-lg sm:text-2xl font-bold text-green-600">{{ number_format($totalSaldo, 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm text-gray-600">Net simpanan</p>
+                <div class="ml-3">
+                    <h3 class="text-xs font-medium text-gray-500">Total Saldo</h3>
+                    <p class="text-lg font-bold text-green-600">{{ number_format($totalSaldo, 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-500">{{ $transaksiHariIni }} transaksi</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div class="bg-white rounded-lg shadow p-4">
             <div class="flex items-center">
-                <div class="p-2 sm:p-3 bg-blue-100 rounded-full">
-                    <i class="fas fa-piggy-bank text-blue-600 text-sm sm:text-xl"></i>
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-piggy-bank text-blue-600"></i>
+                    </div>
                 </div>
-                <div class="ml-3 sm:ml-4">
-                    <h3 class="text-sm sm:text-lg font-semibold text-gray-900">Total Simpanan</h3>
-                    <p class="text-lg sm:text-2xl font-bold text-blue-600">{{ number_format($totalSimpanan, 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm text-gray-600">{{ $transaksiHariIni }} transaksi</p>
+                <div class="ml-3">
+                    <h3 class="text-xs font-medium text-gray-500">Total Simpanan</h3>
+                    <p class="text-lg font-bold text-blue-600">{{ number_format($totalSimpanan, 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-500">{{ $transaksiHariIni }} transaksi</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div class="bg-white rounded-lg shadow p-4">
             <div class="flex items-center">
-                <div class="p-2 sm:p-3 bg-purple-100 rounded-full">
-                    <i class="fas fa-hand-holding-usd text-purple-600 text-sm sm:text-xl"></i>
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-hand-holding-usd text-purple-600"></i>
+                    </div>
                 </div>
-                <div class="ml-3 sm:ml-4">
-                    <h3 class="text-sm sm:text-lg font-semibold text-gray-900">Total Pembiayaan</h3>
-                    <p class="text-lg sm:text-2xl font-bold text-purple-600">{{ number_format($totalPembiayaanCair, 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm text-gray-600">{{ $activePembiayaan }} aktif</p>
+                <div class="ml-3">
+                    <h3 class="text-xs font-medium text-gray-500">Total Pembiayaan</h3>
+                    <p class="text-lg font-bold text-purple-600">{{ number_format($totalPembiayaanCair, 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-500">{{ $activePembiayaan }} aktif</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div class="bg-white rounded-lg shadow p-4">
             <div class="flex items-center">
-                <div class="p-2 sm:p-3 bg-yellow-100 rounded-full">
-                    <i class="fas fa-chart-line text-yellow-600 text-sm sm:text-xl"></i>
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-yellow-600"></i>
+                    </div>
                 </div>
-                <div class="ml-3 sm:ml-4">
-                    <h3 class="text-sm sm:text-lg font-semibold text-gray-900">Total Margin</h3>
-                    <p class="text-lg sm:text-2xl font-bold text-yellow-600">{{ number_format($totalMargin, 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm text-gray-600">Dari pembiayaan</p>
+                <div class="ml-3">
+                    <h3 class="text-xs font-medium text-gray-500">Total Margin</h3>
+                    <p class="text-lg font-bold text-yellow-600">{{ number_format($totalMargin, 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-500">Dari pembiayaan</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Angsuran Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow p-4 sm:p-6 text-white">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow p-4 text-white">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm sm:text-lg font-semibold opacity-90">Sisa Angsuran</h3>
-                    <p class="text-2xl sm:text-3xl font-bold mt-2">{{ number_format($totalSisaAngsuran, 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm opacity-75 mt-1">{{ $countAngsuranBelumLunas }} angsuran belum lunas</p>
+                    <h3 class="text-xs font-medium opacity-90">Sisa Angsuran</h3>
+                    <p class="text-xl font-bold mt-1">{{ number_format($totalSisaAngsuran, 0, ',', '.') }}</p>
+                    <p class="text-xs opacity-75 mt-1">{{ $countAngsuranBelumLunas }} belum lunas</p>
                 </div>
-                <div class="p-3 bg-white bg-opacity-20 rounded-full">
-                    <i class="fas fa-file-invoice-dollar text-white text-2xl sm:text-3xl"></i>
+                <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-file-invoice-dollar text-white"></i>
                 </div>
             </div>
         </div>
 
-        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow p-4 sm:p-6 text-white">
+        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow p-4 text-white">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm sm:text-lg font-semibold opacity-90">Sudah Dibayar</h3>
-                    <p class="text-2xl sm:text-3xl font-bold mt-2">{{ number_format($totalSudahBayar, 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm opacity-75 mt-1">Total angsuran terbayar</p>
+                    <h3 class="text-xs font-medium opacity-90">Sudah Dibayar</h3>
+                    <p class="text-xl font-bold mt-1">{{ number_format($totalSudahBayar, 0, ',', '.') }}</p>
+                    <p class="text-xs opacity-75 mt-1">Total terbayar</p>
                 </div>
-                <div class="p-3 bg-white bg-opacity-20 rounded-full">
-                    <i class="fas fa-check-circle text-white text-2xl sm:text-3xl"></i>
+                <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check-circle text-white"></i>
                 </div>
             </div>
         </div>
 
-        <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg shadow p-4 sm:p-6 text-white">
+        <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg shadow p-4 text-white">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm sm:text-lg font-semibold opacity-90">Tunggakan Simpanan Wajib</h3>
-                    <p class="text-2xl sm:text-3xl font-bold mt-2">{{ number_format($totalTunggakanWajib, 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm opacity-75 mt-1">{{ $jumlahAnggotaNunggakWajib }} anggota menunggak</p>
+                    <h3 class="text-xs font-medium opacity-90">Tunggakan Wajib</h3>
+                    <p class="text-xl font-bold mt-1">{{ number_format($totalTunggakanWajib, 0, ',', '.') }}</p>
+                    <p class="text-xs opacity-75 mt-1">{{ $jumlahAnggotaNunggakWajib }} anggota</p>
                 </div>
-                <div class="p-3 bg-white bg-opacity-20 rounded-full">
-                    <i class="fas fa-exclamation-triangle text-white text-2xl sm:text-3xl"></i>
+                <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-white"></i>
                 </div>
             </div>
         </div>

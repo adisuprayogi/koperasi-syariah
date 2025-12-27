@@ -606,7 +606,13 @@ class PengurusController extends Controller
             $query->where('status', $request->status);
         }
 
-        $transaksi = $query->paginate(10);
+        $transaksi = $query->paginate(10)->appends([
+            'tanggal_dari' => $tanggalDari,
+            'tanggal_sampai' => $tanggalSampai,
+            'jenis_transaksi' => $request->jenis_transaksi,
+            'jenis_simpanan_id' => $request->jenis_simpanan_id,
+            'status' => $request->status,
+        ]);
         $anggota = Anggota::orderBy('nama_lengkap')->get();
         $jenisSimpanan = JenisSimpanan::where('status', 1)->get();
 
@@ -861,11 +867,31 @@ class PengurusController extends Controller
     /**
      * Index Pengajuan
      */
-    public function pengajuanIndex()
+    public function pengajuanIndex(Request $request)
     {
-        $pengajuans = PengajuanPembiayaan::with(['anggota', 'jenisPembiayaan'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = PengajuanPembiayaan::with(['anggota', 'jenisPembiayaan'])
+            ->orderBy('created_at', 'desc');
+
+        // Filter by status
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by search (kode pengajuan or nama anggota)
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('kode_pengajuan', 'like', "%{$search}%")
+                  ->orWhereHas('anggota', function($query) use ($search) {
+                      $query->where('nama_lengkap', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $pengajuans = $query->paginate(10)->appends([
+            'status' => $request->status,
+            'search' => $request->search,
+        ]);
 
         // Statistics for sidebar
         $stats = [

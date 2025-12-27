@@ -10,7 +10,7 @@
                         </span>
                     @else
                         <a href="{{ $paginator->previousPageUrl() }}"
-                           class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                           class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-primary-50 transition-colors">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     @endif
@@ -40,7 +40,7 @@
                             </span>
                         @else
                             <a href="{{ $paginator->previousPageUrl() }}"
-                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-primary-50 transition-colors">
                                 <span class="sr-only">Previous</span>
                                 <i class="fas fa-chevron-left"></i>
                             </a>
@@ -58,12 +58,12 @@
                                 @foreach ($element as $page => $url)
                                     @if ($page == $paginator->currentPage())
                                         <span aria-current="page"
-                                              class="relative inline-flex items-center px-4 py-2 border border-indigo-500 bg-indigo-600 text-sm font-medium text-white">
+                                              class="relative inline-flex items-center px-4 py-2 border border-primary-500 bg-primary-600 text-sm font-medium text-white">
                                             {{ $page }}
                                         </span>
                                     @else
                                         <a href="{{ $url }}"
-                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-primary-50 transition-colors">
                                             {{ $page }}
                                         </a>
                                     @endif
@@ -74,7 +74,7 @@
                         <!-- Next -->
                         @if ($paginator->hasMorePages())
                             <a href="{{ $paginator->nextPageUrl() }}"
-                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-primary-50 transition-colors">
                                 <span class="sr-only">Next</span>
                                 <i class="fas fa-chevron-right"></i>
                             </a>
@@ -93,7 +93,7 @@
                 <span class="relative z-0 inline-flex shadow-sm rounded-md -space-x-px">
                     @if ($paginator->hasMorePages())
                         <a href="{{ $paginator->nextPageUrl() }}"
-                           class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                           class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-primary-50 transition-colors">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     @else
