@@ -308,3 +308,87 @@ Route::get('/create-pengurus', function() {
 
     return 'User pengurus berhasil dibuat!<br>Email: pengurus@koperasi.local<br>Password: password123<br><a href="/login">Klik Login</a>';
 });
+
+// Route khusus untuk menjalankan recalculate saldo (hanya admin yang bisa akses)
+Route::prefix('admin-system')->name('admin-system.')->middleware(['auth', 'admin'])->group(function () {
+    Route::get('/recalculate-saldo', function() {
+        // Cek parameter secret key untuk keamanan
+        $secretKey = request('key');
+        $validKey = 'koperasi-syariah-2025'; // Ganti dengan key yang aman
+
+        if ($secretKey !== $validKey) {
+            return response('Unauthorized: Invalid secret key', 403);
+        }
+
+        try {
+            $totalUpdated = 0;
+            $anggotaProcessed = 0;
+
+            // Ambil semua anggota aktif
+            $anggotas = \App\Models\Anggota::where('status_keanggotaan', 'aktif')->get();
+            $jenisSimpanans = \App\Models\JenisSimpanan::where('status', 1)->get();
+
+            foreach ($anggotas as $anggota) {
+                $hasUpdate = false;
+
+                foreach ($jenisSimpanans as $jenisSimpanan) {
+                    // Ambil semua transaksi verified untuk anggota dan jenis simpanan ini
+                    // Urutkan by tanggal_transaksi, created_at, id ASC untuk kalkulasi saldo
+                    $transaksi = \App\Models\TransaksiSimpanan::where('anggota_id', $anggota->id)
+                        ->where('jenis_simpanan_id', $jenisSimpanan->id)
+                        ->where('status', 'verified')
+                        ->orderBy('tanggal_transaksi')
+                        ->orderBy('created_at')
+                        ->orderBy('id')
+                        ->get();
+
+                    if ($transaksi->isEmpty()) {
+                        continue;
+                    }
+
+                    $runningSaldo = 0;
+
+                    foreach ($transaksi as $trx) {
+                        $saldoSebelumnya = $runningSaldo;
+
+                        // Hitung saldo setelahnya
+                        if ($trx->jenis_transaksi == 'setor') {
+                            $runningSaldo += $trx->jumlah;
+                        } elseif ($trx->jenis_transaksi == 'tarik') {
+                            $runningSaldo -= $trx->jumlah;
+                        }
+
+                        $saldoSetelahnya = $runningSaldo;
+
+                        // Update jika berbeda
+                        if ($trx->saldo_sebelumnya != $saldoSebelumnya || $trx->saldo_setelahnya != $saldoSetelahnya) {
+                            $trx->saldo_sebelumnya = $saldoSebelumnya;
+                            $trx->saldo_setelahnya = $saldoSetelahnya;
+                            $trx->save();
+                            $totalUpdated++;
+                            $hasUpdate = true;
+                        }
+                    }
+                }
+
+                if ($hasUpdate) {
+                    $anggotaProcessed++;
+                }
+            }
+
+            $output = "<html><head><title>Recalculate Saldo</title><style>body{font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:0 auto;} .success{color:green;} .info{color:blue;}</style></head><body>";
+            $output .= "<h1>Hasil Recalculate Saldo</h1>";
+            $output .= "<p class='success'><strong>Status:</strong> Sukses</p>";
+            $output .= "<p><strong>Total Anggota Processed:</strong> " . $anggotaProcessed . "</p>";
+            $output .= "<p><strong>Total Records Updated:</strong> " . $totalUpdated . "</p>";
+            $output .= "<hr><p class='info'>Saldo simpanan telah berhasil dihitung ulang.</p>";
+            $output .= "<p><a href='/admin/dashboard'>Kembali ke Dashboard</a></p>";
+            $output .= "</body></html>";
+
+            return $output;
+
+        } catch (\Exception $e) {
+            return "<html><body><h1>Error</h1><p style='color:red'>" . $e->getMessage() . "</p><p>File: " . $e->getFile() . "</p><p>Line: " . $e->getLine() . "</p></body></html>";
+        }
+    })->name('recalculate-saldo');
+});

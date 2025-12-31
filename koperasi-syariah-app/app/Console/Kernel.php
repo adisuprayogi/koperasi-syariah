@@ -15,7 +15,16 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Recalculate saldo simpanan daily at 2 AM
+        $schedule->command('simpanan:recalculate-saldo')
+                 ->dailyAt('02:00')
+                 ->description('Recalculate saldo simpanan for all anggota')
+                 ->onSuccess(function () {
+                     \Log::info('Saldo simpanan recalculation completed successfully');
+                 })
+                 ->onFailure(function () {
+                     \Log::error('Saldo simpanan recalculation failed');
+                 });
     }
 
     /**

@@ -214,7 +214,10 @@ class AnggotaController extends Controller
         // Query untuk transaksi simpanan anggota ini saja
         $query = TransaksiSimpanan::with(['jenisSimpanan', 'pengurus'])
                                 ->where('anggota_id', $anggota->id)
-                                ->latest();
+                                ->orderByDesc('tahun')
+                                ->orderByDesc('bulan')
+                                ->orderByDesc('created_at')
+                                ->orderByDesc('id');
 
         // Filter by date range
         if ($request->has('tanggal_dari') && $request->tanggal_dari) {
