@@ -21,7 +21,7 @@
                 <div class="ml-3">
                     <h3 class="text-xs font-medium text-gray-500">Total Saldo</h3>
                     <p class="text-lg font-bold text-green-600">{{ number_format($totalSaldo, 0, ',', '.') }}</p>
-                    <p class="text-xs text-gray-500">{{ $transaksiHariIni }} transaksi</p>
+                    <p class="text-xs text-gray-500">Kas koperasi</p>
                 </div>
             </div>
         </div>
@@ -35,8 +35,8 @@
                 </div>
                 <div class="ml-3">
                     <h3 class="text-xs font-medium text-gray-500">Total Simpanan</h3>
-                    <p class="text-lg font-bold text-blue-600">{{ number_format($totalSimpanan, 0, ',', '.') }}</p>
-                    <p class="text-xs text-gray-500">{{ $transaksiHariIni }} transaksi</p>
+                    <p class="text-lg font-bold text-blue-600">{{ number_format($saldoSimpanan, 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-500">Saldo simpanan</p>
                 </div>
             </div>
         </div>
@@ -70,6 +70,50 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Simpanan Per Jenis -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">Total Simpanan per Jenis</h3>
+            <a href="{{ route('pengurus.laporan.index') }}" class="text-sm text-blue-600 hover:text-blue-800">
+                Lihat Detail <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            @foreach($simpananPerJenis as $simpanan)
+            @if($simpanan->saldo > 0)
+            <div class="border rounded-lg p-4 hover:shadow-md transition-shadow" style="border-left: 4px solid {{ $simpanan->jenis->warna ?? '#16a34a' }};">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-800 text-sm">{{ $simpanan->jenis->nama_simpanan }}</h4>
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background-color: {{ $simpanan->jenis->warna ?? '#16a34a' }}20;">
+                        <i class="fas fa-wallet text-sm" style="color: {{ $simpanan->jenis->warna ?? '#16a34a' }};"></i>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Total Setor:</span>
+                        <span class="text-green-600 font-medium">{{ number_format($simpanan->total_setor, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Total Tarik:</span>
+                        <span class="text-red-600 font-medium">{{ number_format($simpanan->total_tarik, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm pt-2 border-t">
+                        <span class="text-gray-700 font-medium">Saldo:</span>
+                        <span class="font-bold" style="color: {{ $simpanan->jenis->warna ?? '#16a34a' }};">{{ number_format($simpanan->saldo, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
+            @endif
+            @endforeach
+        </div>
+        @if($simpananPerJenis->where('saldo', '>', 0)->count() === 0)
+        <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-inbox text-4xl mb-2"></i>
+            <p>Belum ada data simpanan</p>
+        </div>
+        @endif
     </div>
 
     <!-- Angsuran Statistics -->

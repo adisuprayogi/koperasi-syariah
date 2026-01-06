@@ -333,10 +333,12 @@ Route::prefix('admin-system')->name('admin-system.')->middleware(['auth', 'admin
 
                 foreach ($jenisSimpanans as $jenisSimpanan) {
                     // Ambil semua transaksi verified untuk anggota dan jenis simpanan ini
-                    // Urutkan by tanggal_transaksi, created_at, id ASC untuk kalkulasi saldo
+                    // Urutkan ASCENDING (dari terlama ke terbaru) untuk kalkulasi saldo yang benar
                     $transaksi = \App\Models\TransaksiSimpanan::where('anggota_id', $anggota->id)
                         ->where('jenis_simpanan_id', $jenisSimpanan->id)
                         ->where('status', 'verified')
+                        ->orderBy('tahun')
+                        ->orderBy('bulan')
                         ->orderBy('tanggal_transaksi')
                         ->orderBy('created_at')
                         ->orderBy('id')

@@ -303,10 +303,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const marginPercent = getMarginPercent();
 
         if (jumlah > 0 && tenor > 0) {
-            const jumlahMargin = jumlah * (marginPercent / 100);
+            // Rumus BARU: Margin per bulan dikalikan tenor (sesuai backend)
+            const marginPerBulan = jumlah * (marginPercent / 100);
+            const jumlahMargin = marginPerBulan * tenor;
             const totalPembiayaan = jumlah + jumlahMargin;
             const angsuranPokok = jumlah / tenor;
-            const angsuranMargin = jumlahMargin / tenor;
+            const angsuranMargin = marginPerBulan;
             const totalAngsuran = angsuranPokok + angsuranMargin;
 
             // Update margin percentage display

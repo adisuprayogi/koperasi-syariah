@@ -62,7 +62,6 @@ class PengurusController extends Controller
         // Statistik Simpanan
         $totalSimpanan = TransaksiSimpanan::where('jenis_transaksi', 'setor')->sum('jumlah');
         $totalPenarikan = TransaksiSimpanan::where('jenis_transaksi', 'tarik')->sum('jumlah');
-        $totalSaldo = $totalSimpanan - $totalPenarikan;
 
         // Transaksi hari ini
         $transaksiHariIni = TransaksiSimpanan::whereDate('tanggal_transaksi', today())->count();
@@ -82,6 +81,13 @@ class PengurusController extends Controller
         $totalMargin = PengajuanPembiayaan::whereIn('status', ['cair', 'lunas'])
                                            ->sum('jumlah_margin');
 
+        // Total yang sudah dibayar (angsuran yang terbayar)
+        $totalSudahBayar = Angsuran::where('status', 'terbayar')
+                                    ->whereHas('pengajuanPembiayaan', function($q) {
+                                        $q->whereIn('status', ['cair', 'approved', 'lunas']);
+                                    })
+                                    ->sum('jumlah_angsuran');
+
         // Total Sisa Angsuran
         $angsuranBelumLunas = Angsuran::where('status', 'pending')
                                        ->whereHas('pengajuanPembiayaan', function($q) {
@@ -91,12 +97,9 @@ class PengurusController extends Controller
         $totalSisaAngsuran = $angsuranBelumLunas->sum('jumlah_angsuran');
         $countAngsuranBelumLunas = $angsuranBelumLunas->count();
 
-        // Total yang sudah dibayar (angsuran yang lunas)
-        $totalSudahBayar = Angsuran::where('status', 'terbayar')
-                                    ->whereHas('pengajuanPembiayaan', function($q) {
-                                        $q->whereIn('status', ['cair', 'approved', 'lunas']);
-                                    })
-                                    ->sum('jumlah_angsuran');
+        // Hitung Total Saldo: ((total simpanan - total penarikan) - total pembiayaan cair) + total pembayaran angsuran
+        $saldoSimpanan = $totalSimpanan - $totalPenarikan;
+        $totalSaldo = ($saldoSimpanan - $totalPembiayaanCair) + $totalSudahBayar;
 
         // Pending Tasks berdasarkan posisi
         $pendingTasks = collect();
@@ -176,10 +179,31 @@ class PengurusController extends Controller
             ->orderBy('month', 'asc')
             ->get();
 
+        // Total Simpanan per Jenis
+        $simpananPerJenis = JenisSimpanan::where('status', 1)
+            ->get()
+            ->map(function($jenis) {
+                $totalSetor = TransaksiSimpanan::where('jenis_simpanan_id', $jenis->id)
+                    ->where('jenis_transaksi', 'setor')
+                    ->sum('jumlah');
+                $totalTarik = TransaksiSimpanan::where('jenis_simpanan_id', $jenis->id)
+                    ->where('jenis_transaksi', 'tarik')
+                    ->sum('jumlah');
+                $saldo = $totalSetor - $totalTarik;
+
+                return (object)[
+                    'jenis' => $jenis,
+                    'total_setor' => $totalSetor,
+                    'total_tarik' => $totalTarik,
+                    'saldo' => $saldo
+                ];
+            });
+
         return view('pengurus.dashboard', compact(
             'pengurus',
             'totalSimpanan',
             'totalPenarikan',
+            'saldoSimpanan',
             'totalSaldo',
             'transaksiHariIni',
             'setoranHariIni',
@@ -197,7 +221,8 @@ class PengurusController extends Controller
             'monthlySummary',
             'totalTunggakanWajib',
             'jumlahAnggotaNunggakWajib',
-            'tunggakanSimpananWajib'
+            'tunggakanSimpananWajib',
+            'simpananPerJenis'
         ));
     }
 
@@ -696,9 +721,11 @@ class PengurusController extends Controller
         try {
             DB::beginTransaction();
 
-            // Cek duplikasi: apakah sudah ada transaksi untuk bulan/tahun/jenis simpanan yang sama
+            // Cek duplikasi: apakah sudah ada transaksi untuk bulan/tahun/jenis simpanan/jenis transaksi yang sama
+            // Setor dan tarik di bulan yang sama diperbolehkan, jadi cek per jenis transaksi
             $existingTransaksi = TransaksiSimpanan::where('anggota_id', $request->anggota_id)
                 ->where('jenis_simpanan_id', $request->jenis_simpanan_id)
+                ->where('jenis_transaksi', $request->jenis_transaksi)
                 ->where('bulan', $request->bulan)
                 ->where('tahun', $request->tahun)
                 ->where('status', 'verified')
