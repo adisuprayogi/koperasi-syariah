@@ -68,9 +68,19 @@
                             <p class="text-lg text-gray-900">{{ $pembiayaan->tenor }} Bulan</p>
                         </div>
 
+                        @if($pembiayaan->tipe_angsuran)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500 mb-1">Tipe Angsuran</label>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium @if($pembiayaan->tipe_angsuran == 'flat') bg-green-100 text-green-800 @elseif($pembiayaan->tipe_angsuran == 'menurun') bg-orange-100 text-orange-800 @else bg-purple-100 text-purple-800 @endif">
+                                @if($pembiayaan->tipe_angsuran == 'flat') Flat (Tetap) @elseif($pembiayaan->tipe_angsuran == 'menurun') Menurun (Declining) @else Menaik (Stepped) @endif
+                            </span>
+                        </div>
+                        @endif
+
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Angsuran per Bulan</label>
-                            <p class="text-lg font-semibold text-green-600">Rp {{ number_format($pembiayaan->angsuran_margin, 0, ',', '.') }}</p>
+                            <p class="text-lg font-semibold text-green-600">Rp {{ number_format($pembiayaan->total_angsuran, 0, ',', '.') }}</p>
+                            <p class="text-xs text-gray-500">Pokok: Rp {{ number_format($pembiayaan->angsuran_pokok, 0, ',', '.') }} + Margin: Rp {{ number_format($pembiayaan->angsuran_margin, 0, ',', '.') }}</p>
                         </div>
 
                         <div>
@@ -170,12 +180,12 @@
                     <h2 class="text-lg font-semibold text-gray-900">Jadwal Angsuran</h2>
                     <div class="text-sm text-gray-500">
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                              @if($angsurans->where('status', 'terbayar')->count() == $angsurans->count())
+                              @if($angsurans->whereIn('status', ['terbayar', 'lunas_lebih_cepat'])->count() == $angsurans->count())
                                   bg-green-100 text-green-800
                               @else
                                   bg-blue-100 text-blue-800
                               @endif">
-                            {{ $angsurans->where('status', 'terbayar')->count() }} dari {{ $angsurans->count() }} Angsuran Lunas
+                            {{ $angsurans->whereIn('status', ['terbayar', 'lunas_lebih_cepat'])->count() }} dari {{ $angsurans->count() }} Angsuran Lunas
                         </span>
                     </div>
                 </div>
@@ -191,7 +201,13 @@
                                     Jatuh Tempo
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Jumlah
+                                    Tagihan
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Dibayar
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Sisa
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
@@ -206,20 +222,50 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($angsurans as $angsuran)
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-gray-50 @if($angsuran->is_perpanjangan) bg-orange-50 @endif">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {{ $angsuran->angsuran_ke }}
+                                        @if($angsuran->is_perpanjangan)
+                                        <span class="ml-2 px-2 py-0.5 text-xs rounded bg-orange-100 text-orange-700">Perpanjangan</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $angsuran->tanggal_jatuh_tempo ? $angsuran->tanggal_jatuh_tempo->format('d/m/Y') : '-' }}
+                                        @if($angsuran->tanggal_jatuh_tempo && $angsuran->tanggal_jatuh_tempo->isPast() && $angsuran->status == 'pending')
+                                        <br><span class="text-xs text-red-600">{{ $angsuran->tanggal_jatuh_tempo->diffInDays(now()) }} hari telat</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                                         Rp {{ number_format($angsuran->jumlah_angsuran, 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        @if($angsuran->jumlah_dibayar > 0)
+                                            <span class="text-green-600 font-medium">Rp {{ number_format($angsuran->jumlah_dibayar, 0, ',', '.') }}</span>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        @if($angsuran->sisa_dibawa > 0)
+                                            <span class="text-orange-600 font-medium">Rp {{ number_format($angsuran->sisa_dibawa, 0, ',', '.') }}</span>
+                                        @elseif($angsuran->status == 'pending')
+                                            <span class="text-gray-500">Rp {{ number_format($angsuran->jumlah_angsuran - $angsuran->jumlah_dibayar, 0, ',', '.') }}</span>
+                                        @else
+                                            -
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if($angsuran->status == 'terbayar')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                 <i class="fas fa-check-circle mr-1"></i>Lunas
+                                            </span>
+                                        @elseif($angsuran->status == 'lunas_lebih_cepat')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                <i class="fas fa-bolt mr-1"></i>Lunas Cepat
+                                            </span>
+                                        @elseif($angsuran->status == 'partial_bayar')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                <i class="fas fa-clock mr-1"></i>Sebagian
                                             </span>
                                         @elseif($angsuran->status == 'terlambat')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
@@ -240,8 +286,14 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $angsuran->tanggal_bayar ? $angsuran->tanggal_bayar->format('d/m/Y') : '-' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $angsuran->keterangan ?? '-' }}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        @if($angsuran->is_perpanjangan)
+                                            <span class="text-orange-600">Perpanjangan tanpa margin</span>
+                                        @elseif($angsuran->catatan)
+                                            {{ $angsuran->catatan }}
+                                        @else
+                                            {{ $angsuran->keterangan ?? '-' }}
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -262,7 +314,7 @@
                         <div class="ml-4">
                             <h3 class="text-lg font-medium text-gray-900">Angsuran Lunas</h3>
                             <p class="text-2xl font-bold text-green-600">
-                                {{ $angsurans->where('status', 'terbayar')->count() }} / {{ $angsurans->count() }}
+                                {{ $angsurans->whereIn('status', ['terbayar', 'lunas_lebih_cepat'])->count() }} / {{ $angsurans->count() }}
                             </p>
                         </div>
                     </div>
@@ -278,7 +330,7 @@
                         <div class="ml-4">
                             <h3 class="text-lg font-medium text-gray-900">Sisa Angsuran</h3>
                             <p class="text-2xl font-bold text-yellow-600">
-                                {{ $angsurans->where('status', '!=', 'terbayar')->count() }}
+                                {{ $angsurans->whereIn('status', ['pending', 'partial_bayar'])->count() }}
                             </p>
                         </div>
                     </div>
@@ -292,9 +344,9 @@
                             </div>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-lg font-medium text-gray-900">Sisa Pinjaman</h3>
+                            <h3 class="text-lg font-medium text-gray-900">Sisa Tagihan</h3>
                             <p class="text-2xl font-bold text-blue-600">
-                                Rp {{ number_format($pembiayaan->sisaTotal(), 0, ',', '.') }}
+                                Rp {{ number_format($angsurans->whereIn('status', ['pending', 'partial_bayar'])->sum(function($a) { return $a->jumlah_angsuran - $a->jumlah_dibayar; }), 0, ',', '.') }}
                             </p>
                         </div>
                     </div>

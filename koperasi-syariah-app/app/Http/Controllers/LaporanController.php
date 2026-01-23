@@ -1122,4 +1122,197 @@ class LaporanController extends Controller
 
         return Excel::download(new NeracaExport($tanggal), $filename);
     }
+
+    /**
+     * Laporan Rekap Simpanan Anggota
+     */
+    public function rekapSimpananAnggota(Request $request)
+    {
+        $anggotaQuery = Anggota::where('status_keanggotaan', 'aktif');
+
+        // Filter by search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $anggotaQuery->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('no_anggota', 'like', "%{$search}%");
+            });
+        }
+
+        $anggotas = $anggotaQuery->orderBy('no_anggota')->get();
+
+        // Get jenis simpanan
+        $jenisSimpanan = JenisSimpanan::where('status', 1)->get();
+        $jenisPokok = $jenisSimpanan->where('tipe_simpanan', 'pokok')->first();
+        $jenisWajib = $jenisSimpanan->where('tipe_simpanan', 'wajib')->first();
+        $jenisModal = $jenisSimpanan->where('tipe_simpanan', 'modal')->first();
+        $jenisSukarela = $jenisSimpanan->where('tipe_simpanan', 'sukarela')->first();
+
+        $rekapData = [];
+        $totalPokok = 0;
+        $totalWajib = 0;
+        $totalModal = 0;
+        $totalSukarela = 0;
+        $totalAllSimpanan = 0;
+        $totalTagihanWajib = 0;
+
+        foreach ($anggotas as $anggota) {
+            // Hitung saldo per jenis simpanan
+            $saldoPokok = $this->getSaldoSimpanan($anggota->id, $jenisPokok->id ?? null);
+            $saldoWajib = $this->getSaldoSimpanan($anggota->id, $jenisWajib->id ?? null);
+            $saldoModal = $this->getSaldoSimpanan($anggota->id, $jenisModal->id ?? null);
+            $saldoSukarela = $this->getSaldoSimpanan($anggota->id, $jenisSukarela->id ?? null);
+
+            $totalSimpanan = $saldoPokok + $saldoWajib + $saldoModal + $saldoSukarela;
+
+            // Hitung tagihan simpanan wajib (tunggakan)
+            $tunggakan = TransaksiSimpanan::hitungTunggakanPerAnggota($anggota->id);
+            $tagihanWajib = $tunggakan['total_tunggakan'];
+
+            $rekapData[] = (object) [
+                'no_anggota' => $anggota->no_anggota,
+                'nama' => $anggota->nama_lengkap,
+                'simpanan_pokok' => $saldoPokok,
+                'simpanan_wajib' => $saldoWajib,
+                'simpanan_modal' => $saldoModal,
+                'simpanan_sukarela' => $saldoSukarela,
+                'total_simpanan' => $totalSimpanan,
+                'tagihan_wajib' => $tagihanWajib,
+                'bulan_nunggak' => $tunggakan['bulan_nunggak'],
+            ];
+
+            $totalPokok += $saldoPokok;
+            $totalWajib += $saldoWajib;
+            $totalModal += $saldoModal;
+            $totalSukarela += $saldoSukarela;
+            $totalAllSimpanan += $totalSimpanan;
+            $totalTagihanWajib += $tagihanWajib;
+        }
+
+        return view('pengurus.laporan.rekap_simpanan', compact(
+            'rekapData',
+            'totalPokok',
+            'totalWajib',
+            'totalModal',
+            'totalSukarela',
+            'totalAllSimpanan',
+            'totalTagihanWajib'
+        ));
+    }
+
+    /**
+     * Get saldo simpanan for anggota and jenis simpanan
+     */
+    private function getSaldoSimpanan($anggotaId, $jenisSimpananId)
+    {
+        if (!$jenisSimpananId) {
+            return 0;
+        }
+
+        $totalSetor = TransaksiSimpanan::where('anggota_id', $anggotaId)
+            ->where('jenis_simpanan_id', $jenisSimpananId)
+            ->where('jenis_transaksi', 'setor')
+            ->where('status', 'verified')
+            ->sum('jumlah');
+
+        $totalTarik = TransaksiSimpanan::where('anggota_id', $anggotaId)
+            ->where('jenis_simpanan_id', $jenisSimpananId)
+            ->where('jenis_transaksi', 'tarik')
+            ->where('status', 'verified')
+            ->sum('jumlah');
+
+        return $totalSetor - $totalTarik;
+    }
+
+    /**
+     * Export Rekap Simpanan Anggota to Excel
+     */
+    public function exportRekapSimpananAnggota(Request $request)
+    {
+        $search = $request->get('search');
+        $filename = 'Rekap_Simpanan_Anggota_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new \App\Exports\RekapSimpananAnggotaExport($search), $filename);
+    }
+
+    /**
+     * Print Rekap Simpanan Anggota (PDF)
+     */
+    public function printRekapSimpananAnggota(Request $request)
+    {
+        $search = $request->get('search');
+
+        $anggotaQuery = Anggota::where('status_keanggotaan', 'aktif');
+
+        if ($search) {
+            $anggotaQuery->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('no_anggota', 'like', "%{$search}%");
+            });
+        }
+
+        $anggotas = $anggotaQuery->orderBy('no_anggota')->get();
+
+        $jenisSimpanan = JenisSimpanan::where('status', 1)->get();
+        $jenisPokok = $jenisSimpanan->where('tipe_simpanan', 'pokok')->first();
+        $jenisWajib = $jenisSimpanan->where('tipe_simpanan', 'wajib')->first();
+        $jenisModal = $jenisSimpanan->where('tipe_simpanan', 'modal')->first();
+        $jenisSukarela = $jenisSimpanan->where('tipe_simpanan', 'sukarela')->first();
+
+        $rekapData = [];
+        $totalPokok = 0;
+        $totalWajib = 0;
+        $totalModal = 0;
+        $totalSukarela = 0;
+        $totalAllSimpanan = 0;
+        $totalTagihanWajib = 0;
+
+        foreach ($anggotas as $anggota) {
+            $saldoPokok = $this->getSaldoSimpanan($anggota->id, $jenisPokok->id ?? null);
+            $saldoWajib = $this->getSaldoSimpanan($anggota->id, $jenisWajib->id ?? null);
+            $saldoModal = $this->getSaldoSimpanan($anggota->id, $jenisModal->id ?? null);
+            $saldoSukarela = $this->getSaldoSimpanan($anggota->id, $jenisSukarela->id ?? null);
+
+            $totalSimpanan = $saldoPokok + $saldoWajib + $saldoModal + $saldoSukarela;
+
+            $tunggakan = TransaksiSimpanan::hitungTunggakanPerAnggota($anggota->id);
+            $tagihanWajib = $tunggakan['total_tunggakan'];
+
+            $rekapData[] = (object) [
+                'no_anggota' => $anggota->no_anggota,
+                'nama' => $anggota->nama_lengkap,
+                'simpanan_pokok' => $saldoPokok,
+                'simpanan_wajib' => $saldoWajib,
+                'simpanan_modal' => $saldoModal,
+                'simpanan_sukarela' => $saldoSukarela,
+                'total_simpanan' => $totalSimpanan,
+                'tagihan_wajib' => $tagihanWajib,
+                'bulan_nunggak' => $tunggakan['bulan_nunggak'],
+            ];
+
+            $totalPokok += $saldoPokok;
+            $totalWajib += $saldoWajib;
+            $totalModal += $saldoModal;
+            $totalSukarela += $saldoSukarela;
+            $totalAllSimpanan += $totalSimpanan;
+            $totalTagihanWajib += $tagihanWajib;
+        }
+
+        $koperasi = Koperasi::first();
+
+        $pdf = PDF::loadView('pengurus.laporan.print.rekap_simpanan', compact(
+            'koperasi',
+            'rekapData',
+            'totalPokok',
+            'totalWajib',
+            'totalModal',
+            'totalSukarela',
+            'totalAllSimpanan',
+            'totalTagihanWajib'
+        ));
+
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->download('Rekap_Simpanan_Anggota_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.pdf');
+    }
 }

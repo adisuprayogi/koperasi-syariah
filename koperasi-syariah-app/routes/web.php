@@ -186,8 +186,16 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->
     Route::get('/pembiayaan/{id}', [PengurusController::class, 'pembiayaanShow'])->name('pembiayaan.show');
     Route::get('/pembiayaan/{id}/bayar/{angsuranId}', [PengurusController::class, 'pembiayaanBayar'])->name('pembiayaan.bayar');
     Route::post('/pembiayaan/{id}/bayar/{angsuranId}', [PengurusController::class, 'pembiayaanBayarStore'])->name('pembiayaan.bayar.store');
+    // Lunas Lebih Cepat - AJAX (tanpa form, langsung lunas)
+    Route::post('/pembiayaan/{id}/lunas-cepat', [PengurusController::class, 'lunasLebihCepat'])->name('pembiayaan.lunas-cepat');
+    // Lunas Lebih Cepat - dengan form (perlu bukti pembayaran)
+    Route::get('/pembiayaan/{id}/lunas-lebih-cepat', [PengurusController::class, 'lunasLebihCepatForm'])->name('pembiayaan.lunas_lebih_cepat');
+    Route::post('/pembiayaan/{id}/lunas-lebih-cepat', [PengurusController::class, 'lunasLebihCepatStore'])->name('pembiayaan.lunas_lebih_cepat.store');
     Route::post('/pembiayaan/{id}/generate-jadwal', [PengurusController::class, 'generateJadwalAngsuran'])->name('pembiayaan.generate-jadwal');
     Route::get('/pembiayaan/{id}/print/{angsuranId}', [PengurusController::class, 'printBuktiBayar'])->name('pembiayaan.print-bukti');
+
+    // Jadwal Angsuran (Sistem Baru)
+    Route::post('/pembiayaan/{id}/jadwal/{periode}/bayar', [PengurusController::class, 'bayarJadwalAngsuran'])->name('pembiayaan.jadwal.bayar');
 
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
@@ -195,6 +203,7 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->
     Route::get('/laporan/mingguan', [LaporanController::class, 'mingguan'])->name('laporan.mingguan');
     Route::get('/laporan/bulanan', [LaporanController::class, 'bulanan'])->name('laporan.bulanan');
     Route::get('/laporan/simpanan-wajib', [LaporanController::class, 'simpananWajib'])->name('laporan.simpanan-wajib');
+    Route::get('/laporan/rekap-simpanan', [LaporanController::class, 'rekapSimpananAnggota'])->name('laporan.rekap-simpanan');
     Route::get('/laporan/simpanan-per-anggota', [LaporanController::class, 'simpananPerAnggota'])->name('laporan.simpanan-per-anggota');
     Route::get('/laporan/pembiayaan-per-anggota', [LaporanController::class, 'pembiayaanPerAnggota'])->name('laporan.pembiayaan-per-anggota');
     Route::get('/laporan/laba-rugi', [LaporanController::class, 'labaRugi'])->name('laporan.laba-rugi');
@@ -204,6 +213,8 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->
     // Excel Export Routes - MUST be defined BEFORE the generic /{type} route
     Route::get('/laporan/export/simpanan-per-anggota', [LaporanController::class, 'exportSimpananPerAnggota'])->name('laporan.export-simpanan-per-anggota');
     Route::get('/laporan/export/rekap-simpanan', [LaporanController::class, 'exportRekapSimpanan'])->name('laporan.export-rekap-simpanan');
+    Route::get('/laporan/rekap-simpanan/export', [LaporanController::class, 'exportRekapSimpananAnggota'])->name('laporan.rekap-simpanan-export');
+    Route::get('/laporan/rekap-simpanan/print', [LaporanController::class, 'printRekapSimpananAnggota'])->name('laporan.rekap-simpanan-print');
     Route::get('/laporan/export/pembiayaan-per-anggota', [LaporanController::class, 'exportPembiayaanPerAnggota'])->name('laporan.export-pembiayaan-per-anggota');
     Route::get('/laporan/export/laba-rugi', [LaporanController::class, 'exportLabaRugi'])->name('laporan.export-laba-rugi');
     Route::get('/laporan/export/neraca', [LaporanController::class, 'exportNeraca'])->name('laporan.export-neraca');

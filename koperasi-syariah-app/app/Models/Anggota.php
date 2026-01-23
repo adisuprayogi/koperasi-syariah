@@ -32,6 +32,9 @@ class Anggota extends Model
         'penghasilan',
         'no_npwp',
         'status_keanggotaan',
+        'is_blacklisted',
+        'blacklisted_at',
+        'blacklist_reason',
         'tanggal_gabung',
         'tanggal_keluar',
         'alasan_keluar',
@@ -45,6 +48,8 @@ class Anggota extends Model
         'tanggal_keluar' => 'date',
         'status_keanggotaan' => 'string',
         'jenis_anggota' => 'string',
+        'is_blacklisted' => 'boolean',
+        'blacklisted_at' => 'datetime',
     ];
 
     /**
@@ -53,6 +58,68 @@ class Anggota extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Scope untuk anggota yang di-blacklist
+     */
+    public function scopeBlacklisted($query)
+    {
+        return $query->where('is_blacklisted', true);
+    }
+
+    /**
+     * Scope untuk anggota yang TIDAK di-blacklist
+     */
+    public function scopeNotBlacklisted($query)
+    {
+        return $query->where('is_blacklisted', false);
+    }
+
+    /**
+     * Cek apakah anggota punya tunggakan angsuran
+     */
+    public function hasTunggakan(): bool
+    {
+        return Angsuran::where('anggota_id', $this->id)
+            ->whereIn('status', ['partial_bayar', 'pending'])
+            ->where('tanggal_jatuh_tempo', '<', now()->subMonth())
+            ->exists();
+    }
+
+    /**
+     * Hitung total tunggakan
+     */
+    public function totalTunggakan()
+    {
+        return Angsuran::where('anggota_id', $this->id)
+            ->whereIn('status', ['partial_bayar', 'pending'])
+            ->where('tanggal_jatuh_tempo', '<', now()->subMonth())
+            ->sum(\DB::raw('jumlah_angsuran - jumlah_dibayar'));
+    }
+
+    /**
+     * Blacklist anggota
+     */
+    public function blacklist($reason = 'Tunggakan pembayaran')
+    {
+        $this->update([
+            'is_blacklisted' => true,
+            'blacklisted_at' => now(),
+            'blacklist_reason' => $reason
+        ]);
+    }
+
+    /**
+     * Unblacklist anggota
+     */
+    public function unblacklist()
+    {
+        $this->update([
+            'is_blacklisted' => false,
+            'blacklisted_at' => null,
+            'blacklist_reason' => null
+        ]);
     }
 
     /**

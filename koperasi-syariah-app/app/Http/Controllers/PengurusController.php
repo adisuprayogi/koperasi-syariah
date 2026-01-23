@@ -721,22 +721,6 @@ class PengurusController extends Controller
         try {
             DB::beginTransaction();
 
-            // Cek duplikasi: apakah sudah ada transaksi untuk bulan/tahun/jenis simpanan/jenis transaksi yang sama
-            // Setor dan tarik di bulan yang sama diperbolehkan, jadi cek per jenis transaksi
-            $existingTransaksi = TransaksiSimpanan::where('anggota_id', $request->anggota_id)
-                ->where('jenis_simpanan_id', $request->jenis_simpanan_id)
-                ->where('jenis_transaksi', $request->jenis_transaksi)
-                ->where('bulan', $request->bulan)
-                ->where('tahun', $request->tahun)
-                ->where('status', 'verified')
-                ->first();
-
-            if ($existingTransaksi) {
-                return back()
-                    ->with('error', "Sudah ada transaksi untuk bulan {$request->bulan}/tahun {$request->tahun} pada jenis simpanan ini. Silakan cek kembali data transaksi yang sudah ada.")
-                    ->withInput();
-            }
-
             // Get jenis simpanan to check withdrawal rules
             $jenisSimpanan = JenisSimpanan::findOrFail($request->jenis_simpanan_id);
 
@@ -835,6 +819,36 @@ class PengurusController extends Controller
                 ->with('error', 'Gagal menyimpan transaksi: ' . $e->getMessage())
                 ->withInput();
         }
+    }
+
+    /**
+     * Get Saldo API untuk form penarikan
+     */
+    public function getSaldo(Request $request)
+    {
+        $request->validate([
+            'anggota_id' => 'required|exists:anggota,id',
+            'jenis_simpanan_id' => 'required|exists:jenis_simpanan,id'
+        ]);
+
+        // Hitung saldo dari total semua transaksi: total setoran - total penarikan
+        $totalSetor = TransaksiSimpanan::where('anggota_id', $request->anggota_id)
+            ->where('jenis_simpanan_id', $request->jenis_simpanan_id)
+            ->where('jenis_transaksi', 'setor')
+            ->where('status', 'verified')
+            ->sum('jumlah');
+
+        $totalTarik = TransaksiSimpanan::where('anggota_id', $request->anggota_id)
+            ->where('jenis_simpanan_id', $request->jenis_simpanan_id)
+            ->where('jenis_transaksi', 'tarik')
+            ->where('status', 'verified')
+            ->sum('jumlah');
+
+        $saldo = $totalSetor - $totalTarik;
+
+        return response()->json([
+            'saldo' => (float)$saldo
+        ]);
     }
 
     /**
@@ -973,14 +987,18 @@ class PengurusController extends Controller
         $angsuranMargin = $marginPerBulan;
         $totalAngsuran = $angsuranPokok + $angsuranMargin;
 
+        // Get pengurus ID from logged in user
+        $pengurus = Pengurus::where('user_id', auth()->user()->id)->first();
+        $pengurusId = $pengurus ? $pengurus->id : null;
+
         // Update status langsung ke approved dengan perhitungan margin yang benar
         $pengajuan->update([
             'status' => 'approved',
             'tanggal_verifikasi' => now(),
-            'verified_by' => auth()->user()->id,
+            'verified_by' => $pengurusId,
             'verified_at' => now(),
             'tanggal_approve' => now(),
-            'approved_by' => auth()->user()->id,
+            'approved_by' => $pengurusId,
             'approved_at' => now(),
             'margin_percent' => $marginPercent,
             'jumlah_margin' => $jumlahMargin,
@@ -1097,6 +1115,14 @@ class PengurusController extends Controller
                 'keterangan_jatuh_tempo' => $request->keterangan_jatuh_tempo ?? 'Angsuran pertama jatuh tempo'
             ]);
 
+            // Generate jadwal angsuran otomatis saat pencairan
+            try {
+                Angsuran::generateJadwalAngsuran($pengajuan);
+            } catch (\Exception $e) {
+                // Log error but don't fail the disbursement
+                \Log::error('Failed to generate jadwal: ' . $e->getMessage());
+            }
+
             // Send notification to anggota about disbursement
             try {
                 $anggota = Anggota::find($pengajuan->anggota_id);
@@ -1197,12 +1223,13 @@ class PengurusController extends Controller
 
         // Hitung statistik angsuran
         $totalAngsuran = $pengajuan->angsurans->count();
-        $totalTerbayar = $pengajuan->angsurans->where('status', 'terbayar')->count();
+        $totalTerbayar = $pengajuan->angsurans->whereIn('status', ['terbayar', 'lunas_lebih_cepat'])->count();
         $totalPending = $pengajuan->angsurans->where('status', 'pending')->count();
         $totalTerlambat = $pengajuan->angsurans->where('status', 'terlambat')->count();
 
         $angsuranBerikutnya = $pengajuan->angsurans()
-            ->whereIn('status', ['pending', 'terlambat'])
+            ->where('status', 'pending')
+            ->where('tanggal_jatuh_tempo', '>=', now()->startOfDay())
             ->orderBy('angsuran_ke', 'asc')
             ->first();
 
@@ -1266,7 +1293,6 @@ class PengurusController extends Controller
         $request->validate([
             'tanggal_bayar' => 'required|date|before_or_equal:today',
             'jumlah_bayar' => 'required|numeric|min:0',
-            'denda' => 'nullable|numeric|min:0',
             'keterangan' => 'nullable|string|max:500',
             'bukti_pembayaran' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048'
         ]);
@@ -1280,60 +1306,125 @@ class PengurusController extends Controller
                 ->with('error', 'Angsuran tidak ditemukan untuk pembiayaan ini');
         }
 
-        // Check if already paid
-        if ($angsuran->status == 'terbayar') {
+        // Check if already fully paid
+        if (in_array($angsuran->status, ['terbayar', 'lunas_lebih_cepat'])) {
             return redirect()->route('pengurus.pembiayaan.show', $id)
-                ->with('error', 'Angsuran ini sudah terbayar');
+                ->with('error', 'Angsuran ini sudah lunas');
         }
 
         try {
             DB::beginTransaction();
+
+            $jumlahBayar = (float)$request->jumlah_bayar;
+            $totalHarusBayar = (float)$angsuran->jumlah_angsuran;
 
             // Upload bukti pembayaran
             $buktiFile = $request->file('bukti_pembayaran');
             $buktiName = time() . '_bukti_' . $angsuran->kode_angsuran . '.' . $buktiFile->getClientOriginalExtension();
             $buktiFile->storeAs('public/bukti_pembayaran', $buktiName);
 
-            // Calculate late days and update status
+            // Calculate late days
             $hariTerlambat = 0;
-            $status = 'terbayar';
-
             if ($request->tanggal_bayar > $angsuran->tanggal_jatuh_tempo) {
                 $hariTerlambat = Carbon::parse($angsuran->tanggal_jatuh_tempo)
                     ->diffInDays($request->tanggal_bayar);
-                $status = 'terlambat';
             }
 
-            // Update angsuran record
-            $angsuran->update([
-                'status' => $status,
-                'tanggal_bayar' => $request->tanggal_bayar,
-                'denda' => 0, // Syariah compliance: No denda
-                'persentase_denda' => 0, // Syariah compliance: No penalty percentage
-                'hari_terlambat' => $hariTerlambat, // Still tracking for information
-                'keterangan' => $request->keterangan,
-                'bukti_pembayaran' => $buktiName,
-                'bukti_pembayaran_original' => $buktiFile->getClientOriginalName(),
-                'dibayar_oleh' => auth()->id(),
-                'tanggal_jatuh_tempo_akhir' => $request->tanggal_bayar
-            ]);
+            // Process payment (support partial payment)
+            $sisaSetelahBayar = $totalHarusBayar - $jumlahBayar;
 
-            // Check if all installments are paid
-            $totalAngsuran = $pengajuan->angsurans()->count();
-            $totalTerbayar = $pengajuan->angsurans()->where('status', 'terbayar')->count();
+            if ($angsuran->status == 'partial_bayar') {
+                // If already partial, add to existing payment
+                $jumlahDibayarSebelumnya = (float)$angsuran->jumlah_dibayar;
+                $totalDibayar = $jumlahDibayarSebelumnya + $jumlahBayar;
+                $sisaBaru = $totalHarusBayar - $totalDibayar;
 
-            if ($totalTerbayar == $totalAngsuran) {
-                $pengajuan->update(['status' => 'lunas']);
+                if ($sisaBaru <= 0) {
+                    // Fully paid
+                    $status = 'terbayar';
+                    $finalDibayar = $totalHarusBayar;
+                    $finalSisa = 0;
+                } else {
+                    // Still partial
+                    $status = 'partial_bayar';
+                    $finalDibayar = $totalDibayar;
+                    $finalSisa = $sisaBaru;
+                }
+
+                $angsuran->update([
+                    'status' => $status,
+                    'jumlah_dibayar' => $finalDibayar,
+                    'sisa_dibawa' => $finalSisa,
+                    'tanggal_bayar' => $request->tanggal_bayar,
+                    'denda' => 0, // Syariah compliance: No denda
+                    'persentase_denda' => 0,
+                    'hari_terlambat' => $hariTerlambat,
+                    'keterangan' => $request->keterangan,
+                    'bukti_pembayaran' => $buktiName,
+                    'bukti_pembayaran_original' => $buktiFile->getClientOriginalName(),
+                    'dibayar_oleh' => auth()->id(),
+                    'tanggal_jatuh_tempo_akhir' => $request->tanggal_bayar
+                ]);
+            } else {
+                // First payment
+                if ($sisaSetelahBayar <= 0) {
+                    // Full payment - lunas_lebih_cepat if paid before due date
+                    // TAPI perpanjangan TIDAK BOLEH status lunas_lebih_cepat karena itu dari keterlambatan
+                    if ($angsuran->is_perpanjangan) {
+                        $status = 'terbayar';
+                    } else {
+                        $status = ($request->tanggal_bayar < $angsuran->tanggal_jatuh_tempo) ? 'lunas_lebih_cepat' : 'terbayar';
+                    }
+                    $finalDibayar = $totalHarusBayar;
+                    $finalSisa = 0;
+
+                    $angsuran->update([
+                        'status' => $status,
+                        'jumlah_dibayar' => $finalDibayar,
+                        'sisa_dibawa' => $finalSisa,
+                        'tanggal_bayar' => $request->tanggal_bayar,
+                        'denda' => 0,
+                        'persentase_denda' => 0,
+                        'hari_terlambat' => $hariTerlambat,
+                        'keterangan' => $request->keterangan,
+                        'bukti_pembayaran' => $buktiName,
+                        'bukti_pembayaran_original' => $buktiFile->getClientOriginalName(),
+                        'dibayar_oleh' => auth()->id(),
+                        'tanggal_jatuh_tempo_akhir' => $request->tanggal_bayar
+                    ]);
+                } else {
+                    // Partial payment
+                    $angsuran->update([
+                        'status' => 'partial_bayar',
+                        'jumlah_dibayar' => $jumlahBayar,
+                        'sisa_dibawa' => $sisaSetelahBayar,
+                        'tanggal_bayar' => $request->tanggal_bayar,
+                        'denda' => 0,
+                        'persentase_denda' => 0,
+                        'hari_terlambat' => $hariTerlambat,
+                        'keterangan' => $request->keterangan,
+                        'bukti_pembayaran' => $buktiName,
+                        'bukti_pembayaran_original' => $buktiFile->getClientOriginalName(),
+                        'dibayar_oleh' => auth()->id(),
+                        'tanggal_jatuh_tempo_akhir' => $request->tanggal_bayar
+                    ]);
+
+                    // Roll sisa to next period
+                    $this->rollSisaKePeriodeBerikutnya($pengajuan, $angsuran->angsuran_ke, $sisaSetelahBayar);
+                }
             }
 
-            // Create transaction record (Syariah: No denda included)
+            // Check if all installments are fully paid (including partial_bayar that's completed)
+            $this->checkLunas($pengajuan);
+
+            // Create transaction record for the actual payment amount
             $transaksi = Transaksi::create([
                 'kode_transaksi' => 'AGS-' . date('Ymd') . '-' . str_pad($angsuran->angsuran_ke, 3, '0', STR_PAD_LEFT),
                 'pengajuan_pembiayaan_id' => $pengajuan->id,
                 'anggota_id' => $pengajuan->anggota_id,
                 'jenis_transaksi' => 'angsuran',
-                'jumlah' => $angsuran->jumlah_angsuran, // Only installment amount, no denda
-                'keterangan' => "Pembayaran angsuran ke-{$angsuran->angsuran_ke}",
+                'jumlah' => $jumlahBayar,
+                'keterangan' => "Pembayaran angsuran ke-{$angsuran->angsuran_ke}" . ($sisaSetelahBayar > 0 ? " (partial)" : ""),
                 'status' => 'completed',
                 'created_by' => auth()->id()
             ]);
@@ -1344,7 +1435,7 @@ class PengurusController extends Controller
                 if ($anggota && $anggota->user) {
                     // Get next installment for notification
                     $nextAngsuran = $pengajuan->angsurans()
-                        ->whereIn('status', ['pending', 'terlambat'])
+                        ->where('status', 'pending')
                         ->orderBy('angsuran_ke', 'asc')
                         ->first();
 
@@ -1357,14 +1448,219 @@ class PengurusController extends Controller
 
             DB::commit();
 
+            $message = $sisaSetelahBayar > 0
+                ? "Pembayaran sebagian berhasil dicatat! Sisa Rp " . number_format($sisaSetelahBayar, 0, ',', '.') . " akan ditambahkan ke periode berikutnya."
+                : "Pembayaran angsuran berhasil dicatat!";
+
             return redirect()->route('pengurus.pembiayaan.show', $id)
-                ->with('success', 'Pembayaran angsuran berhasil dicatat!');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Gagal mencatat pembayaran: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Form Lunas Lebih Cepat (Bayar semua sisa angsuran sekaligus)
+     */
+    public function lunasLebihCepatForm($id)
+    {
+        $pengajuan = PengajuanPembiayaan::with([
+            'anggota',
+            'jenisPembiayaan',
+            'angsurans' => function($query) {
+                $query->orderBy('angsuran_ke', 'asc');
+            }
+        ])->findOrFail($id);
+
+        // Cek apakah sudah lunas
+        if ($pengajuan->status == 'lunas') {
+            return redirect()->route('pengurus.pembiayaan.show', $id)
+                ->with('info', 'Pembiayaan ini sudah lunas');
+        }
+
+        // Cek apakah masih ada angsuran pending
+        $angsuranPending = $pengajuan->angsurans()
+            ->where('status', 'pending')
+            ->orderBy('angsuran_ke', 'asc')
+            ->get();
+
+        if ($angsuranPending->isEmpty()) {
+            return redirect()->route('pengurus.pembiayaan.show', $id)
+                ->with('info', 'Tidak ada angsuran yang perlu dibayar');
+        }
+
+        // Hitung total sisa
+        $sisaPokok = $pengajuan->sisaPokok();
+        $sisaMargin = $pengajuan->sisaMargin();
+        $sisaTotal = $pengajuan->sisaTotal();
+        $jumlahAngsuranPending = $angsuranPending->count();
+
+        return view('pengurus.pembiayaan.lunas-lebih-cepat', compact(
+            'pengajuan',
+            'sisaPokok',
+            'sisaMargin',
+            'sisaTotal',
+            'jumlahAngsuranPending',
+            'angsuranPending'
+        ));
+    }
+
+    /**
+     * Proses Lunas Lebih Cepat (Bayar semua sisa angsuran sekaligus)
+     */
+    public function lunasLebihCepatStore(Request $request, $id)
+    {
+        $request->validate([
+            'tanggal_bayar' => 'required|date|before_or_equal:today',
+            'bukti_pembayaran' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'keterangan' => 'nullable|string|max:500'
+        ]);
+
+        $pengajuan = PengajuanPembiayaan::findOrFail($id);
+
+        // Cek apakah sudah lunas
+        if ($pengajuan->status == 'lunas') {
+            return redirect()->route('pengurus.pembiayaan.show', $id)
+                ->with('info', 'Pembiayaan ini sudah lunas');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Upload bukti pembayaran
+            $buktiFile = $request->file('bukti_pembayaran');
+            $buktiName = time() . '_lunas_cepat_' . $pengajuan->kode_pengajuan . '.' . $buktiFile->getClientOriginalExtension();
+            $buktiFile->storeAs('public/bukti_pembayaran', $buktiName);
+
+            // Ambil semua angsuran yang masih pending
+            $angsuranPending = $pengajuan->angsurans()
+                ->where('status', 'pending')
+                ->orderBy('angsuran_ke', 'asc')
+                ->get();
+
+            $totalDibayar = 0;
+            $tanggalBayar = $request->tanggal_bayar;
+
+            // Update semua angsuran pending menjadi lunas_lebih_cepat
+            foreach ($angsuranPending as $angsuran) {
+                // Cek apakah tanggal bayar sebelum jatuh tempo
+                // TAPI perpanjangan TIDAK BOLEH status lunas_lebih_cepat
+                $isLebihCepat = !$angsuran->is_perpanjangan && ($tanggalBayar < $angsuran->tanggal_jatuh_tempo);
+                $status = $isLebihCepat ? 'lunas_lebih_cepat' : 'terbayar';
+
+                $angsuran->update([
+                    'status' => $status,
+                    'jumlah_dibayar' => $angsuran->jumlah_angsuran,
+                    'sisa_dibawa' => 0,
+                    'tanggal_bayar' => $tanggalBayar,
+                    'denda' => 0,
+                    'persentase_denda' => 0,
+                    'hari_terlambat' => 0,
+                    'keterangan' => 'Pelunasan lebih cepat - ' . ($request->keterangan ?? ''),
+                    'bukti_pembayaran' => $buktiName,
+                    'bukti_pembayaran_original' => $buktiFile->getClientOriginalName(),
+                    'dibayar_oleh' => auth()->id(),
+                    'tanggal_jatuh_tempo_akhir' => $tanggalBayar
+                ]);
+
+                $totalDibayar += $angsuran->jumlah_angsuran;
+            }
+
+            // Update status pembiayaan menjadi lunas
+            $pengajuan->update(['status' => 'lunas']);
+
+            // Create transaction record
+            $transaksi = Transaksi::create([
+                'kode_transaksi' => 'LC-' . date('Ymd') . '-' . $pengajuan->kode_pengajuan,
+                'pengajuan_pembiayaan_id' => $pengajuan->id,
+                'anggota_id' => $pengajuan->anggota_id,
+                'jenis_transaksi' => 'lunas_lebih_cepat',
+                'jumlah' => $totalDibayar,
+                'keterangan' => 'Pelunasan lebih cepat ' . $angsuranPending->count() . ' angsuran',
+                'status' => 'completed',
+                'created_by' => auth()->id()
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('pengurus.pembiayaan.show', $id)
+                ->with('success', 'Alhamdulillah! Pembiayaan telah dilunasi lebih cepat. Total: Rp ' . number_format($totalDibayar, 0, ',', '.'));
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal melunasi lebih cepat: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Roll sisa pembayaran ke periode berikutnya
+     * Jika tidak ada periode berikutnya, buat perpanjangan 1 bulan (untuk tracking keterlambatan)
+     */
+    private function rollSisaKePeriodeBerikutnya($pengajuan, $currentPeriode, $sisa)
+    {
+        // Cari periode berikutnya yang masih pending
+        $nextAngsuran = $pengajuan->angsurans()
+            ->where('angsuran_ke', '>', $currentPeriode)
+            ->whereIn('status', ['pending'])
+            ->orderBy('angsuran_ke', 'asc')
+            ->first();
+
+        if ($nextAngsuran) {
+            // Tambah sisa ke periode berikutnya
+            $nextAngsuran->update([
+                'jumlah_angsuran' => $nextAngsuran->jumlah_angsuran + $sisa,
+                'catatan' => 'Membawa sisa dari periode ' . $currentPeriode . ': Rp ' . number_format($sisa, 0, ',', '.')
+            ]);
+        } else {
+            // Tidak ada periode berikutnya? Buat perpanjangan 1 bulan untuk tracking keterlambatan
+            if ($pengajuan->needsPerpanjangan()) {
+                $pengajuan->buatPerpanjangan(1); // Hanya 1 bulan, bukan 6
+            }
+        }
+    }
+
+    /**
+     * Check if all installments are paid and update status
+     */
+    private function checkLunas($pengajuan)
+    {
+        // Hitung total yang harus dibayar (pokok + margin)
+        $totalPokok = (float)$pengajuan->jumlah_pengajuan;
+        $totalMargin = (float)$pengajuan->jumlah_margin;
+        $totalHarusDibayar = $totalPokok + $totalMargin;
+
+        // Hitung total yang sudah dibayar dari semua angsuran (termasuk partial_bayar)
+        $totalDibayar = (float)$pengajuan->totalDibayar();
+
+        // Cek apakah ada angsuran pending yang BELUM dibayar sama sekali
+        $pendingBelumBayar = $pengajuan->angsurans()
+            ->where('status', 'pending')
+            ->where('jumlah_dibayar', 0)
+            ->count();
+
+        // Cek apakah semua sudah lunas
+        // Syarat: totalDibayar >= totalHarusDibayar DAN tidak ada pending yang belum dibayar
+        $isLunas = ($totalDibayar >= ($totalHarusDibayar - 0.01)) && ($pendingBelumBayar === 0);
+
+        \Log::info('checkLunas for pembiayaan ' . $pengajuan->id, [
+            'totalPokok' => $totalPokok,
+            'totalMargin' => $totalMargin,
+            'totalHarusDibayar' => $totalHarusDibayar,
+            'totalDibayar' => $totalDibayar,
+            'pendingBelumBayar' => $pendingBelumBayar,
+            'isLunas' => $isLunas,
+            'current_status' => $pengajuan->status
+        ]);
+
+        if ($isLunas) {
+            $pengajuan->update(['status' => 'lunas']);
+            \Log::info('Updated pembiayaan ' . $pengajuan->id . ' to lunas');
         }
     }
 
@@ -1423,5 +1719,190 @@ class PengurusController extends Controller
         }
 
         return view('pengurus.pembiayaan.print-bukti', compact('angsuran'));
+    }
+
+    /**
+     * Bayar Jadwal Angsuran (Support Partial Payment)
+     */
+    public function bayarJadwalAngsuran(Request $request, $id, $periode)
+    {
+        $pengajuan = PengajuanPembiayaan::findOrFail($id);
+        $angsuran = Angsuran::where('pengajuan_pembiayaan_id', $id)
+            ->where('angsuran_ke', $periode)
+            ->whereIn('status', ['pending', 'partial_bayar'])
+            ->firstOrFail();
+
+        $request->validate([
+            'jumlah_bayar' => 'required|numeric|min:0',
+            'tanggal_bayar' => 'required|date',
+            'catatan' => 'nullable|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $jumlahBayar = (float)$request->jumlah_bayar;
+            $sisaHarusBayar = $angsuran->jumlah_angsuran - $angsuran->jumlah_dibayar;
+            $totalSetelahBayar = $angsuran->jumlah_dibayar + $jumlahBayar;
+
+            // CEK: Jika partial payment dan akan membuat perpanjangan ke-7
+            if ($totalSetelahBayar < $angsuran->jumlah_angsuran) {
+                // Ini partial payment, cek apakah akan butuh perpanjangan
+                $totalPerpanjangan = $pengajuan->angsurans()->where('is_perpanjangan', true)->count();
+
+                // Cek apakah ada periode berikutnya yang masih pending
+                $nextAngsuran = Angsuran::where('pengajuan_pembiayaan_id', $id)
+                    ->where('angsuran_ke', '>', $periode)
+                    ->where('status', 'pending')
+                    ->orderBy('angsuran_ke', 'asc')
+                    ->first();
+
+                // Jika tidak ada periode berikutnya DAN sudah 6 perpanjangan
+                if (!$nextAngsuran && $totalPerpanjangan >= 6) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Batas maksimal perpanjangan (6 bulan) telah tercapai. Pembayaran harus LUNAS TEPAT sebesar Rp ' . number_format($sisaHarusBayar, 0, ',', '.') . '. Tidak bisa melakukan pembayaran partial lagi.',
+                        'require_exact_amount' => true,
+                        'required_amount' => $sisaHarusBayar
+                    ], 400);
+                }
+
+                // Jika akan membuat perpanjangan ke-7, beri peringatan
+                if (!$nextAngsuran && $totalPerpanjangan >= 5) {
+                    // Masih bisa, tapi ini akan jadi perpanjangan terakhir (ke-6)
+                }
+            }
+
+            if ($totalSetelahBayar >= $angsuran->jumlah_angsuran) {
+                // Lunas penuh untuk periode ini
+                $kelebihan = $totalSetelahBayar - $angsuran->jumlah_angsuran;
+
+                $angsuran->update([
+                    'status' => 'terbayar',
+                    'jumlah_dibayar' => $angsuran->jumlah_angsuran,
+                    'sisa_dibawa' => 0,
+                    'tanggal_bayar' => $request->tanggal_bayar,
+                    'catatan' => $request->catatan
+                ]);
+
+                // Jika ada kelebihan, tambahkan ke periode berikutnya
+                if ($kelebihan > 0) {
+                    $nextAngsuran = Angsuran::where('pengajuan_pembiayaan_id', $id)
+                        ->where('angsuran_ke', '>', $periode)
+                        ->where('status', 'pending')
+                        ->orderBy('angsuran_ke', 'asc')
+                        ->first();
+
+                    if ($nextAngsuran) {
+                        // Tambahkan ke periode berikutnya (rolling)
+                        $nextAngsuran->update([
+                            'jumlah_pokok' => $nextAngsuran->jumlah_pokok + $kelebihan,
+                            'jumlah_angsuran' => $nextAngsuran->jumlah_pokok + $nextAngsuran->jumlah_margin + $kelebihan
+                        ]);
+                    }
+                }
+            } else {
+                // Partial payment
+                $sisaDibawa = $angsuran->jumlah_angsuran - $totalSetelahBayar;
+
+                $angsuran->update([
+                    'status' => 'partial_bayar',
+                    'jumlah_dibayar' => $totalSetelahBayar,
+                    'sisa_dibawa' => $sisaDibawa,
+                    'tanggal_bayar' => $request->tanggal_bayar,
+                    'catatan' => $request->catatan
+                ]);
+
+                // Tambahkan sisa ke periode berikutnya (rolling)
+                $nextAngsuran = Angsuran::where('pengajuan_pembiayaan_id', $id)
+                    ->where('angsuran_ke', '>', $periode)
+                    ->where('status', 'pending')
+                    ->orderBy('angsuran_ke', 'asc')
+                    ->first();
+
+                if ($nextAngsuran) {
+                    $nextAngsuran->update([
+                        'jumlah_pokok' => $nextAngsuran->jumlah_pokok + $sisaDibawa,
+                        'jumlah_angsuran' => $nextAngsuran->jumlah_pokok + $nextAngsuran->jumlah_margin + $sisaDibawa
+                    ]);
+                } else {
+                    // Tidak ada periode berikutnya? Buat perpanjangan 1 bulan untuk tracking keterlambatan
+                    if ($pengajuan->needsPerpanjangan()) {
+                        $pengajuan->buatPerpanjangan(1); // Hanya 1 bulan, bukan 6
+                    }
+                }
+            }
+
+            // Cek jika semua sudah lunas (termasuk partial yang sudah lunas)
+            $this->checkLunas($pengajuan);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembayaran berhasil!'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Pelunasan Lebih Cepat
+     */
+    public function lunasLebihCepat(Request $request, $id)
+    {
+        $pengajuan = PengajuanPembiayaan::findOrFail($id);
+
+        try {
+            DB::beginTransaction();
+
+            $catatan = $request->catatan ?? 'Pelunasan lebih cepat oleh ' . auth()->user()->name;
+
+            // Get all pending angsuran
+            $pendingAngsurans = $pengajuan->jadwalPending()->get();
+
+            if ($pendingAngsurans->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada angsuran pending yang bisa dilunasi.'
+                ], 400);
+            }
+
+            // Update all pending angsuran to lunas_lebih_cepat
+            // TAPI perpanjangan TIDAK BOLEH status lunas_lebih_cepat
+            $count = 0;
+            foreach ($pendingAngsurans as $angsuran) {
+                $status = $angsuran->is_perpanjangan ? 'terbayar' : 'lunas_lebih_cepat';
+                $angsuran->update([
+                    'status' => $status,
+                    'tanggal_bayar' => now(),
+                    'catatan' => $catatan
+                ]);
+                $count++;
+            }
+
+            // Update pengajuan status to lunas
+            $pengajuan->update(['status' => 'lunas']);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil melunasi {$count} periode sekaligus!",
+                'data' => ['processed' => $count]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

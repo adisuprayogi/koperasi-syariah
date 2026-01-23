@@ -17,6 +17,7 @@ class PengajuanPembiayaan extends Model
         'jenis_pembiayaan_id',
         'jumlah_pengajuan',
         'tenor',
+        'tipe_angsuran',
         'margin_percent',
         'jumlah_margin',
         'angsuran_pokok',
@@ -207,6 +208,11 @@ class PengajuanPembiayaan extends Model
         return 'Rp ' . number_format($this->jumlah_cair, 0, ',', '.');
     }
 
+    public function getTotalDibayarFormattedAttribute()
+    {
+        return 'Rp ' . number_format($this->totalDibayar(), 0, ',', '.');
+    }
+
     // Relationships
     public function anggota()
     {
@@ -243,19 +249,85 @@ class PengajuanPembiayaan extends Model
         return $this->hasMany(Angsuran::class);
     }
 
+    /**
+     * Get jadwal yang masih pending
+     */
+    public function jadwalPending()
+    {
+        return $this->angsurans()->pending();
+    }
+
+    /**
+     * Get jadwal yang sudah lunas
+     */
+    public function jadwalLunas()
+    {
+        return $this->angsurans()->whereIn('status', ['terbayar', 'lunas_lebih_cepat']);
+    }
+
+    /**
+     * Hitung total dari jadwal angsuran
+     */
+    public function totalJadwal()
+    {
+        return $this->angsurans()->sum('jumlah_angsuran');
+    }
+
+    /**
+     * Hitung sisa berdasarkan jadwal
+     */
+    public function sisaJadwal()
+    {
+        return $this->jadwalPending()->sum('jumlah_angsuran');
+    }
+
+    /**
+     * Hitung jumlah periode yang sudah lunas
+     */
+    public function periodeLunas()
+    {
+        return $this->jadwalLunas()->count();
+    }
+
+    /**
+     * Hitung jumlah periode yang masih pending
+     */
+    public function periodePending()
+    {
+        return $this->jadwalPending()->count();
+    }
+
+    /**
+     * Cek apakah semua jadwal sudah lunas
+     */
+    public function isLunasSemua(): bool
+    {
+        return $this->periodePending() === 0 && $this->periodeLunas() > 0;
+    }
+
     public function totalDibayar()
     {
-        return $this->angsurans()->where('status', 'terbayar')->sum('jumlah_angsuran');
+        // Hitung dari status terbayar/lunas_lebih_cepat (pakai jumlah_dibayar)
+        $dariLunas = (float)$this->angsurans()
+            ->whereIn('status', ['terbayar', 'lunas_lebih_cepat'])
+            ->sum('jumlah_dibayar');
+
+        // Hitung dari partial_bayar - ambil SEMUA jumlah_dibayar (karena uang sudah dibayar)
+        $dariPartial = (float)$this->angsurans()
+            ->where('status', 'partial_bayar')
+            ->sum('jumlah_dibayar');
+
+        return $dariLunas + $dariPartial;
     }
 
     public function totalPokokDibayar()
     {
-        return $this->angsurans()->where('status', 'terbayar')->sum('jumlah_pokok');
+        return $this->angsurans()->whereIn('status', ['terbayar', 'lunas_lebih_cepat'])->sum('jumlah_pokok');
     }
 
     public function totalMarginDibayar()
     {
-        return $this->angsurans()->where('status', 'terbayar')->sum('jumlah_margin');
+        return $this->angsurans()->whereIn('status', ['terbayar', 'lunas_lebih_cepat'])->sum('jumlah_margin');
     }
 
     public function totalDenda()
@@ -428,5 +500,150 @@ class PengajuanPembiayaan extends Model
         }
 
         return $allFiles;
+    }
+
+    /**
+     * Hitung total sisa dari partial_bayar angsuran
+     */
+    public function totalSisaPartial()
+    {
+        return $this->angsurans()->where('status', 'partial_bayar')->sum('sisa_dibawa');
+    }
+
+    /**
+     * Cek apakah butuh perpanjangan (ada sisa di akhir tenor)
+     */
+    public function needsPerpanjangan(): bool
+    {
+        return $this->totalSisaPartial() > 0 || $this->jadwalPending()->count() > 0;
+    }
+
+    /**
+     * Buat perpanjangan angsuran (sesuai kebutuhan, default 1 bulan saja)
+     * Untuk tracking keterlambatan pelunasan
+     * MAKSIMAL 6 bulan perpanjangan
+     */
+    public function buatPerpanjangan(int $maxBulan = 1): int
+    {
+        // Cek batas maksimal 6 bulan perpanjangan
+        $totalPerpanjangan = $this->angsurans()->where('is_perpanjangan', true)->count();
+        if ($totalPerpanjangan >= 6) {
+            \Log::warning('Pembiayaan ' . $this->id . ' sudah mencapai batas maksimal 6 bulan perpanjangan');
+            return 0;
+        }
+
+        // Ambil sisa HANYA dari angsuran terakhir yang belum lunas
+        // Bukan menjumlahkan semua sisa_dibawa dari semua angsuran
+        $lastAngsuran = $this->angsurans()->orderBy('angsuran_ke', 'desc')->first();
+
+        $totalSisa = 0;
+        if ($lastAngsuran) {
+            if ($lastAngsuran->status == 'partial_bayar') {
+                // Ambil sisa_dibawa dari angsuran terakhir
+                $totalSisa = (float)$lastAngsuran->sisa_dibawa;
+            } elseif ($lastAngsuran->status == 'pending') {
+                // Ambil jumlah_angsuran dari pending
+                $totalSisa = (float)$lastAngsuran->jumlah_angsuran;
+            }
+        }
+
+        $grandTotalSisa = $totalSisa;
+
+        if ($grandTotalSisa <= 0) {
+            return 0;
+        }
+
+        // Hitung berapa bulan perpanjangan yang dibutuhkan
+        // Gunakan angsuran pokok sebagai dasar (tanpa margin)
+        $pokokPerBulan = (float)$this->angsuran_pokok;
+        if ($pokokPerBulan <= 0) {
+            // Fallback: pakai rata-rata dari total
+            $totalPokok = (float)$this->jumlah_pengajuan / (int)$this->tenor;
+            $pokokPerBulan = $totalPokok;
+        }
+
+        // Hitung bulan yang dibutuhkan, tapi max sesuai parameter DAN sisa kuota perpanjangan
+        $sisaKuotaPerpanjangan = 6 - $totalPerpanjangan;
+        $bulanDibutuhkan = ceil($grandTotalSisa / $pokokPerBulan);
+        $bulanPerpanjangan = min($bulanDibutuhkan, $maxBulan, $sisaKuotaPerpanjangan);
+
+        $lastAngsuran = $this->angsurans()->orderBy('angsuran_ke', 'desc')->first();
+        $lastPeriode = $lastAngsuran ? $lastAngsuran->angsuran_ke : 0;
+        $lastTanggal = $lastAngsuran ? Carbon::parse($lastAngsuran->tanggal_jatuh_tempo) : now();
+
+        $angsuransToAdd = [];
+        $sisaSisa = $grandTotalSisa;
+
+        for ($i = 1; $i <= $bulanPerpanjangan; $i++) {
+            $periodeKe = $lastPeriode + $i;
+            $tanggalJatuhTempo = $lastTanggal->copy()->addMonths($i);
+
+            // Hitung jumlah untuk periode ini
+            if ($i == $bulanPerpanjangan) {
+                // Periode terakhir, sisa semua
+                $jumlahAngsuran = $sisaSisa;
+            } else {
+                $jumlahAngsuran = min($pokokPerBulan, $sisaSisa);
+                $sisaSisa -= $jumlahAngsuran;
+            }
+
+            // Generate unique kode for each perpanjangan
+            // Format: AGS + YYYYMM + 4 digit random + pengajuan_id (to ensure uniqueness)
+            $date = now()->format('ym');
+            $random = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4));
+            $kodeAngsuran = 'AGS' . $date . '.' . $random . '-' . $this->id;
+
+            $angsuransToAdd[] = [
+                'kode_angsuran' => $kodeAngsuran,
+                'pengajuan_pembiayaan_id' => $this->id,
+                'anggota_id' => $this->anggota_id,
+                'angsuran_ke' => $periodeKe,
+                'jumlah_pokok' => $jumlahAngsuran,
+                'jumlah_margin' => 0, // Perpanjangan tanpa margin
+                'jumlah_angsuran' => $jumlahAngsuran,
+                'status' => 'pending',
+                'tanggal_jatuh_tempo' => $tanggalJatuhTempo,
+                'is_perpanjangan' => true,
+                'created_at' => now(),
+                'updated_at' => now()
+            ];
+        }
+
+        // Insert perpanjangan angsuran with duplicate check
+        foreach ($angsuransToAdd as $angsuranData) {
+            try {
+                // Insert langsung, jika duplicate akan throw exception
+                Angsuran::insert($angsuranData);
+            } catch (\Exception $e) {
+                // If duplicate, generate new random kode
+                if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                    $random = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6));
+                    $angsuranData['kode_angsuran'] = 'AGS' . now()->format('ym') . '.' . $random . '-' . $this->id;
+                    Angsuran::insert($angsuranData);
+                } else {
+                    \Log::error('Failed to insert perpanjangan angsuran: ' . $e->getMessage());
+                    throw $e; // Re-throw if not duplicate error
+                }
+            }
+        }
+
+        return count($angsuransToAdd);
+    }
+
+    /**
+     * Cek apakah melewati batas perpanjangan (untuk blacklist)
+     */
+    public function melebihiBatasPerpanjangan(): bool
+    {
+        // Hitung total bulan perpanjangan yang ada
+        $bulanPerpanjangan = $this->angsurans()->perpanjangan()->count();
+
+        // Cek apakah ada angsuran perpanjangan yang masih pending/telat
+        $perpanjanganPending = $this->angsurans()->perpanjangan()
+            ->whereIn('status', ['pending', 'partial_bayar'])
+            ->where('tanggal_jatuh_tempo', '<', now())
+            ->exists();
+
+        return $bulanPerpanjangan >= 6 && $perpanjanganPending;
     }
 }

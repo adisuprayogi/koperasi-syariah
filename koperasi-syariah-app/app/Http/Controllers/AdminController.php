@@ -570,6 +570,27 @@ class AdminController extends Controller
             'keterangan' => 'nullable|string',
         ]);
 
+        // Custom validation: minimal tidak boleh lebih besar dari maksimal
+        $validator->after(function ($validator) use ($request) {
+            $min = $request->input('minimal_pembiayaan');
+            $max = $request->input('maksimal_pembiayaan');
+
+            // Jika maksimal diisi, minimal harus <= maksimal
+            if (!is_null($max) && $max > 0 && floatval($min) > floatval($max)) {
+                $validator->errors()->add('minimal_pembiayaan', 'Minimal pembiayaan tidak boleh lebih besar dari maksimal pembiayaan');
+                $validator->errors()->add('maksimal_pembiayaan', 'Maksimal pembiayaan tidak boleh lebih kecil dari minimal pembiayaan');
+            }
+
+            // Jangka waktu min tidak boleh lebih besar dari max
+            $tenorMin = intval($request->input('jangka_waktu_min'));
+            $tenorMax = intval($request->input('jangka_waktu_max'));
+
+            if ($tenorMin > $tenorMax) {
+                $validator->errors()->add('jangka_waktu_min', 'Jangka waktu minimal tidak boleh lebih besar dari maksimal');
+                $validator->errors()->add('jangka_waktu_max', 'Jangka waktu maksimal tidak boleh lebih kecil dari minimal');
+            }
+        });
+
         if ($validator->fails()) {
             return back()
                 ->withErrors($validator)
@@ -620,6 +641,27 @@ class AdminController extends Controller
             'status' => 'required|boolean',
             'keterangan' => 'nullable|string',
         ]);
+
+        // Custom validation: minimal tidak boleh lebih besar dari maksimal
+        $validator->after(function ($validator) use ($request) {
+            $min = $request->input('minimal_pembiayaan');
+            $max = $request->input('maksimal_pembiayaan');
+
+            // Jika maksimal diisi, minimal harus <= maksimal
+            if (!is_null($max) && $max > 0 && floatval($min) > floatval($max)) {
+                $validator->errors()->add('minimal_pembiayaan', 'Minimal pembiayaan tidak boleh lebih besar dari maksimal pembiayaan');
+                $validator->errors()->add('maksimal_pembiayaan', 'Maksimal pembiayaan tidak boleh lebih kecil dari minimal pembiayaan');
+            }
+
+            // Jangka waktu min tidak boleh lebih besar dari max
+            $tenorMin = intval($request->input('jangka_waktu_min'));
+            $tenorMax = intval($request->input('jangka_waktu_max'));
+
+            if ($tenorMin > $tenorMax) {
+                $validator->errors()->add('jangka_waktu_min', 'Jangka waktu minimal tidak boleh lebih besar dari maksimal');
+                $validator->errors()->add('jangka_waktu_max', 'Jangka waktu maksimal tidak boleh lebih kecil dari minimal');
+            }
+        });
 
         if ($validator->fails()) {
             return back()
@@ -896,9 +938,9 @@ class AdminController extends Controller
 
         // CSV content with BOM for Excel compatibility
         $csvContent = "\xEF\xBB\xBF"; // UTF-8 BOM for Excel
-        $csvContent .= "No Pembiayaan,No Anggota,Jenis Pembiayaan,Jumlah Pengajuan,Tenor,Tujuan Pembiayaan,Tanggal Pengajuan,Tanggal Pencairan,Deskripsi,No Rekening,Atas Nama Rekening\n";
-        $csvContent .= "PM001,2512.00001,Pembiayaan Murabahah Motor,15000000,24,Konsumtif,2024-12-01,2024-12-05,Pembiayaan pembelian motor Honda Beat,1234567890,Ahmad Yani\n";
-        $csvContent .= "MM002,2512.00002,Modal Kerja Mudharabah,50000000,36,Modal Kerja,2024-12-01,,Modal kerja untuk tambah stok barang,0987654321,Siti Nurhaliza";
+        $csvContent .= "No Pembiayaan,No Anggota,Jenis Pembiayaan,Jumlah Pengajuan,Tenor,Tipe Angsuran,Tujuan Pembiayaan,Tanggal Pengajuan,Tanggal Pencairan,Deskripsi,No Rekening,Atas Nama Rekening\n";
+        $csvContent .= "PM001,2512.00001,Pembiayaan Murabahah Motor,15000000,24,flat,Konsumtif,2024-12-01,2024-12-05,Pembiayaan pembelian motor Honda Beat,1234567890,Ahmad Yani\n";
+        $csvContent .= "MM002,2512.00002,Modal Kerja Mudharabah,50000000,36,flat,Modal Kerja,2024-12-01,,Modal kerja untuk tambah stok barang,0987654321,Siti Nurhaliza";
 
         return response($csvContent, 200, $headers);
     }
@@ -938,9 +980,13 @@ class AdminController extends Controller
                     $jenisPembiayaan = trim($row[2] ?? '');
                     $jumlah = trim($row[3] ?? '');
                     $tenor = trim($row[4] ?? '');
-                    $tujuan = trim($row[5] ?? '');
-                    $tanggal = trim($row[6] ?? '');
-                    $tanggalPencairan = trim($row[7] ?? '');
+                    $tipeAngsuran = trim($row[5] ?? 'flat'); // Default flat
+                    $tujuan = trim($row[6] ?? '');
+                    $tanggal = trim($row[7] ?? '');
+                    $tanggalPencairan = trim($row[8] ?? '');
+                    $deskripsi = trim($row[9] ?? '');
+                    $noRekening = trim($row[10] ?? '');
+                    $atasNama = trim($row[11] ?? '');
 
                     if (empty($noPembiayaan) || empty($noAnggota) || empty($jenisPembiayaan) || empty($jumlah) || empty($tenor) || empty($tujuan) || empty($tanggal)) {
                         $errors[] = "Baris $rowIndex: Field wajib kosong (No Pembiayaan, No Anggota, Jenis, Jumlah, Tenor, Tujuan, Tanggal)";
@@ -974,6 +1020,18 @@ class AdminController extends Controller
 
                     if (!is_numeric($tenor) || $tenor <= 0 || $tenor > 60) {
                         $errors[] = "Baris $rowIndex: Tenor harus 1-60 bulan";
+                        continue;
+                    }
+
+                    // Validasi tipe angsuran
+                    $tipeAngsuranMap = [
+                        'flat' => 'flat',
+                        'menurun' => 'menurun',
+                        'menaik' => 'menaik'
+                    ];
+                    $tipeAngsuranKey = $tipeAngsuranMap[strtolower($tipeAngsuran)] ?? 'flat';
+                    if (!in_array($tipeAngsuranKey, ['flat', 'menurun', 'menaik'])) {
+                        $errors[] = "Baris $rowIndex: Tipe Angsuran tidak valid. Pilihan: flat, menurun, menaik";
                         continue;
                     }
 
@@ -1021,19 +1079,23 @@ class AdminController extends Controller
                             'jenis_pembiayaan_id' => $jenisModel->id,
                             'jumlah_pengajuan' => (float)$jumlah,
                             'tenor' => (int)$tenor,
+                            'tipe_angsuran' => $tipeAngsuranKey, // Gunakan dari CSV
                             'margin_percent' => $marginPercent,
                             'jumlah_margin' => $jumlahMargin,
                             'angsuran_pokok' => $angsuranPokok,
                             'angsuran_margin' => $angsuranMargin,
                             'total_angsuran' => $angsuranPokok + $angsuranMargin,
                             'tujuan_pembiayaan' => $tujuanKey,
-                            'deskripsi' => $row[8] ?? 'Import dari CSV',
+                            'deskripsi' => $deskripsi ?: 'Import dari CSV',
                             'status' => 'approved',
-                            'no_rekening' => $row[9] ?? '',
-                            'atas_nama' => $row[10] ?? $anggota->nama_lengkap,
+                            'verified_by' => auth()->user()->pengurus ? auth()->user()->pengurus->id : null,
+                            'verified_at' => $tanggalParsed,
+                            'approved_by' => auth()->user()->pengurus ? auth()->user()->pengurus->id : null,
+                            'approved_at' => $tanggalParsed,
+                            'no_rekening' => $noRekening,
+                            'atas_nama' => $atasNama ?: $anggota->nama_lengkap,
                             'tanggal_jatuh_tempo' => Carbon::parse($tanggalParsed)->addMonths((int)$tenor),
                             'created_at' => $tanggalParsed,
-                            'approved_at' => $tanggalParsed,
                             'tanggal_cair' => $tanggalPencairanParsed ?: $tanggalParsed, // Gunakan tanggal pencairan atau tanggal pengajuan
                         ]);
 

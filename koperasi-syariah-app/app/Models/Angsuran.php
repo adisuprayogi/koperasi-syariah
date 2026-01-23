@@ -19,6 +19,8 @@ class Angsuran extends Model
         'jumlah_pokok',
         'jumlah_margin',
         'jumlah_angsuran',
+        'jumlah_dibayar',
+        'sisa_dibawa',
         'status',
         'tanggal_jatuh_tempo',
         'tanggal_bayar',
@@ -27,6 +29,8 @@ class Angsuran extends Model
         'persentase_denda',
         'hari_terlambat',
         'keterangan',
+        'catatan',
+        'is_perpanjangan',
         'bukti_pembayaran',
         'bukti_pembayaran_original',
         'dibayar_oleh'
@@ -36,8 +40,11 @@ class Angsuran extends Model
         'jumlah_pokok' => 'decimal:2',
         'jumlah_margin' => 'decimal:2',
         'jumlah_angsuran' => 'decimal:2',
+        'jumlah_dibayar' => 'decimal:2',
+        'sisa_dibawa' => 'decimal:2',
         'denda' => 'decimal:2',
         'persentase_denda' => 'decimal:2',
+        'is_perpanjangan' => 'boolean',
         'tanggal_jatuh_tempo' => 'date',
         'tanggal_bayar' => 'date',
         'tanggal_jatuh_tempo_akhir' => 'date',
@@ -70,7 +77,9 @@ class Angsuran extends Model
         $statusLabels = [
             'pending' => '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu</span>',
             'terbayar' => '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Terbayar</span>',
-            'terlambat' => '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Terlambat</span>'
+            'terlambat' => '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Terlambat</span>',
+            'lunas_lebih_cepat' => '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Lunas Lebih Cepat</span>',
+            'partial_bayar' => '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Sebagian</span>'
         ];
 
         return $statusLabels[$this->status] ?? $statusLabels['pending'];
@@ -110,6 +119,16 @@ class Angsuran extends Model
     public function getTanggalBayarFormattedAttribute()
     {
         return $this->tanggal_bayar ? Carbon::parse($this->tanggal_bayar)->format('d M Y') : '-';
+    }
+
+    public function getJumlahDibayarFormattedAttribute()
+    {
+        return 'Rp ' . number_format($this->jumlah_dibayar, 0, ',', '.');
+    }
+
+    public function getSisaDibawaFormattedAttribute()
+    {
+        return 'Rp ' . number_format($this->sisa_dibawa, 0, ',', '.');
     }
 
     public function getHariTersisaAttribute()
@@ -205,8 +224,70 @@ class Angsuran extends Model
         return $query->where('status', '!=', 'terbayar');
     }
 
+    public function scopeLunasLebihCepat($query)
+    {
+        return $query->where('status', 'lunas_lebih_cepat');
+    }
+
+    public function scopePartialBayar($query)
+    {
+        return $query->where('status', 'partial_bayar');
+    }
+
+    public function scopePerpanjangan($query)
+    {
+        return $query->where('is_perpanjangan', true);
+    }
+
+    /**
+     * Helper: Cek apakah angsuran ini bisa di-partial payment
+     */
+    public function canPartialPayment(): bool
+    {
+        return $this->status == 'pending' && $this->jumlah_dibayar == 0;
+    }
+
+    /**
+     * Helper: Hitung sisa yang harus dibayar
+     */
+    public function getSisaHarusDibayarAttribute()
+    {
+        return $this->jumlah_angsuran - $this->jumlah_dibayar;
+    }
+
+    /**
+     * Helper: Proses partial payment
+     * Returns true if fully paid, false if partial
+     */
+    public function processPartialPayment($jumlahBayar): bool
+    {
+        $totalHarusBayar = $this->jumlah_angsuran;
+        $sisaSetelahBayar = $totalHarusBayar - $jumlahBayar;
+
+        if ($sisaSetelahBayar <= 0) {
+            // Lunas penuh
+            $this->update([
+                'status' => 'terbayar',
+                'jumlah_dibayar' => $totalHarusBayar,
+                'sisa_dibawa' => 0,
+                'tanggal_bayar' => now()
+            ]);
+            return true;
+        } else {
+            // Partial payment
+            $this->update([
+                'status' => 'partial_bayar',
+                'jumlah_dibayar' => $jumlahBayar,
+                'sisa_dibawa' => $sisaSetelahBayar,
+                'tanggal_bayar' => now()
+            ]);
+            return false;
+        }
+    }
+
     /**
      * Generate jadwal angsuran untuk pengajuan pembiayaan
+     * Supports: flat, menurun (declining), menaik (stepped)
      */
     public static function generateJadwalAngsuran($pengajuan)
     {
@@ -219,6 +300,74 @@ class Angsuran extends Model
 
         $angsurans = [];
         $tanggalJatuhPertama = $pengajuan->tanggal_jatuh_tempo_pertama ?: now()->addMonth();
+        $tipeAngsuran = $pengajuan->tipe_angsuran ?? 'flat';
+        $tenor = (int)$pengajuan->tenor;
+        $jumlahPengajuan = (float)$pengajuan->jumlah_pengajuan;
+
+        // Hitung berdasarkan tipe angsuran
+        if ($tipeAngsuran == 'flat') {
+            // FLAT: Tetap setiap bulan
+            $pokok = $jumlahPengajuan / $tenor;
+            $margin = (float)$pengajuan->angsuran_margin;
+            for ($i = 1; $i <= $tenor; $i++) {
+                $angsurans[] = [
+                    'pokok' => $pokok,
+                    'margin' => $margin,
+                    'total' => $pokok + $margin
+                ];
+            }
+        } elseif ($tipeAngsuran == 'menurun') {
+            // MENURUN (Declining): Pokok tetap, margin berkurang
+            $pokok = $jumlahPengajuan / $tenor;
+            $totalMargin = (float)$pengajuan->jumlah_margin;
+            // Margin per bulan = total margin / tenor
+            $marginPerBulan = $totalMargin / $tenor;
+
+            $sisaPinjaman = $jumlahPengajuan;
+            $marginPercent = (float)$pengajuan->margin_percent;
+
+            for ($i = 1; $i <= $tenor; $i++) {
+                // Margin = sisa pinjaman × (margin% / 12) untuk bulan ini
+                $margin = $sisaPinjaman * ($marginPercent / 100 / 12);
+                $angsurans[] = [
+                    'pokok' => $pokok,
+                    'margin' => $margin,
+                    'total' => $pokok + $margin
+                ];
+                $sisaPinjaman -= $pokok;
+            }
+        } elseif ($tipeAngsuran == 'menaik') {
+            // MENAIK (Stepped): Mulai kecil, makin besar
+            // Divide tenor into 3 phases
+            $phase1 = ceil($tenor / 3); // 1/3 awal
+            $phase2 = ceil($tenor / 3); // 1/3 tengah
+            $phase3 = $tenor - $phase1 - $phase2; // sisa
+
+            $pokok = $jumlahPengajuan / $tenor;
+            $totalMargin = (float)$pengajuan->jumlah_margin;
+
+            // Phase 1: 50% dari normal margin
+            $margin1 = ($totalMargin / $tenor) * 0.5;
+            // Phase 2: 100% dari normal margin
+            $margin2 = ($totalMargin / $tenor) * 1.0;
+            // Phase 3: 150% dari normal margin (untuk menutup deficit)
+            $margin3 = ($totalMargin / $tenor) * 1.5;
+
+            for ($i = 1; $i <= $tenor; $i++) {
+                if ($i <= $phase1) {
+                    $margin = $margin1;
+                } elseif ($i <= $phase1 + $phase2) {
+                    $margin = $margin2;
+                } else {
+                    $margin = $margin3;
+                }
+                $angsurans[] = [
+                    'pokok' => $pokok,
+                    'margin' => $margin,
+                    'total' => $pokok + $margin
+                ];
+            }
+        }
 
         // Get the starting number for this month
         $date = now()->format('ym');
@@ -242,8 +391,9 @@ class Angsuran extends Model
         }
 
         $startNumber = $maxNumber + 1;
+        $insertData = [];
 
-        for ($i = 1; $i <= (int)$pengajuan->tenor; $i++) {
+        for ($i = 1; $i <= $tenor; $i++) {
             $tanggalJatuhTempo = Carbon::parse($tanggalJatuhPertama)->addMonths($i - 1);
 
             // Generate unique kode untuk setiap angsuran
@@ -259,28 +409,28 @@ class Angsuran extends Model
                 $attempts++;
             }
 
-            $angsuran = [
+            $data = [
                 'kode_angsuran' => $kodeAngsuran,
                 'pengajuan_pembiayaan_id' => $pengajuan->id,
                 'anggota_id' => $pengajuan->anggota_id,
                 'angsuran_ke' => $i,
-                'jumlah_pokok' => $pengajuan->angsuran_pokok,
-                'jumlah_margin' => $pengajuan->angsuran_margin,
-                'jumlah_angsuran' => $pengajuan->total_angsuran,
+                'jumlah_pokok' => $angsurans[$i - 1]['pokok'],
+                'jumlah_margin' => $angsurans[$i - 1]['margin'],
+                'jumlah_angsuran' => $angsurans[$i - 1]['total'],
                 'status' => 'pending',
                 'tanggal_jatuh_tempo' => $tanggalJatuhTempo,
                 'created_at' => now(),
                 'updated_at' => now()
             ];
 
-            $angsurans[] = $angsuran;
+            $insertData[] = $data;
         }
 
         // Insert one by one to handle potential duplicates better
         $successCount = 0;
         $skipCount = 0;
 
-        foreach ($angsurans as $angsuranData) {
+        foreach ($insertData as $angsuranData) {
             try {
                 // Double-check again before insert
                 if (!self::where('kode_angsuran', $angsuranData['kode_angsuran'])->exists()) {
@@ -303,6 +453,6 @@ class Angsuran extends Model
         }
 
         // Return true if at least one angsuran was created, or all were skipped (already exists)
-        return $successCount > 0 || $skipCount === count($angsurans);
+        return $successCount > 0 || $skipCount === count($insertData);
     }
 }

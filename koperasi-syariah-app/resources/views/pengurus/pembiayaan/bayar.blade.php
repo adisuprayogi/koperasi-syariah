@@ -105,7 +105,7 @@
             </h2>
         </div>
         <div class="p-6">
-            @if($angsuran->status == 'terbayar')
+            @if(in_array($angsuran->status, ['terbayar', 'lunas_lebih_cepat']))
                 <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
                     <div class="flex">
                         <div class="flex-shrink-0">
@@ -119,10 +119,36 @@
                         </div>
                     </div>
                 </div>
-            @else
+            @elseif($angsuran->status == 'partial_bayar')
+                <!-- Info Partial Payment -->
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Pembayaran Sebagian</h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <p>Sudah dibayar: <strong>{{ $angsuran->jumlah_dibayar_formatted }}</strong></p>
+                                <p>Sisa: <strong class="text-red-600">{{ $angsuran->sisa_dibawa_formatted }}</strong></p>
+                                <p class="mt-1">Silakan lanjutkan pembayaran untuk melunasi.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(!in_array($angsuran->status, ['terbayar', 'lunas_lebih_cepat']))
                 <form action="{{ route('pengurus.pembiayaan.bayar.store', [$pengajuan->id, $angsuran->id]) }}"
                       method="POST" enctype="multipart/form-data">
                     @csrf
+
+                    @php
+                        // Hitung sisa yang perlu dibayar
+                        $sisaPerluBayar = $angsuran->status == 'partial_bayar'
+                            ? $angsuran->sisa_dibawa
+                            : $angsuran->jumlah_angsuran;
+                    @endphp
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
@@ -146,11 +172,17 @@
                                     <span class="text-gray-500 sm:text-sm">Rp</span>
                                 </div>
                                 <input type="number" id="jumlah_bayar"
-                                       name="jumlah_bayar" value="{{ $angsuran->jumlah_angsuran }}" required
+                                       name="jumlah_bayar" value="{{ number_format($sisaPerluBayar, 2, '.', '') }}" required
                                        step="0.01" min="0"
                                        class="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                             </div>
-                            <p class="mt-1 text-sm text-gray-500">Masukkan jumlah yang dibayar anggota</p>
+                            @if($angsuran->status == 'partial_bayar')
+                                <p class="mt-1 text-sm text-yellow-600">Sisa yang perlu dibayar: <strong>{{ $angsuran->sisa_dibawa_formatted }}</strong></p>
+                            @else
+                                <p class="mt-1 text-sm text-gray-500">Masukkan jumlah yang dibayar anggota</p>
+                            @endif
+                            <!-- Info Perpanjangan - hidden by default -->
+                            <div id="infoPerpanjanganBayar" class="mt-2 hidden"></div>
                         </div>
                     </div>
 
@@ -194,8 +226,8 @@
                         <p class="mt-1 text-sm text-gray-500">Keterangan pembayaran jika diperlukan</p>
                     </div>
 
-                    <!-- Summary Card -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <!-- Summary Card (Hidden) -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6 hidden">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                             <div>
                                 <p class="text-sm text-gray-500">Jumlah Angsuran</p>
@@ -273,25 +305,94 @@
 
 @endsection
 
-@section('script')
+@push('scripts')
 <script>
-// Format currency display
-document.getElementById('jumlah_bayar').addEventListener('input', function() {
-    const jumlah = parseFloat(this.value) || 0;
-    // Display formatted currency (no denda calculation in syariah)
-    const formatted = 'Rp ' + jumlah.toLocaleString('id-ID');
-    console.log('Jumlah Pembayaran:', formatted);
-});
+// Data perpanjangan dari server
+const perpanjanganData = {
+    totalPerpanjangan: {{ $pengajuan->angsurans()->where('is_perpanjangan', true)->count() }},
+    maxPerpanjangan: 6,
+    totalAngsuran: {{ $pengajuan->angsurans->count() }},
+    currentAngsuranKe: {{ $angsuran->angsuran_ke }}
+};
 
-// Show file name when bukti pembayaran is selected
-document.getElementById('bukti_pembayaran').addEventListener('change', function() {
-    const fileName = document.getElementById('file_name');
-    if (this.files && this.files[0]) {
-        fileName.textContent = 'File terpilih: ' + this.files[0].name;
-        fileName.classList.remove('hidden');
-    } else {
-        fileName.classList.add('hidden');
+document.addEventListener('DOMContentLoaded', function() {
+    // Format currency display
+    const jumlahBayarInput = document.getElementById('jumlah_bayar');
+    const infoPerpanjanganBayar = document.getElementById('infoPerpanjanganBayar');
+
+    if (jumlahBayarInput) {
+        // Function to update display
+        function updateDisplay() {
+            const jumlah = parseFloat(jumlahBayarInput.value) || 0;
+            const formatted = 'Rp ' + jumlah.toLocaleString('id-ID');
+
+            // Update display-total element
+            const displayTotal = document.getElementById('display-total');
+            if (displayTotal) {
+                displayTotal.textContent = formatted;
+            }
+        }
+
+        // Add event listener
+        jumlahBayarInput.addEventListener('input', updateDisplay);
+
+        // Initialize with default value
+        updateDisplay();
+
+        // CEK: Perpanjangan blocking - Jika ini periode terakhir dan sudah 6 perpanjangan
+        const isLastPeriode = perpanjanganData.currentAngsuranKe === perpanjanganData.totalAngsuran;
+        const isMaxPerpanjangan = perpanjanganData.totalPerpanjangan >= perpanjanganData.maxPerpanjangan;
+
+        // Debug: Tampilkan data di console
+        console.log('=== PERPANJANGAN DEBUG ===');
+        console.log('perpanjanganData:', perpanjanganData);
+        console.log('isLastPeriode:', isLastPeriode);
+        console.log('isMaxPerpanjangan:', isMaxPerpanjangan);
+        console.log('jumlahBayarInput:', jumlahBayarInput);
+
+        if (isLastPeriode && isMaxPerpanjangan) {
+            console.log('MEMASUKI KONDISI BLOCKING!!!');
+            // Disable input dan beri info
+            const exactAmount = parseFloat(jumlahBayarInput.value);
+
+            jumlahBayarInput.disabled = true;
+            jumlahBayarInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+            jumlahBayarInput.setAttribute('data-original-value', exactAmount);
+
+            // Show warning message
+            if (infoPerpanjanganBayar) {
+                infoPerpanjanganBayar.classList.remove('hidden');
+                infoPerpanjanganBayar.innerHTML = '<div class="text-sm text-red-600 font-medium">' +
+                    '<i class="fas fa-exclamation-triangle mr-1"></i>' +
+                    'Batas perpanjangan maksimal (6 bulan) tercapai. Pembayaran harus lunas tepat ' +
+                    'Rp ' + exactAmount.toLocaleString('id-ID') +
+                    '</div>';
+            }
+
+            // Prevent form submission if amount is changed
+            const form = jumlahBayarInput.closest('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Re-enable input briefly to allow form submission
+                    jumlahBayarInput.disabled = false;
+                });
+            }
+        }
+    }
+
+    // Show file name when bukti pembayaran is selected
+    const buktiPembayaranInput = document.getElementById('bukti_pembayaran');
+    if (buktiPembayaranInput) {
+        buktiPembayaranInput.addEventListener('change', function() {
+            const fileName = document.getElementById('file_name');
+            if (this.files && this.files[0]) {
+                fileName.textContent = 'File terpilih: ' + this.files[0].name;
+                fileName.classList.remove('hidden');
+            } else {
+                fileName.classList.add('hidden');
+            }
+        });
     }
 });
 </script>
-@endsection
+@endpush

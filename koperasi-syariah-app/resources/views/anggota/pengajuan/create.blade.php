@@ -31,7 +31,8 @@
     </div>
 
     <!-- Form -->
-    <form action="{{ route('anggota.pengajuan.store') }}" method="POST" enctype="multipart/form-data" class="w-full">
+    <form action="{{ route('anggota.pengajuan.store') }}" method="POST" enctype="multipart/form-data" class="w-full"
+          id="pengajuanForm" novalidate onsubmit="return handleFormSubmit(event)">
         @csrf
         <div class="space-y-6">
             <!-- Informasi Anggota -->
@@ -69,7 +70,12 @@
                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             <option value="">Pilih Jenis Pembiayaan</option>
                             @foreach($jenisPembiayaan as $jenis)
-                                <option value="{{ $jenis->id }}" data-margin="{{ $jenis->margin }}">
+                                <option value="{{ $jenis->id }}" {{ old('jenis_pembiayaan_id') == $jenis->id ? 'selected' : '' }}
+                                        data-margin="{{ $jenis->margin }}"
+                                        data-min="{{ $jenis->minimal_pembiayaan }}"
+                                        data-max="{{ $jenis->maksimal_pembiayaan }}"
+                                        data-tenor-min="{{ $jenis->jangka_waktu_min }}"
+                                        data-tenor-max="{{ $jenis->jangka_waktu_max }}">
                                     {{ $jenis->nama_pembiayaan }} ({{ $jenis->margin }}%)
                                 </option>
                             @endforeach
@@ -87,7 +93,7 @@
                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             <option value="">Pilih Tujuan</option>
                             @foreach($tujuanOptions as $key => $value)
-                                <option value="{{ $key }}">{{ $value }}</option>
+                                <option value="{{ $key }}" {{ old('tujuan_pembiayaan') == $key ? 'selected' : '' }}>{{ $value }}</option>
                             @endforeach
                         </select>
                         @error('tujuan_pembiayaan')
@@ -100,9 +106,13 @@
                             Jumlah Pengajuan (Rp) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="jumlah_pengajuan" name="jumlah_pengajuan" required
-                               min="1000000" step="100000" value="{{ old('jumlah_pengajuan') }}"
+                               min="1000000" step="10000" value="{{ old('jumlah_pengajuan') }}"
                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                placeholder="Minimal 1.000.000">
+                        <p id="jumlah-hint" class="mt-1 text-xs text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <span id="jumlah-hint-text">Pilih jenis pembiayaan terlebih dahulu</span>
+                        </p>
                         @error('jumlah_pengajuan')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -116,9 +126,38 @@
                                min="1" max="60" value="{{ old('tenor') }}"
                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                placeholder="1-60 bulan">
+                        <p id="tenor-hint" class="mt-1 text-xs text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <span id="tenor-hint-text">Pilih jenis pembiayaan terlebih dahulu</span>
+                        </p>
                         @error('tenor')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <div>
+                        <label for="tipe_angsuran" class="block text-sm font-medium text-gray-700">
+                            Tipe Angsuran <span class="text-red-500">*</span>
+                        </label>
+                        <select id="tipe_angsuran" name="tipe_angsuran" required
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="flat" {{ old('tipe_angsuran', 'flat') == 'flat' ? 'selected' : '' }}>
+                                Flat (Tetap setiap bulan)
+                            </option>
+                            <option value="menurun" {{ old('tipe_angsuran') == 'menurun' ? 'selected' : '' }}>
+                                Menurun (Declining)
+                            </option>
+                            <option value="menaik" {{ old('tipe_angsuran') == 'menaik' ? 'selected' : '' }}>
+                                Menaik (Stepped)
+                            </option>
+                        </select>
+                        @error('tipe_angsuran')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Flat: tetap, Menurun: awal lebih besar, Menaik: awal lebih kecil
+                        </p>
                     </div>
                 </div>
 
@@ -170,6 +209,37 @@
             <!-- Dokumen Pendukung -->
             <div class="bg-white shadow rounded-lg p-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Dokumen Pendukung</h2>
+
+                {{-- Info File yang Diupload Sebelumnya (setelah validation error) --}}
+                @if(session('uploadedFileNames'))
+                    <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-md">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-blue-500"></i>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <h3 class="text-sm font-medium text-blue-800">File yang perlu diupload ulang</h3>
+                                <p class="mt-1 text-sm text-blue-700">Mohon upload kembali file-file berikut:</p>
+                                <ul class="mt-2 list-disc list-inside text-sm text-blue-700 space-y-1">
+                                    @foreach(session('uploadedFileNames') as $field => $fileName)
+                                        @if(is_array($fileName))
+                                            @foreach($fileName as $f)
+                                                <li>{{ $f }}</li>
+                                            @endforeach
+                                        @else
+                                            <li>{{ $fileName }}</li>
+                                        @endif
+                                    @endforeach
+                                </ul>
+                            </div>
+                            <div class="ml-4 flex-shrink-0">
+                                <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-blue-400 hover:text-blue-600">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endif
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <x-file-upload
                         name="ktp_file"
@@ -275,7 +345,7 @@
                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Batal
                 </a>
-                <button type="submit"
+                <button type="submit" id="submit-pengajuan-btn"
                         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Ajukan Sekarang
                 </button>
@@ -291,16 +361,71 @@ document.addEventListener('DOMContentLoaded', function() {
     const jenisPembiayaanSelect = document.getElementById('jenis_pembiayaan_id');
     const simulation = document.getElementById('simulation');
     const marginPercentSpan = document.getElementById('margin-percent');
+    const jumlahHintText = document.getElementById('jumlah-hint-text');
+    const tenorHintText = document.getElementById('tenor-hint-text');
 
     function getMarginPercent() {
         const selectedOption = jenisPembiayaanSelect.options[jenisPembiayaanSelect.selectedIndex];
-        return selectedOption ? parseFloat(selectedOption.getAttribute('data-margin')) || 10 : 10;
+        if (!selectedOption || !selectedOption.value) {
+            return 0; // Return 0 if no option selected
+        }
+        const margin = parseFloat(selectedOption.getAttribute('data-margin'));
+        return !isNaN(margin) ? margin : 0;
+    }
+
+    function updateMinMax() {
+        const selectedOption = jenisPembiayaanSelect.options[jenisPembiayaanSelect.selectedIndex];
+
+        if (selectedOption && selectedOption.value) {
+            const minJumlah = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+            const maxJumlah = parseFloat(selectedOption.getAttribute('data-max')) || 0;
+            const tenorMin = parseInt(selectedOption.getAttribute('data-tenor-min')) || 1;
+            const tenorMax = parseInt(selectedOption.getAttribute('data-tenor-max')) || 60;
+
+            // Update jumlah input
+            jumlahInput.min = minJumlah;
+            if (maxJumlah > 0) {
+                jumlahInput.max = maxJumlah;
+                jumlahHintText.textContent = `Minimal: Rp ${minJumlah.toLocaleString('id-ID')}, Maksimal: Rp ${maxJumlah.toLocaleString('id-ID')}`;
+            } else {
+                jumlahInput.removeAttribute('max');
+                jumlahHintText.textContent = `Minimal: Rp ${minJumlah.toLocaleString('id-ID')}`;
+            }
+
+            // Update tenor input
+            tenorInput.min = tenorMin;
+            tenorInput.max = tenorMax;
+            tenorHintText.textContent = `Minimal: ${tenorMin} bulan, Maksimal: ${tenorMax} bulan`;
+
+            // Clear values if outside new range
+            if (parseFloat(jumlahInput.value) < minJumlah || (maxJumlah > 0 && parseFloat(jumlahInput.value) > maxJumlah)) {
+                jumlahInput.value = '';
+            }
+            if (parseInt(tenorInput.value) < tenorMin || parseInt(tenorInput.value) > tenorMax) {
+                tenorInput.value = '';
+            }
+        } else {
+            // Reset to defaults
+            jumlahInput.min = 0;
+            jumlahInput.removeAttribute('max');
+            tenorInput.min = 1;
+            tenorInput.max = 60;
+            jumlahHintText.textContent = 'Pilih jenis pembiayaan terlebih dahulu';
+            tenorHintText.textContent = 'Pilih jenis pembiayaan terlebih dahulu';
+        }
     }
 
     function calculateSimulation() {
         const jumlah = parseFloat(jumlahInput.value) || 0;
         const tenor = parseInt(tenorInput.value) || 0;
         const marginPercent = getMarginPercent();
+
+        // Only show simulation if jenis pembiayaan is selected
+        const selectedOption = jenisPembiayaanSelect.options[jenisPembiayaanSelect.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+            simulation.classList.add('hidden');
+            return;
+        }
 
         if (jumlah > 0 && tenor > 0) {
             // Rumus BARU: Margin per bulan dikalikan tenor (sesuai backend)
@@ -312,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const totalAngsuran = angsuranPokok + angsuranMargin;
 
             // Update margin percentage display
-            marginPercentSpan.textContent = marginPercent;
+            marginPercentSpan.textContent = marginPercent + '%';
 
             // Update simulation display
             document.getElementById('sim-pokok').textContent = 'Rp ' + formatNumber(jumlah);
@@ -332,10 +457,209 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.round(num).toLocaleString('id-ID');
     }
 
+    // Update min/max when jenis pembiayaan changes
+    jenisPembiayaanSelect.addEventListener('change', function() {
+        updateMinMax();
+        calculateSimulation();
+    });
+
     // Calculate on input change
     jumlahInput.addEventListener('input', calculateSimulation);
     tenorInput.addEventListener('input', calculateSimulation);
-    jenisPembiayaanSelect.addEventListener('change', calculateSimulation);
+
+    // Initialize on page load
+    updateMinMax();
 });
+
+// Handle form submit
+function handleFormSubmit(event) {
+    console.log('Form submit triggered');
+    const isValid = validateRequiredFiles();
+
+    if (!isValid) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        console.log('Form submission prevented - missing files');
+        return false;
+    }
+
+    console.log('Form validation passed - submitting');
+    return true;
+}
+
+// Validasi file wajib sebelum submit
+function validateRequiredFiles() {
+    const requiredFiles = document.querySelectorAll('input[type="file"][required]');
+    console.log('Required files found:', requiredFiles.length);
+
+    const missingFiles = [];
+
+    requiredFiles.forEach(function(input) {
+        console.log('Checking file input:', input.name, 'Files:', input.files ? input.files.length : 'none');
+
+        if (!input.files || input.files.length === 0) {
+            // Fallback ke nama field yang lebih deskriptif
+            const nameMapping = {
+                'ktp_file': 'Scan KTP',
+                'kk_file': 'Scan KK',
+                'slip_gaji_file': 'Slip Gaji',
+                'proposal_file': 'Proposal Bisnis'
+            };
+            const labelName = nameMapping[input.name] || input.name;
+
+            missingFiles.push({
+                name: labelName,
+                element: input
+            });
+        }
+    });
+
+    console.log('Missing files:', missingFiles.length);
+
+    if (missingFiles.length > 0) {
+        // Disable tombol submit sementara
+        const submitBtn = document.getElementById('submit-pengajuan-btn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // Tampilkan alert dengan daftar file yang belum diupload
+        showFileAlert(missingFiles.map(f => f.name));
+
+        // Scroll ke file pertama yang belum diisi
+        if (missingFiles[0].element) {
+            const container = missingFiles[0].element.closest('.space-y-2, .space-y-3, .border-2');
+            if (container) {
+                setTimeout(() => {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Highlight dengan border merah sementara
+                    container.classList.add('ring-2', 'ring-red-500');
+                    setTimeout(() => {
+                        container.classList.remove('ring-2', 'ring-red-500');
+                    }, 3000);
+                }, 300);
+            }
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+function showFileAlert(missingFiles) {
+    // Hapus modal lama jika ada
+    const existingModal = document.getElementById('file-alert-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Buat modal overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'file-alert-modal';
+    overlay.className = 'fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4';
+    overlay.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full transform transition-all" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="bg-red-50 px-6 py-4 border-b border-red-200 rounded-t-lg">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-bold text-red-800">
+                            File Wajib Belum Diupload!
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-4">
+                <p class="text-sm text-gray-700 mb-3">Mohon upload file berikut sebelum submit:</p>
+                <ul class="space-y-2">
+                    ${missingFiles.map(f => `
+                        <li class="flex items-start">
+                            <i class="fas fa-times-circle text-red-500 mt-0.5 mr-2 flex-shrink-0"></i>
+                            <span class="text-sm font-medium text-gray-800">${f}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 rounded-b-lg">
+                <div class="flex justify-end">
+                    <button type="button" id="file-alert-ok-btn" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                        <i class="fas fa-check mr-1"></i> Mengerti
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Tambahkan event listener untuk close ketika klik overlay
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeFileAlert();
+        }
+    });
+
+    // Tambahkan event listener untuk tombol OK (lebih aman daripada onclick inline)
+    const okBtn = overlay.querySelector('#file-alert-ok-btn');
+    if (okBtn) {
+        okBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeFileAlert();
+        });
+    }
+
+    // Tambahkan event listener untuk tombol ESC
+    document.addEventListener('keydown', handleEscKey);
+
+    document.body.appendChild(overlay);
+
+    // Disable scroll pada body
+    document.body.style.overflow = 'hidden';
+}
+
+function handleEscKey(e) {
+    if (e.key === 'Escape') {
+        closeFileAlert();
+    }
+}
+
+function closeFileAlert() {
+    const modal = document.getElementById('file-alert-modal');
+    if (modal) {
+        modal.remove();
+    }
+
+    // Re-enable scroll pada body
+    document.body.style.overflow = '';
+
+    // Hapus event listener ESC
+    document.removeEventListener('keydown', handleEscKey);
+
+    // Hapus juga alert box lama jika ada (untuk kompatibilitas)
+    const alertBox = document.getElementById('file-alert-box');
+    if (alertBox) {
+        alertBox.remove();
+    }
+
+    // Blur dan re-enable tombol submit
+    const submitBtn = document.getElementById('submit-pengajuan-btn');
+    if (submitBtn) {
+        submitBtn.blur();
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        submitBtn.innerHTML = 'Ajukan Sekarang';
+    }
+
+    return false;
+}
 </script>
 @endsection

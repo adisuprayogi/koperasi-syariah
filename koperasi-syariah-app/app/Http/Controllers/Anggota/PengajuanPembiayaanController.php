@@ -57,6 +57,12 @@ class PengajuanPembiayaanController extends Controller
         $user = auth()->user();
         $anggota = Anggota::where('user_id', $user->id)->firstOrFail();
 
+        // Check if anggota is blacklisted
+        if ($anggota->is_blacklisted) {
+            return redirect()->route('anggota.pengajuan.index')
+                ->with('error', 'Maaf, Anda saat ini di-blacklist. Hubungi pengurus untuk informasi lebih lanjut. Alasan: ' . $anggota->blacklist_reason);
+        }
+
         // Check if there's pending application
         $pendingCount = PengajuanPembiayaan::where('anggota_id', $anggota->id)
             ->whereIn('status', ['draft', 'diajukan', 'verifikasi'])
@@ -91,10 +97,35 @@ class PengajuanPembiayaanController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        // Get jenis pembiayaan untuk validasi dinamis
+        $jenisPembiayaan = JenisPembiayaan::findOrFail($request->jenis_pembiayaan_id);
+
+        // Capture uploaded file names before validation (for display after validation error)
+        $uploadedFileNames = [];
+        $fileFields = ['ktp_file', 'kk_file', 'slip_gaji_file', 'proposal_file'];
+        foreach ($fileFields as $field) {
+            if ($request->hasFile($field)) {
+                $uploadedFileNames[$field] = $request->file($field)->getClientOriginalName();
+            }
+        }
+        if ($request->hasFile('jaminan_files')) {
+            $uploadedFileNames['jaminan_files'] = [];
+            foreach ($request->file('jaminan_files') as $file) {
+                $uploadedFileNames['jaminan_files'][] = $file->getClientOriginalName();
+            }
+        }
+        if ($request->hasFile('dokumen_lainnya_files')) {
+            $uploadedFileNames['dokumen_lainnya_files'] = [];
+            foreach ($request->file('dokumen_lainnya_files') as $file) {
+                $uploadedFileNames['dokumen_lainnya_files'][] = $file->getClientOriginalName();
+            }
+        }
+
+        $validator = \Validator::make($request->all(), [
             'jenis_pembiayaan_id' => 'required|exists:jenis_pembiayaans,id',
-            'jumlah_pengajuan' => 'required|numeric|min:1000000',
-            'tenor' => 'required|integer|min:1|max:60',
+            'jumlah_pengajuan' => 'required|numeric|min:' . $jenisPembiayaan->minimal_pembiayaan . ($jenisPembiayaan->maksimal_pembiayaan ? '|max:' . $jenisPembiayaan->maksimal_pembiayaan : ''),
+            'tenor' => 'required|integer|min:' . $jenisPembiayaan->jangka_waktu_min . '|max:' . $jenisPembiayaan->jangka_waktu_max,
+            'tipe_angsuran' => 'required|in:flat,menurun,menaik',
             'tujuan_pembiayaan' => 'required|in:modal_kerja,investasi,konsumtif,pendidikan,renovasi,lainnya',
             'deskripsi' => 'required|string|min:20',
             'no_rekening' => 'required|string|max:50',
@@ -107,14 +138,23 @@ class PengajuanPembiayaanController extends Controller
             'jaminan_files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'dokumen_lainnya_files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
         ], [
-            'jumlah_pengajuan.min' => 'Minimal pengajuan Rp 1.000.000',
-            'tenor.max' => 'Maksimal tenor 60 bulan',
+            'jumlah_pengajuan.min' => 'Minimal pengajuan Rp ' . number_format($jenisPembiayaan->minimal_pembiayaan, 0, ',', '.'),
+            'jumlah_pengajuan.max' => 'Maksimal pengajuan Rp ' . number_format($jenisPembiayaan->maksimal_pembiayaan, 0, ',', '.'),
+            'tenor.min' => 'Minimal tenor ' . $jenisPembiayaan->jangka_waktu_min . ' bulan',
+            'tenor.max' => 'Maksimal tenor ' . $jenisPembiayaan->jangka_waktu_max . ' bulan',
             'deskripsi.min' => 'Deskripsi minimal 20 karakter',
             'ktp_file.required' => 'KTP wajib diupload',
             'ktp_file.max' => 'Ukuran file maksimal 2MB',
             'jaminan_files.*.max' => 'Ukuran file jaminan maksimal 2MB',
             'dokumen_lainnya_files.*.max' => 'Ukuran file dokumen lainnya maksimal 2MB',
         ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('uploadedFileNames', $uploadedFileNames);
+        }
 
         try {
             DB::beginTransaction();
@@ -265,10 +305,13 @@ class PengajuanPembiayaanController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Get jenis pembiayaan untuk validasi dinamis
+        $jenisPembiayaan = JenisPembiayaan::findOrFail($request->jenis_pembiayaan_id);
+
         $request->validate([
             'jenis_pembiayaan_id' => 'required|exists:jenis_pembiayaans,id',
-            'jumlah_pengajuan' => 'required|numeric|min:1000000',
-            'tenor' => 'required|integer|min:1|max:60',
+            'jumlah_pengajuan' => 'required|numeric|min:' . $jenisPembiayaan->minimal_pembiayaan . ($jenisPembiayaan->maksimal_pembiayaan ? '|max:' . $jenisPembiayaan->maksimal_pembiayaan : ''),
+            'tenor' => 'required|integer|min:' . $jenisPembiayaan->jangka_waktu_min . '|max:' . $jenisPembiayaan->jangka_waktu_max,
             'tujuan_pembiayaan' => 'required|in:modal_kerja,investasi,konsumtif,pendidikan,renovasi,lainnya',
             'deskripsi' => 'required|string|min:20',
             'no_rekening' => 'required|string|max:50',

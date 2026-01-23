@@ -208,14 +208,44 @@
                                 <td class="px-4 py-3">
                                     @if($pembiayaan->angsurans->count() > 0)
                                         @php
+                                            // Hitung progress berdasarkan NOMINAL yang dibayar, bukan periode
+                                            $totalHarusDibayar = $pembiayaan->jumlah_pengajuan + $pembiayaan->jumlah_margin;
+                                            $totalDibayar = $pembiayaan->totalDibayar();
+                                            $progress = ($totalDibayar / $totalHarusDibayar) * 100;
+
+                                            // Hitung periode info
                                             $totalAngsuran = $pembiayaan->angsurans->count();
-                                            $totalTerbayar = $pembiayaan->angsurans->where('status', 'terbayar')->count();
-                                            $progress = ($totalTerbayar / $totalAngsuran) * 100;
+                                            $periodeLunas = $pembiayaan->periodeLunas();
+                                            $periodePending = $pembiayaan->periodePending();
+
+                                            // Tentukan warna berdasarkan progress & status
+                                            // Jika status lunas, langsung hijau
+                                            if ($pembiayaan->status === 'lunas') {
+                                                $progressColor = 'bg-green-600';
+                                            } elseif ($progress >= 99.5) {
+                                                // Progress 99.5%+ dianggap hampir lunas
+                                                $progressColor = 'bg-green-600';
+                                            } elseif ($progress >= 50) {
+                                                $progressColor = 'bg-blue-600';
+                                            } elseif ($progress >= 25) {
+                                                $progressColor = 'bg-yellow-600';
+                                            } else {
+                                                $progressColor = 'bg-red-600';
+                                            }
                                         @endphp
                                         <div class="w-full bg-gray-200 rounded-full h-2">
-                                            <div class="bg-primary-600 h-2 rounded-full transition-all" style="width: {{ $progress }}%"></div>
+                                            <div class="{{ $progressColor }} h-2 rounded-full transition-all" style="width: {{ min($progress, 100) }}%"></div>
                                         </div>
-                                        <div class="text-xs text-gray-500 mt-1">{{ number_format($progress, 0) }}% ({{ $totalTerbayar }}/{{ $totalAngsuran }})</div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            {{ number_format($progress, 0) }}%
+                                            <span class="text-gray-400">({{ $periodeLunas }}/{{ $totalAngsuran }} periode)</span>
+                                            @if($periodePending > 0)
+                                                <span class="text-yellow-600 font-medium"> +{{ $periodePending }} pending</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-gray-400">
+                                            {{ $pembiayaan->totalDibayar_formatted }} / {{ $pembiayaan->jumlah_pengajuan_formatted }}
+                                        </div>
                                     @else
                                         <span class="text-xs text-gray-400">-</span>
                                     @endif

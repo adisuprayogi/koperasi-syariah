@@ -33,7 +33,8 @@
     <p class="text-gray-600 mt-2">Update jenis pembiayaan: {{ $jenisPembiayaan->nama_pembiayaan }}</p>
 </div>
 
-<form action="{{ route('admin.jenis-pembiayaan.update', $jenisPembiayaan->id) }}" method="POST">
+<form action="{{ route('admin.jenis-pembiayaan.update', $jenisPembiayaan->id) }}" method="POST"
+      id="jenisPembiayaanForm" onsubmit="return validateJenisPembiayaanForm()">
     @csrf
     @method('PUT')
 
@@ -236,4 +237,124 @@
     </div>
 </form>
 </div>
+
+<script>
+// Validasi form sebelum submit
+function validateJenisPembiayaanForm() {
+    const minPembiayaan = parseFloat(document.getElementById('minimal_pembiayaan').value) || 0;
+    const maxPembiayaan = parseFloat(document.getElementById('maksimal_pembiayaan').value) || 0;
+    const tenorMin = parseInt(document.getElementById('jangka_waktu_min').value) || 0;
+    const tenorMax = parseInt(document.getElementById('jangka_waktu_max').value) || 0;
+
+    // Reset error states
+    clearErrors();
+
+    let hasError = false;
+
+    // Validasi minimal <= maksimal pembiayaan
+    if (maxPembiayaan > 0 && minPembiayaan > maxPembiayaan) {
+        showError('minimal_pembiayaan', 'Minimal pembiayaan tidak boleh lebih besar dari maksimal pembiayaan');
+        showError('maksimal_pembiayaan', 'Maksimal pembiayaan tidak boleh lebih kecil dari minimal pembiayaan');
+        hasError = true;
+    }
+
+    // Validasi jangka waktu min <= max
+    if (tenorMin > tenorMax) {
+        showError('jangka_waktu_min', 'Jangka waktu minimal tidak boleh lebih besar dari maksimal');
+        showError('jangka_waktu_max', 'Jangka waktu maksimal tidak boleh lebih kecil dari minimal');
+        hasError = true;
+    }
+
+    if (hasError) {
+        // Scroll to first error
+        const firstError = document.querySelector('.border-red-500');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return false;
+    }
+
+    return true;
+}
+
+// Show error on input
+function showError(fieldId, message) {
+    const input = document.getElementById(fieldId);
+    if (input) {
+        input.classList.add('border-red-500');
+        input.classList.remove('border-gray-300');
+
+        // Cek apakah sudah ada error message
+        let errorMsg = input.parentElement.querySelector('.error-message');
+        if (!errorMsg) {
+            errorMsg = document.createElement('p');
+            errorMsg.className = 'error-message mt-1 text-sm text-red-600';
+            input.parentElement.appendChild(errorMsg);
+        }
+        errorMsg.textContent = message;
+    }
+}
+
+// Clear all errors
+function clearErrors() {
+    const errorFields = document.querySelectorAll('.border-red-500');
+    errorFields.forEach(field => {
+        field.classList.remove('border-red-500');
+        field.classList.add('border-gray-300');
+    });
+
+    const errorMessages = document.querySelectorAll('.error-message');
+    errorMessages.forEach(msg => msg.remove());
+}
+
+// Real-time validation saat input berubah
+document.addEventListener('DOMContentLoaded', function() {
+    const minPembiayaanInput = document.getElementById('minimal_pembiayaan');
+    const maxPembiayaanInput = document.getElementById('maksimal_pembiayaan');
+    const tenorMinInput = document.getElementById('jangka_waktu_min');
+    const tenorMaxInput = document.getElementById('jangka_waktu_max');
+
+    function validatePembiayaan() {
+        const min = parseFloat(minPembiayaanInput.value) || 0;
+        const max = parseFloat(maxPembiayaanInput.value) || 0;
+
+        if (max > 0 && min > max) {
+            showError('minimal_pembiayaan', 'Minimal tidak boleh lebih besar dari maksimal');
+        } else {
+            clearFieldError('minimal_pembiayaan');
+            clearFieldError('maksimal_pembiayaan');
+        }
+    }
+
+    function validateTenor() {
+        const min = parseInt(tenorMinInput.value) || 0;
+        const max = parseInt(tenorMaxInput.value) || 0;
+
+        if (min > max) {
+            showError('jangka_waktu_min', 'Minimal tidak boleh lebih besar dari maksimal');
+        } else {
+            clearFieldError('jangka_waktu_min');
+            clearFieldError('jangka_waktu_max');
+        }
+    }
+
+    function clearFieldError(fieldId) {
+        const input = document.getElementById(fieldId);
+        if (input) {
+            input.classList.remove('border-red-500');
+            input.classList.add('border-gray-300');
+            const errorMsg = input.parentElement.querySelector('.error-message');
+            if (errorMsg) {
+                errorMsg.remove();
+            }
+        }
+    }
+
+    // Add event listeners
+    minPembiayaanInput.addEventListener('input', validatePembiayaan);
+    maxPembiayaanInput.addEventListener('input', validatePembiayaan);
+    tenorMinInput.addEventListener('input', validateTenor);
+    tenorMaxInput.addEventListener('input', validateTenor);
+});
+</script>
 @endsection

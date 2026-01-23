@@ -193,13 +193,20 @@ class TransaksiSimpanan extends Model
      */
     public static function calculateSaldo($anggota_id, $jenis_simpanan_id, $jenis_transaksi, $jumlah)
     {
-        $lastTransaksi = self::where('anggota_id', $anggota_id)
-                            ->where('jenis_simpanan_id', $jenis_simpanan_id)
-                            ->where('status', 'verified')
-                            ->orderBy('created_at', 'desc')
-                            ->first();
+        // Hitung saldo_sebelumnya dari total semua transaksi: total setoran - total penarikan
+        $totalSetor = self::where('anggota_id', $anggota_id)
+            ->where('jenis_simpanan_id', $jenis_simpanan_id)
+            ->where('jenis_transaksi', 'setor')
+            ->where('status', 'verified')
+            ->sum('jumlah');
 
-        $saldoSebelumnya = $lastTransaksi ? $lastTransaksi->saldo_setelahnya : 0;
+        $totalTarik = self::where('anggota_id', $anggota_id)
+            ->where('jenis_simpanan_id', $jenis_simpanan_id)
+            ->where('jenis_transaksi', 'tarik')
+            ->where('status', 'verified')
+            ->sum('jumlah');
+
+        $saldoSebelumnya = $totalSetor - $totalTarik;
 
         if ($jenis_transaksi == 'setor') {
             $saldoSetelahnya = $saldoSebelumnya + $jumlah;

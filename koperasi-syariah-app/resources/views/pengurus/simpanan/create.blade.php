@@ -29,7 +29,8 @@
                             Anggota <span class="text-red-500">*</span>
                         </label>
                         <select name="anggota_id" id="anggota_id" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                data-select-saldo="true">
                             <option value="">-- Pilih Anggota --</option>
                             @foreach($anggota as $a)
                                 <option value="{{ $a->id }}" data-nama="{{ $a->nama_lengkap }}" data-no="{{ $a->no_anggota }}">
@@ -47,7 +48,8 @@
                             Jenis Simpanan <span class="text-red-500">*</span>
                         </label>
                         <select name="jenis_simpanan_id" id="jenis_simpanan_id" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                data-select-saldo="true">
                             <option value="">-- Pilih Jenis Simpanan --</option>
                             @foreach($jenisSimpanan as $js)
                                 <option value="{{ $js->id }}"
@@ -277,24 +279,44 @@
 @push('scripts')
 <script>
 let currentSaldo = 0;
+let saldoLoaded = false;
 
 // Fungsi untuk mengambil saldo
 function getSaldo(anggotaId, jenisSimpananId) {
+    console.log('=== GET SALDO CALLED === anggotaId:', anggotaId, 'jenisSimpananId:', jenisSimpananId);
+
     if (!anggotaId || !jenisSimpananId) {
         return;
     }
 
-    $.get('{{ route("pengurus.api.get-saldo") }}', {
-        anggota_id: anggotaId,
-        jenis_simpanan_id: jenisSimpananId
-    })
-    .done(function(response) {
-        currentSaldo = response.saldo;
-        updateSaldoInfo();
-    })
-    .fail(function() {
-        currentSaldo = 0;
-        updateSaldoInfo();
+    // Cek apakah jQuery tersedia
+    if (typeof $ === 'undefined') {
+        console.error('jQuery is NOT loaded! $ is undefined');
+        return;
+    }
+
+    const url = '{{ route("pengurus.api.get-saldo") }}';
+    console.log('Calling AJAX to:', url);
+
+    $.ajax({
+        url: url,
+        method: 'GET',
+        data: {
+            anggota_id: anggotaId,
+            jenis_simpanan_id: jenisSimpananId
+        },
+        success: function(response) {
+            console.log('AJAX SUCCESS:', response);
+            currentSaldo = parseFloat(response.saldo) || 0;
+            saldoLoaded = true;
+            updateSaldoInfo();
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX ERROR:', error, 'Status:', xhr.status, 'Response:', xhr.responseText);
+            currentSaldo = 0;
+            saldoLoaded = true;
+            updateSaldoInfo();
+        }
     });
 }
 
@@ -303,94 +325,165 @@ function updateSaldoInfo() {
     const anggotaSelect = document.getElementById('anggota_id');
     const jenisSimpananSelect = document.getElementById('jenis_simpanan_id');
     const jumlahInput = document.getElementById('jumlah');
-    const jenisTransaksi = document.querySelector('input[name="jenis_transaksi"]:checked').value;
+    const jenisTransaksiRadio = document.querySelector('input[name="jenis_transaksi"]:checked');
 
+    console.log('=== UPDATE INFO CALLED === currentSaldo:', currentSaldo, 'saldoLoaded:', saldoLoaded);
+
+    if (!anggotaSelect.value || !jenisSimpananSelect.value || !jenisTransaksiRadio) {
+        document.getElementById('saldoInfo').classList.add('hidden');
+        return;
+    }
+
+    const jenisTransaksi = jenisTransaksiRadio.value;
     const selectedAnggota = anggotaSelect.options[anggotaSelect.selectedIndex];
     const selectedJenisSimpanan = jenisSimpananSelect.options[jenisSimpananSelect.selectedIndex];
     const jumlah = parseFloat(jumlahInput.value) || 0;
 
-    if (anggotaSelect.value && jenisSimpananSelect.value) {
-        document.getElementById('saldoInfo').classList.remove('hidden');
-        document.getElementById('infoNama').textContent = selectedAnggota.dataset.nama || '-';
-        document.getElementById('infoNoAnggota').textContent = selectedAnggota.dataset.no || '-';
-        document.getElementById('infoSaldo').textContent = 'Rp ' + currentSaldo.toLocaleString('id-ID');
+    document.getElementById('saldoInfo').classList.remove('hidden');
+    document.getElementById('infoNama').textContent = selectedAnggota.dataset.nama || '-';
+    document.getElementById('infoNoAnggota').textContent = selectedAnggota.dataset.no || '-';
+    document.getElementById('infoSaldo').textContent = 'Rp ' + currentSaldo.toLocaleString('id-ID');
 
-        // Update perhitungan
-        document.getElementById('saldoPerhitungan').classList.remove('hidden');
-        document.getElementById('saldoBefore').textContent = 'Rp ' + currentSaldo.toLocaleString('id-ID');
+    // Update perhitungan - PASTIKAN currentSaldo terupdate dengan benar
+    document.getElementById('saldoPerhitungan').classList.remove('hidden');
 
-        // Validasi jika jenis simpanan tidak bisa ditarik
-        if (jenisTransaksi === 'tarik') {
-            const bisaDitarik = selectedJenisSimpanan.dataset.bisaDitarik === '1';
-            if (!bisaDitarik) {
-                document.getElementById('jumlahTransaksiRow').classList.add('text-red-600');
-                document.getElementById('jumlahDisplay').textContent = 'Tidak dapat ditarik';
-                document.getElementById('jumlahDisplay').classList.add('text-red-600');
-                document.getElementById('jumlahDisplay').classList.remove('text-green-600');
-                document.getElementById('labelJumlah').textContent = 'Status:';
-                return;
-            }
-        }
+    const saldoBeforeValue = 'Rp ' + currentSaldo.toLocaleString('id-ID');
+    document.getElementById('saldoBefore').textContent = saldoBeforeValue;
 
-        document.getElementById('jumlahTransaksiRow').classList.remove('text-red-600');
-        document.getElementById('jumlahDisplay').classList.remove('text-red-600');
+    console.log('saldoBefore set to:', saldoBeforeValue);
+    console.log('saldoBefore element now:', document.getElementById('saldoBefore').textContent);
 
-        if (jenisTransaksi === 'setor') {
-            document.getElementById('labelJumlah').textContent = 'Jumlah Setoran:';
-            document.getElementById('jumlahDisplay').textContent = '+Rp ' + jumlah.toLocaleString('id-ID');
-            document.getElementById('jumlahDisplay').classList.add('text-green-600');
-            document.getElementById('jumlahDisplay').classList.remove('text-red-600');
-        } else {
-            document.getElementById('labelJumlah').textContent = 'Jumlah Penarikan:';
-            document.getElementById('jumlahDisplay').textContent = '-Rp ' + jumlah.toLocaleString('id-ID');
+    // Validasi jika jenis simpanan tidak bisa ditarik
+    if (jenisTransaksi === 'tarik') {
+        const bisaDitarik = selectedJenisSimpanan.dataset.bisaDitarik === '1';
+        if (!bisaDitarik) {
+            document.getElementById('jumlahTransaksiRow').classList.add('text-red-600');
+            document.getElementById('jumlahDisplay').textContent = 'Tidak dapat ditarik';
             document.getElementById('jumlahDisplay').classList.add('text-red-600');
             document.getElementById('jumlahDisplay').classList.remove('text-green-600');
-        }
-
-        const saldoAfter = jenisTransaksi === 'setor' ?
-            currentSaldo + jumlah :
-            currentSaldo - jumlah;
-
-        document.getElementById('saldoAfter').textContent = 'Rp ' + saldoAfter.toLocaleString('id-ID');
-
-        // Tampilkan warning jika saldo tidak cukup
-        if (jenisTransaksi === 'tarik' && saldoAfter < 0) {
-            document.getElementById('saldoAfter').classList.add('text-red-600');
-        } else {
+            document.getElementById('labelJumlah').textContent = 'Status:';
+            document.getElementById('saldoAfter').textContent = 'Rp ' + currentSaldo.toLocaleString('id-ID');
             document.getElementById('saldoAfter').classList.remove('text-red-600');
+            return;
         }
+    }
+
+    document.getElementById('jumlahTransaksiRow').classList.remove('text-red-600');
+    document.getElementById('jumlahDisplay').classList.remove('text-red-600');
+
+    if (jenisTransaksi === 'setor') {
+        document.getElementById('labelJumlah').textContent = 'Jumlah Setoran:';
+        document.getElementById('jumlahDisplay').textContent = '+Rp ' + jumlah.toLocaleString('id-ID');
+        document.getElementById('jumlahDisplay').classList.add('text-green-600');
+        document.getElementById('jumlahDisplay').classList.remove('text-red-600');
     } else {
-        document.getElementById('saldoInfo').classList.add('hidden');
+        document.getElementById('labelJumlah').textContent = 'Jumlah Penarikan:';
+        document.getElementById('jumlahDisplay').textContent = '-Rp ' + jumlah.toLocaleString('id-ID');
+        document.getElementById('jumlahDisplay').classList.add('text-red-600');
+        document.getElementById('jumlahDisplay').classList.remove('text-green-600');
+    }
+
+    // Hitung saldo setelahnya
+    let saldoAfter;
+    if (jenisTransaksi === 'setor') {
+        saldoAfter = currentSaldo + jumlah;
+    } else {
+        saldoAfter = currentSaldo - jumlah;
+    }
+
+    console.log('=== PERHITUNGAN SALDO ===');
+    console.log('currentSaldo:', currentSaldo);
+    console.log('jumlah:', jumlah);
+    console.log('jenisTransaksi:', jenisTransaksi);
+    console.log('saldoAfter:', saldoAfter);
+
+    document.getElementById('saldoAfter').textContent = 'Rp ' + saldoAfter.toLocaleString('id-ID');
+
+    // Tampilkan warning jika saldo tidak cukup
+    if (jenisTransaksi === 'tarik' && saldoAfter < 0) {
+        document.getElementById('saldoAfter').classList.add('text-red-600');
+    } else {
+        document.getElementById('saldoAfter').classList.remove('text-red-600');
     }
 }
 
-// Event listeners
-document.getElementById('anggota_id').addEventListener('change', function() {
-    const jenisSimpananId = document.getElementById('jenis_simpanan_id').value;
-    if (jenisSimpananId) {
-        getSaldo(this.value, jenisSimpananId);
+// Event listeners - Wrapped in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOM CONTENT LOADED ===');
+
+    const anggotaSelect = document.getElementById('anggota_id');
+    const jenisSimpananSelect = document.getElementById('jenis_simpanan_id');
+
+    console.log('anggotaSelect element:', anggotaSelect);
+    console.log('jenisSimpananSelect element:', jenisSimpananSelect);
+
+    // Event listener untuk anggota_id
+    if (anggotaSelect) {
+        anggotaSelect.addEventListener('change', function() {
+            console.log('anggota_id changed to:', this.value);
+            const jsId = jenisSimpananSelect ? jenisSimpananSelect.value : null;
+            if (this.value && jsId) {
+                console.log('Calling getSaldo with:', this.value, jsId);
+                getSaldo(this.value, jsId);
+            }
+        });
+        console.log('anggota_id change listener attached');
+    } else {
+        console.log('ERROR: anggota_id element NOT FOUND!');
     }
-});
 
-document.getElementById('jenis_simpanan_id').addEventListener('change', function() {
-    const anggotaId = document.getElementById('anggota_id').value;
-    if (anggotaId) {
-        getSaldo(anggotaId, this.value);
+    // Event listener untuk jenis_simpanan_id
+    if (jenisSimpananSelect) {
+        jenisSimpananSelect.addEventListener('change', function() {
+            console.log('jenis_simpanan_id changed to:', this.value);
+            const angId = anggotaSelect ? anggotaSelect.value : null;
+            if (this.value && angId) {
+                console.log('Calling getSaldo with:', angId, this.value);
+                getSaldo(angId, this.value);
+            }
+        });
+        console.log('jenis_simpanan_id change listener attached');
+    } else {
+        console.log('ERROR: jenis_simpanan_id element NOT FOUND!');
     }
-});
 
-document.getElementById('jumlah').addEventListener('input', updateSaldoInfo);
+    // Cek apakah sudah ada nilai terpilih (dari old input setelah validation error)
+    if (anggotaSelect && jenisSimpananSelect) {
+        const anggotaId = anggotaSelect.value;
+        const jenisSimpananId = jenisSimpananSelect.value;
 
-document.querySelectorAll('input[name="jenis_transaksi"]').forEach(radio => {
-    radio.addEventListener('change', updateSaldoInfo);
-});
+        console.log('Initial values - anggota_id:', anggotaId, 'jenis_simpanan_id:', jenisSimpananId);
 
-// Format number input
-document.getElementById('jumlah').addEventListener('blur', function() {
-    const value = parseFloat(this.value);
-    if (!isNaN(value)) {
-        this.value = Math.round(value / 1000) * 1000; // Round to nearest 1000
+        if (anggotaId && jenisSimpananId) {
+            console.log('Both values already selected, calling getSaldo directly...');
+            getSaldo(anggotaId, jenisSimpananId);
+        }
     }
+
+    // Event listener untuk jumlah
+    const jumlahInput = document.getElementById('jumlah');
+    if (jumlahInput) {
+        jumlahInput.addEventListener('input', updateSaldoInfo);
+        jumlahInput.addEventListener('keyup', updateSaldoInfo);
+
+        // Format number input
+        jumlahInput.addEventListener('blur', function() {
+            const value = parseFloat(this.value);
+            if (!isNaN(value)) {
+                this.value = Math.round(value / 1000) * 1000; // Round to nearest 1000
+            }
+        });
+    }
+
+    // Event listener untuk jenis_transaksi (radio buttons)
+    document.querySelectorAll('input[name="jenis_transaksi"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            console.log('jenis_transaksi changed to:', this.value);
+            updateSaldoInfo();
+        });
+    });
+
+    console.log('=== EVENT LISTENERS ATTACHED ===');
 });
 
 // Show file name when file is selected
