@@ -65,9 +65,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/ubah-password', [AuthController::class, 'showChangePasswordForm'])->name('password.change');
 Route::post('/ubah-password', [AuthController::class, 'changePassword'])->name('password.update');
 
-// TEMPORARY: Migration Routes - HAPUS SETELAH SELESAI
-Route::get('/run-migrate', [MigrateController::class, 'run']);
-Route::get('/migrate-status', [MigrateController::class, 'status']);
+// TEMPORARY: Migration Routes - HAPUS SETELAH SELESAI (DISABLED)
+// Route::get('/run-migrate', [MigrateController::class, 'run']);
+// Route::get('/migrate-status', [MigrateController::class, 'status']);
 
 // Admin Routes (Admin only)
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
@@ -204,6 +204,7 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->
     Route::get('/laporan/bulanan', [LaporanController::class, 'bulanan'])->name('laporan.bulanan');
     Route::get('/laporan/simpanan-wajib', [LaporanController::class, 'simpananWajib'])->name('laporan.simpanan-wajib');
     Route::get('/laporan/rekap-simpanan', [LaporanController::class, 'rekapSimpananAnggota'])->name('laporan.rekap-simpanan');
+    Route::get('/laporan/tunggakan-pembiayaan', [LaporanController::class, 'tunggakanPembiayaan'])->name('laporan.tunggakan-pembiayaan');
     Route::get('/laporan/simpanan-per-anggota', [LaporanController::class, 'simpananPerAnggota'])->name('laporan.simpanan-per-anggota');
     Route::get('/laporan/pembiayaan-per-anggota', [LaporanController::class, 'pembiayaanPerAnggota'])->name('laporan.pembiayaan-per-anggota');
     Route::get('/laporan/laba-rugi', [LaporanController::class, 'labaRugi'])->name('laporan.laba-rugi');
@@ -215,6 +216,8 @@ Route::prefix('pengurus')->name('pengurus.')->middleware(['auth', 'pengurus'])->
     Route::get('/laporan/export/rekap-simpanan', [LaporanController::class, 'exportRekapSimpanan'])->name('laporan.export-rekap-simpanan');
     Route::get('/laporan/rekap-simpanan/export', [LaporanController::class, 'exportRekapSimpananAnggota'])->name('laporan.rekap-simpanan-export');
     Route::get('/laporan/rekap-simpanan/print', [LaporanController::class, 'printRekapSimpananAnggota'])->name('laporan.rekap-simpanan-print');
+    Route::get('/laporan/tunggakan-pembiayaan/export', [LaporanController::class, 'exportTunggakanPembiayaan'])->name('laporan.tunggakan-pembiayaan-export');
+    Route::get('/laporan/tunggakan-pembiayaan/print', [LaporanController::class, 'printTunggakanPembiayaan'])->name('laporan.tunggakan-pembiayaan-print');
     Route::get('/laporan/export/pembiayaan-per-anggota', [LaporanController::class, 'exportPembiayaanPerAnggota'])->name('laporan.export-pembiayaan-per-anggota');
     Route::get('/laporan/export/laba-rugi', [LaporanController::class, 'exportLabaRugi'])->name('laporan.export-laba-rugi');
     Route::get('/laporan/export/neraca', [LaporanController::class, 'exportNeraca'])->name('laporan.export-neraca');

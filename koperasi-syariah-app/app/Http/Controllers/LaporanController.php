@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\TransaksiSimpanan;
 use App\Models\Anggota;
 use App\Models\JenisSimpanan;
+use App\Models\JenisPembiayaan;
 use App\Models\PengajuanPembiayaan;
 use App\Models\Angsuran;
 use App\Models\Transaksi;
@@ -1314,5 +1315,218 @@ class LaporanController extends Controller
         $pdf->setPaper('A4', 'landscape');
 
         return $pdf->download('Rekap_Simpanan_Anggota_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.pdf');
+    }
+
+    /**
+     * Laporan Tunggakan Pembiayaan Anggota
+     * Menampilkan daftar pembiayaan yang menunggak
+     */
+    public function tunggakanPembiayaan(Request $request)
+    {
+        $query = PengajuanPembiayaan::with(['anggota', 'jenisPembiayaan'])
+            ->whereIn('status', ['cair', 'lunas'])
+            ->whereHas('angsurans', function($q) {
+                $q->where('tanggal_jatuh_tempo', '<', now())
+                  ->whereNotIn('status', ['terbayar', 'lunas_lebih_cepat']);
+            });
+
+        // Filter by jenis pembiayaan
+        if ($request->filled('jenis_pembiayaan_id')) {
+            $query->where('jenis_pembiayaan_id', $request->jenis_pembiayaan_id);
+        }
+
+        // Filter by anggota
+        if ($request->filled('anggota_id')) {
+            $query->where('anggota_id', $request->anggota_id);
+        }
+
+        // Filter by periode (bulan jatuh tempo)
+        if ($request->filled('bulan') && $request->filled('tahun')) {
+            $bulan = $request->bulan;
+            $tahun = $request->tahun;
+            $query->whereHas('angsurans', function($q) use ($bulan, $tahun) {
+                $q->whereMonth('tanggal_jatuh_tempo', $bulan)
+                  ->whereYear('tanggal_jatuh_tempo', $tahun)
+                  ->whereNotIn('status', ['terbayar', 'lunas_lebih_cepat']);
+            });
+        }
+
+        // Search by nama atau no anggota
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('anggota', function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('no_anggota', 'like', "%{$search}%");
+            });
+        }
+
+        // Get data order by anggota, then pembiayaan
+        $pembiayaans = $query->orderBy('anggota_id')->orderBy('id')->get();
+
+        // Process data to calculate tunggakan
+        $tunggakanData = [];
+        $totalSisaAngsuran = 0;
+        $totalBulanMenunggak = 0;
+        $totalJumlahMenunggak = 0;
+
+        foreach ($pembiayaans as $pembiayaan) {
+            // Get angsuran yang menunggak
+            $angsuranMenunggak = $pembiayaan->angsurans()
+                ->where('tanggal_jatuh_tempo', '<', now())
+                ->whereNotIn('status', ['terbayar', 'lunas_lebih_cepat'])
+                ->get();
+
+            if ($angsuranMenunggak->isEmpty()) {
+                continue;
+            }
+
+            // Calculate metrics
+            $sisaAngsuran = $pembiayaan->angsurans()
+                ->whereNotIn('status', ['terbayar', 'lunas_lebih_cepat'])
+                ->count();
+
+            $bulanMenunggak = $angsuranMenunggak->count();
+            $jumlahMenunggak = $angsuranMenunggak->sum('jumlah_angsuran');
+
+            $tunggakanData[] = (object) [
+                'id' => $pembiayaan->id,
+                'kode_pengajuan' => $pembiayaan->kode_pengajuan,
+                'no_anggota' => $pembiayaan->anggota->no_anggota,
+                'nama_anggota' => $pembiayaan->anggota->nama_lengkap,
+                'jenis_pembiayaan' => $pembiayaan->jenisPembiayaan->nama_pembiayaan ?? '-',
+                'tenor' => $pembiayaan->tenor,
+                'sisa_angsuran' => $sisaAngsuran,
+                'bulan_menunggak' => $bulanMenunggak,
+                'jumlah_menunggak' => $jumlahMenunggak,
+                'angsuran_menunggak' => $angsuranMenunggak,
+            ];
+
+            $totalSisaAngsuran += $sisaAngsuran;
+            $totalBulanMenunggak += $bulanMenunggak;
+            $totalJumlahMenunggak += $jumlahMenunggak;
+        }
+
+        // Get filter options
+        $jenisPembiayaanList = JenisPembiayaan::where('status', true)->get();
+        $anggotaList = Anggota::where('status_keanggotaan', 'aktif')->orderBy('no_anggota')->get();
+
+        return view('pengurus.laporan.tunggakan_pembiayaan', compact(
+            'tunggakanData',
+            'jenisPembiayaanList',
+            'anggotaList',
+            'totalSisaAngsuran',
+            'totalBulanMenunggak',
+            'totalJumlahMenunggak'
+        ));
+    }
+
+    /**
+     * Export Tunggakan Pembiayaan to Excel
+     */
+    public function exportTunggakanPembiayaan(Request $request)
+    {
+        $filename = 'Tunggakan_Pembiayaan_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new \App\Exports\TunggakanPembiayaanExport(
+            $request->get('jenis_pembiayaan_id'),
+            $request->get('anggota_id'),
+            $request->get('bulan'),
+            $request->get('tahun'),
+            $request->get('search')
+        ), $filename);
+    }
+
+    /**
+     * Print Tunggakan Pembiayaan (PDF)
+     */
+    public function printTunggakanPembiayaan(Request $request)
+    {
+        $query = PengajuanPembiayaan::with(['anggota', 'jenisPembiayaan'])
+            ->whereIn('status', ['cair', 'lunas'])
+            ->whereHas('angsurans', function($q) {
+                $q->where('tanggal_jatuh_tempo', '<', now())
+                  ->whereNotIn('status', ['terbayar', 'lunas_lebih_cepat']);
+            });
+
+        if ($request->filled('jenis_pembiayaan_id')) {
+            $query->where('jenis_pembiayaan_id', $request->jenis_pembiayaan_id);
+        }
+
+        if ($request->filled('anggota_id')) {
+            $query->where('anggota_id', $request->anggota_id);
+        }
+
+        if ($request->filled('bulan') && $request->filled('tahun')) {
+            $bulan = $request->bulan;
+            $tahun = $request->tahun;
+            $query->whereHas('angsurans', function($q) use ($bulan, $tahun) {
+                $q->whereMonth('tanggal_jatuh_tempo', $bulan)
+                  ->whereYear('tanggal_jatuh_tempo', $tahun)
+                  ->whereNotIn('status', ['terbayar', 'lunas_lebih_cepat']);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('anggota', function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('no_anggota', 'like', "%{$search}%");
+            });
+        }
+
+        $pembiayaans = $query->orderBy('anggota_id')->orderBy('id')->get();
+
+        $tunggakanData = [];
+        $totalSisaAngsuran = 0;
+        $totalBulanMenunggak = 0;
+        $totalJumlahMenunggak = 0;
+
+        foreach ($pembiayaans as $pembiayaan) {
+            $angsuranMenunggak = $pembiayaan->angsurans()
+                ->where('tanggal_jatuh_tempo', '<', now())
+                ->whereNotIn('status', ['terbayar', 'lunas_lebih_cepat'])
+                ->get();
+
+            if ($angsuranMenunggak->isEmpty()) {
+                continue;
+            }
+
+            $sisaAngsuran = $pembiayaan->angsurans()
+                ->whereNotIn('status', ['terbayar', 'lunas_lebih_cepat'])
+                ->count();
+
+            $bulanMenunggak = $angsuranMenunggak->count();
+            $jumlahMenunggak = $angsuranMenunggak->sum('jumlah_angsuran');
+
+            $tunggakanData[] = (object) [
+                'id' => $pembiayaan->id,
+                'kode_pengajuan' => $pembiayaan->kode_pengajuan,
+                'no_anggota' => $pembiayaan->anggota->no_anggota,
+                'nama_anggota' => $pembiayaan->anggota->nama_lengkap,
+                'jenis_pembiayaan' => $pembiayaan->jenisPembiayaan->nama_pembiayaan ?? '-',
+                'tenor' => $pembiayaan->tenor,
+                'sisa_angsuran' => $sisaAngsuran,
+                'bulan_menunggak' => $bulanMenunggak,
+                'jumlah_menunggak' => $jumlahMenunggak,
+            ];
+
+            $totalSisaAngsuran += $sisaAngsuran;
+            $totalBulanMenunggak += $bulanMenunggak;
+            $totalJumlahMenunggak += $jumlahMenunggak;
+        }
+
+        $koperasi = Koperasi::first();
+
+        $pdf = PDF::loadView('pengurus.laporan.print.tunggakan_pembiayaan', compact(
+            'koperasi',
+            'tunggakanData',
+            'totalSisaAngsuran',
+            'totalBulanMenunggak',
+            'totalJumlahMenunggak'
+        ));
+
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->download('Tunggakan_Pembiayaan_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.pdf');
     }
 }

@@ -130,6 +130,22 @@
             </div>
         </div>
 
+        <!-- Laporan Tunggakan Pembiayaan -->
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-4 sm:p-6">
+                <div class="flex items-center mb-3 sm:mb-4">
+                    <div class="p-2 sm:p-3 bg-red-100 rounded-full">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-sm sm:text-xl"></i>
+                    </div>
+                    <h3 class="ml-3 sm:ml-4 text-base sm:text-lg font-semibold text-gray-900">Tunggakan Pembiayaan</h3>
+                </div>
+                <p class="text-gray-600 mb-3 sm:mb-4 text-sm">Daftar pembiayaan anggota yang menunggak angsuran</p>
+                <a href="{{ route('pengurus.laporan.tunggakan-pembiayaan') }}" class="block w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-3 sm:px-4 rounded-md text-center transition-colors text-sm">
+                    <i class="fas fa-eye mr-1 sm:mr-2"></i>Lihat Laporan
+                </a>
+            </div>
+        </div>
+
         <!-- Laporan Simpanan per Anggota -->
         <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div class="p-4 sm:p-6">
